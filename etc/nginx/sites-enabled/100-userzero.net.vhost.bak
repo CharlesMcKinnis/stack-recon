@@ -2,9 +2,9 @@ server {
         listen *:80;
 
 
-        server_name revantine.com www.revantine.com;
+        server_name userzero.net www.userzero.net;
 
-        root   /var/www/revantine.com/web;
+        root   /var/www/userzero.net/web;
 
 
 
@@ -54,8 +54,8 @@ server {
             internal;
         }
 
-        error_log /var/log/ispconfig/httpd/revantine.com/error.log;
-        access_log /var/log/ispconfig/httpd/revantine.com/access.log combined;
+        error_log /var/log/ispconfig/httpd/userzero.net/error.log;
+        access_log /var/log/ispconfig/httpd/userzero.net/access.log combined;
 
         location ~ /\. {
             deny all;
@@ -78,7 +78,7 @@ server {
 
             index index.html index.php;
             auth_basic "Members Only";
-            auth_basic_user_file /var/www/clients/client1/web6/web/stats/.htpasswd_stats;
+            auth_basic_user_file /var/www/clients/client1/web9/web/stats/.htpasswd_stats;
         }
 
         location ^~ /awstats-icon {
@@ -86,13 +86,13 @@ server {
         }
 
         location ~ \.php$ {
-            try_files /28e5c8edaa22f7aadabe5946661b6e2e.htm @php;
+            try_files /cffa25eb7723ee68e93dfb2b44bfd48b.htm @php;
         }
 
         location @php {
             try_files $uri =404;
-            include etc/nginx/fastcgi_params;
-            fastcgi_pass unix:/var/lib/php5-fpm/web6.sock;
+            include /etc/nginx/fastcgi_params;
+            fastcgi_pass unix:/var/lib/php5-fpm/web9.sock;
             fastcgi_index index.php;
             fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
             fastcgi_intercept_errors on;
@@ -111,7 +111,7 @@ server {
                                fastcgi_param HTTPS $https; # <-- add this line
                                fastcgi_index index.php;
                                fastcgi_param SCRIPT_FILENAME $request_filename;
-                               include etc/nginx/fastcgi_params;
+                               include /etc/nginx/fastcgi_params;
                                fastcgi_param PATH_INFO $fastcgi_script_name;
                                fastcgi_buffer_size 128k;
                                fastcgi_buffers 256 4k;
@@ -136,7 +136,7 @@ server {
                                fastcgi_param HTTPS $https; # <-- add this line
                                fastcgi_index index.php;
                                fastcgi_param SCRIPT_FILENAME $request_filename;
-                               include etc/nginx/fastcgi_params;
+                               include /etc/nginx/fastcgi_params;
                                fastcgi_param PATH_INFO $fastcgi_script_name;
                                fastcgi_buffer_size 128k;
                                fastcgi_buffers 256 4k;
