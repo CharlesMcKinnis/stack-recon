@@ -1,0 +1,157 @@
+server {
+        listen *:80;
+
+
+        server_name mckinn.is www.mckinn.is;
+
+        root   /var/www/mckinn.is/web;
+
+
+
+        index index.html index.htm index.php index.cgi index.pl index.xhtml;
+
+
+
+        error_page 400 /error/400.html;
+        error_page 401 /error/401.html;
+        error_page 403 /error/403.html;
+        error_page 404 /error/404.html;
+        error_page 405 /error/405.html;
+        error_page 500 /error/500.html;
+        error_page 502 /error/502.html;
+        error_page 503 /error/503.html;
+        recursive_error_pages on;
+        location = /error/400.html {
+
+            internal;
+        }
+        location = /error/401.html {
+
+            internal;
+        }
+        location = /error/403.html {
+
+            internal;
+        }
+        location = /error/404.html {
+
+            internal;
+        }
+        location = /error/405.html {
+
+            internal;
+        }
+        location = /error/500.html {
+
+            internal;
+        }
+        location = /error/502.html {
+
+            internal;
+        }
+        location = /error/503.html {
+
+            internal;
+        }
+
+        error_log /var/log/ispconfig/httpd/mckinn.is/error.log;
+        access_log /var/log/ispconfig/httpd/mckinn.is/access.log combined;
+
+        location ~ /\. {
+            deny all;
+            access_log off;
+            log_not_found off;
+        }
+
+        location = /favicon.ico {
+            log_not_found off;
+            access_log off;
+        }
+
+        location = /robots.txt {
+            allow all;
+            log_not_found off;
+            access_log off;
+        }
+
+        location /stats/ {
+
+            index index.html index.php;
+            auth_basic "Members Only";
+            auth_basic_user_file /var/www/clients/client1/web1/web/stats/.htpasswd_stats;
+        }
+
+        location ^~ /awstats-icon {
+            alias /usr/share/awstats/icon;
+        }
+
+        location ~ \.php$ {
+            try_files /7666c2a3ed334247243f394f10101425.htm @php;
+        }
+
+        location @php {
+            try_files $uri =404;
+            include /etc/nginx/fastcgi_params;
+            fastcgi_pass unix:/var/lib/php5-fpm/web1.sock;
+            fastcgi_index index.php;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_intercept_errors on;
+        }
+
+
+
+
+        location /phpmyadmin {
+                       root /usr/share/;
+                       index index.php index.html index.htm;
+                       location ~ ^/phpmyadmin/(.+\.php)$ {
+                               try_files $uri =404;
+                               root /usr/share/;
+                               fastcgi_pass 127.0.0.1:9000;
+                               fastcgi_param HTTPS $https; # <-- add this line
+                               fastcgi_index index.php;
+                               fastcgi_param SCRIPT_FILENAME $request_filename;
+                               include /etc/nginx/fastcgi_params;
+                               fastcgi_param PATH_INFO $fastcgi_script_name;
+                               fastcgi_buffer_size 128k;
+                               fastcgi_buffers 256 4k;
+                               fastcgi_busy_buffers_size 256k;
+                               fastcgi_temp_file_write_size 256k;
+                               fastcgi_intercept_errors on;
+                       }
+                       location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
+                               root /usr/share/;
+                       }
+        }
+        location /phpMyAdmin {
+                       rewrite ^/* /phpmyadmin last;
+        }
+        location /roundcubemail {
+                       root /usr/share/;
+                       index index.php index.html index.htm;
+                       location ~ ^/roundcubemail/(.+\.php)$ {
+                               try_files $uri =404;
+                               root /usr/share/;
+                               fastcgi_pass 127.0.0.1:9000;
+                               fastcgi_param HTTPS $https; # <-- add this line
+                               fastcgi_index index.php;
+                               fastcgi_param SCRIPT_FILENAME $request_filename;
+                               include /etc/nginx/fastcgi_params;
+                               fastcgi_param PATH_INFO $fastcgi_script_name;
+                               fastcgi_buffer_size 128k;
+                               fastcgi_buffers 256 4k;
+                               fastcgi_busy_buffers_size 256k;
+                               fastcgi_temp_file_write_size 256k;
+                               fastcgi_intercept_errors on;
+                       }
+                       location ~* ^/roundcubemail/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
+                               root /usr/share/;
+                       }
+        }
+        location /webmail {
+                       rewrite ^/* /squirrelmail last;
+        }
+
+
+
+}
