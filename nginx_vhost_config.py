@@ -55,7 +55,8 @@ for line in wholeconfig.splitlines():
         if result:
             print line.strip()
     # if the server block is bigger than the current stanza, we have left the server stanza we were in
-    if server_start > stanza_count and server_start > 0:
+    #if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
+    if server_start > stanza_count:
         # we are no longer in the server { block
         server_start = 0
         print ""
