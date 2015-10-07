@@ -74,7 +74,7 @@ for line in wholeconfig.splitlines():
             if result.group(1)=="listen":
                 if not result.group(1) in nginx_stanzas[server_line]:
                     nginx_stanzas[server_line][result.group(1)] = []
-                nginx_stanzas[server_line][result.group(1)] += result.group(2).split()
+                nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
                 #nginx_stanzas[server_line][result.group(1)].append(result.group(2)) # WORKS!
                 #print result.group(2)
                 print "listen %s" % result.group(2)
