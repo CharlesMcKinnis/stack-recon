@@ -3,6 +3,8 @@
 import re
 import glob
 
+conffile = "./amalg.conf"
+
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
     def __getitem__(self, item):
@@ -11,8 +13,6 @@ class AutoVivification(dict):
         except KeyError:
             value = self[item] = type(self)()
             return value
-
-conffile = "./amalg.conf"
 
 def importfile(filename, keyword):
     files = glob.iglob(filename)
@@ -36,15 +36,12 @@ def importfile(filename, keyword):
                 #print line.rstrip()
     return combined
 
-#infile = open(onefile, 'r')
-
-#wholeconfig = infile.readlines()
-#print wholeconfig
-
-# list structure
-# [ server stanza { line : { listen: [ ], server_name : [ ], root { location : path } } } ]
 
 def parse_nginx_config(wholeconfig):
+    """
+    list structure
+    [ server stanza { line : { listen: [ ], server_name : [ ], root { location : path } } } ]
+    """
     stanza_count = 0
     server_start = 0
     location_start = 0
@@ -57,7 +54,7 @@ def parse_nginx_config(wholeconfig):
             print "This script does not consistently support opening { and closing } stanzas on the same line."
         stanza_count+=len(re.findall('{',line))
         stanza_count-=len(re.findall('}',line))
-        result = re.match('^\s*server', line.strip() )
+        result = re.match('^\s*server\s', line.strip() )
         if result:
             server_start = stanza_count
             server_line = str(linenum)
@@ -82,9 +79,9 @@ def parse_nginx_config(wholeconfig):
                     nginx_stanzas[server_line][result.group(1)] += result.group(2).split()
                     #print "server_name %s" % result.group(2)
                 if result.group(1)=="root":
-                    if not result.group(1) in nginx_stanzas[server_line]:
-                        nginx_stanzas[server_line][result.group(1)] = []
-                    nginx_stanzas[server_line][result.group(1)] += result.group(2).split()
+                    #if not result.group(1) in nginx_stanzas[server_line]:
+                    #    nginx_stanzas[server_line][result.group(1)] = {}
+                    nginx_stanzas[server_line][result.group(1)] = result.group(2)
                     #print "root %s" % result.group(2)
         # if the server block is bigger than the current stanza, we have left the server stanza we were in
         # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
@@ -96,5 +93,8 @@ def parse_nginx_config(wholeconfig):
 
 wholeconfig = importfile(conffile,"include")
 nginx_stanzas = parse_nginx_config(wholeconfig)
-print "%r" % nginx_stanzas
+#print "%r" % nginx_stanzas
 
+for one in nginx_stanzas:
+    print "%s %s" % (one,nginx_stanzas[one])
+    
