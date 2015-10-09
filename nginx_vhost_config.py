@@ -3,7 +3,83 @@
 import re
 import glob
 
-conffile = "./etc/nginx/nginx.conf"
+conffile = "./amalg.conf"
+
+class nginxCtl:
+
+    """
+    A class for nginxCtl functionalities
+    """
+
+    def get_version(self):
+        """
+        Discovers installed nginx version
+        """
+        version = "nginx -v"
+        p = subprocess.Popen(
+            version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+            )
+        output, err = p.communicate()
+        return err
+
+    def get_conf_parameters(self):
+        """
+        Finds nginx configuration parameters
+
+        :returns: list of nginx configuration parameters
+        """
+        conf = "nginx -V 2>&1 | grep 'configure arguments:'"
+        p = subprocess.Popen(
+            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, err = p.communicate()
+        output = re.sub('configure arguments:', '', output)
+        dict = {}
+        for item in output.split(" "):
+            if len(item.split("=")) == 2:
+                dict[item.split("=")[0]] = item.split("=")[1]
+        return dict
+
+    def get_nginx_conf(self):
+        """
+        :returns: nginx configuration path location
+        """
+        try:
+            return self.get_conf_parameters()['--conf-path']
+        except KeyError:
+            print "nginx is not installed!!!"
+            sys.exit()
+
+    def get_nginx_bin(self):
+        """
+        :returns: nginx binary location
+        """
+        try:
+            return self.get_conf_parameters()['--sbin-path']
+        except:
+            print "nginx is not installed!!!"
+            sys.exit()
+
+    def get_nginx_pid(self):
+        """
+        :returns: nginx pid location which is required by nginx services
+        """
+
+        try:
+            return self.get_conf_parameters()['--pid-path']
+        except:
+            print "nginx is not installed!!!"
+            sys.exit()
+
+    def get_nginx_lock(self):
+        """
+        :returns: nginx lock file location which is required for nginx services
+        """
+
+        try:
+            return self.get_conf_parameters()['--lock-path']
+        except:
+            print "nginx is not installed!!!"
+            sys.exit()
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
@@ -108,10 +184,11 @@ def parse_nginx_config(wholeconfig):
             server_start = 0
             #print ""
     return nginx_stanzas
+
+print nginxCtl.get_nginx_conf()
 wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
 nginx_stanzas = parse_nginx_config(wholeconfig)
 #print "%r" % nginx_stanzas
 #print "-----------------------------------"
 for one in sorted(nginx_stanzas.keys(),key=int):
     print "%s %s" % (one,nginx_stanzas[one])
-    
