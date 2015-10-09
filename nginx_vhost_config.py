@@ -14,7 +14,15 @@ class AutoVivification(dict):
             value = self[item] = type(self)()
             return value
 
-def importfile(filename, keyword):
+def importfile(filename, keyword_regex):
+    """
+    pass the filename of the base config file, and a keyword regular expression to identify the include directive.
+    The regexp should include parantheses ( ) around the filename part of the match
+    
+    Examples:
+    nginx
+        wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
+    """
     files = glob.iglob(filename)
     combined = ""
 
@@ -25,12 +33,12 @@ def importfile(filename, keyword):
         for line in infile:
             #print "%s" % line.rstrip()
             #print "%s" % line.strip() # removes whitespace on left and right
-            result = re.match('\s*%s\s+(\S+);' % keyword, line.strip() )
+            result = re.match(keyword_regex, line.strip() )
             #result = re.match('(include.*)', line.strip(), re.I | re.U )
             if result:
                 combined += "#"+line+"\n"
                 #print "#include %s " % result.group(1)
-                combined += importfile(result.group(1),keyword)
+                combined += importfile(result.group(1),keyword_regex)
             else:
                 combined += line
                 #print line.rstrip()
@@ -73,6 +81,16 @@ def parse_nginx_config(wholeconfig):
                         nginx_stanzas[server_line][result.group(1)] = []
                     nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
                     #print "listen %s" % result.group(2)
+                if result.group(1)=="access_log":
+                    if not result.group(1) in nginx_stanzas[server_line]:
+                        nginx_stanzas[server_line][result.group(1)] = []
+                    nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
+                    #print "listen %s" % result.group(2)
+                if result.group(1)=="error_log":
+                    if not result.group(1) in nginx_stanzas[server_line]:
+                        nginx_stanzas[server_line][result.group(1)] = []
+                    nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
+                    #print "listen %s" % result.group(2)
                 if result.group(1)=="server_name":
                     if not result.group(1) in nginx_stanzas[server_line]:
                         nginx_stanzas[server_line][result.group(1)] = []
@@ -90,8 +108,7 @@ def parse_nginx_config(wholeconfig):
             server_start = 0
             #print ""
     return nginx_stanzas
-
-wholeconfig = importfile(conffile,"include")
+wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
 nginx_stanzas = parse_nginx_config(wholeconfig)
 #print "%r" % nginx_stanzas
 #print "-----------------------------------"
