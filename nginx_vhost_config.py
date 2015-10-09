@@ -2,8 +2,10 @@
 
 import re
 import glob
+import subprocess
+import sys
 
-conffile = "./amalg.conf"
+conffile = "./etc/nginx/nginx.conf"
 
 class nginxCtl:
 
