@@ -48,8 +48,8 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--conf-path']
         except KeyError:
-            print "nginx is not installed!!!"
-            sys.exit()
+            #print "nginx is not installed!!!"
+            sys.exit(1)
 
     def get_nginx_bin(self):
         """
@@ -58,8 +58,8 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--sbin-path']
         except:
-            print "nginx is not installed!!!"
-            sys.exit()
+            #print "nginx is not installed!!!"
+            sys.exit(1)
 
     def get_nginx_pid(self):
         """
@@ -69,8 +69,8 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--pid-path']
         except:
-            print "nginx is not installed!!!"
-            sys.exit()
+            #print "nginx is not installed!!!"
+            sys.exit(1)
 
     def get_nginx_lock(self):
         """
@@ -80,8 +80,8 @@ class nginxCtl:
         try:
             return self.get_conf_parameters()['--lock-path']
         except:
-            print "nginx is not installed!!!"
-            sys.exit()
+            #print "nginx is not installed!!!"
+            sys.exit(1)
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
@@ -190,8 +190,13 @@ def parse_nginx_config(wholeconfig):
     return nginx_stanzas
 
 n = nginxCtl()
-nginx_conf_path = n.get_nginx_conf()
-print nginx_conf_path
+try:
+    nginx_conf_path = n.get_nginx_conf()
+except:
+    print "nginx is not installed"
+    nginx_conf_path = conffile
+    #conffile = "./etc/nginx/nginx.conf"
+print "Using config %s" % nginx_conf_path
 wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);')
 nginx_stanzas = parse_nginx_config(wholeconfig)
 #print "%r" % nginx_stanzas
