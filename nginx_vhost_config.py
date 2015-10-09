@@ -94,7 +94,7 @@ def parse_nginx_config(wholeconfig):
 wholeconfig = importfile(conffile,"include")
 nginx_stanzas = parse_nginx_config(wholeconfig)
 #print "%r" % nginx_stanzas
-
-for one in nginx_stanzas:
+#print "-----------------------------------"
+for one in sorted(nginx_stanzas.keys(),key=int):
     print "%s %s" % (one,nginx_stanzas[one])
     
