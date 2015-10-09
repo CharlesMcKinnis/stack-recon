@@ -97,8 +97,10 @@ def importfile(filename, keyword_regex):
     pass the filename of the base config file, and a keyword regular expression to identify the include directive.
     The regexp should include parantheses ( ) around the filename part of the match
     
-    Examples:
+    Examples (the regexp is case insensitive):
     nginx
+        wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
+    httpd
         wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
     """
     files = glob.iglob(filename)
@@ -111,7 +113,7 @@ def importfile(filename, keyword_regex):
         for line in infile:
             #print "%s" % line.rstrip()
             #print "%s" % line.strip() # removes whitespace on left and right
-            result = re.match(keyword_regex, line.strip() )
+            result = re.match(keyword_regex, line.strip(), re.IGNORECASE )
             #result = re.match('(include.*)', line.strip(), re.I | re.U )
             if result:
                 combined += "#"+line+"\n"
