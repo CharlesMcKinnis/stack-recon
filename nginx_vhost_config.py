@@ -3,7 +3,7 @@
 import re
 import glob
 
-conffile = "./amalg.conf"
+conffile = "./etc/nginx/nginx.conf"
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
