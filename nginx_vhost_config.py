@@ -108,7 +108,10 @@ def importfile(filename, keyword_regex):
 
     for onefile in files:
         #infile = open(filename, 'r')
-        infile = open(onefile, 'r')
+        try:
+            infile = open(onefile, 'r')
+        except:
+            return()
 
         for line in infile:
             #print "%s" % line.rstrip()
@@ -195,11 +198,9 @@ try:
 except:
     print "nginx is not installed"
     nginx_conf_path = conffile
-    #conffile = "./etc/nginx/nginx.conf"
 print "Using config %s" % nginx_conf_path
 wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);')
-nginx_stanzas = parse_nginx_config(wholeconfig)
-#print "%r" % nginx_stanzas
-#print "-----------------------------------"
-for one in sorted(nginx_stanzas.keys(),key=int):
-    print "%s %s" % (one,nginx_stanzas[one])
+if wholeconfig:
+    nginx_stanzas = parse_nginx_config(wholeconfig)
+    for one in sorted(nginx_stanzas.keys(),key=int):
+        print "%s %s" % (one,nginx_stanzas[one])
