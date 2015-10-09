@@ -185,8 +185,9 @@ def parse_nginx_config(wholeconfig):
             #print ""
     return nginx_stanzas
 
-print nginxCtl.get_nginx_conf()
-wholeconfig = importfile(nginxCtl.get_nginx_conf(),'\s*include\s+(\S+);')
+nginx_conf_path = nginxCtl.get_nginx_conf()
+print nginx_conf_path
+wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);')
 nginx_stanzas = parse_nginx_config(wholeconfig)
 #print "%r" % nginx_stanzas
 #print "-----------------------------------"
