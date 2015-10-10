@@ -7,10 +7,36 @@ import sys
 
 conffile = "./etc/nginx/nginx.conf"
 
-class apacheCtl:
-
+class apache:
     """
-    A class for nginxCtl functionalities
+    [root@527387-db1 26594]# httpd -V
+    Server version: Apache/2.2.15 (Unix)
+    Server built:   Aug 25 2015 04:30:38
+    Server's Module Magic Number: 20051115:25
+    Server loaded:  APR 1.3.9, APR-Util 1.3.9
+    Compiled using: APR 1.3.9, APR-Util 1.3.9
+    Architecture:   64-bit
+    Server MPM:     Prefork
+      threaded:     no
+        forked:     yes (variable process count)
+    Server compiled with....
+     -D APACHE_MPM_DIR="server/mpm/prefork"
+     -D APR_HAS_SENDFILE
+     -D APR_HAS_MMAP
+     -D APR_HAVE_IPV6 (IPv4-mapped addresses enabled)
+     -D APR_USE_SYSVSEM_SERIALIZE
+     -D APR_USE_PTHREAD_SERIALIZE
+     -D APR_HAS_OTHER_CHILD
+     -D AP_HAVE_RELIABLE_PIPED_LOGS
+     -D DYNAMIC_MODULE_LIMIT=128
+     -D HTTPD_ROOT="/etc/httpd"
+     -D SUEXEC_BIN="/usr/sbin/suexec"
+     -D DEFAULT_PIDLOG="run/httpd.pid"
+     -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
+     -D DEFAULT_LOCKFILE="logs/accept.lock"
+     -D DEFAULT_ERRORLOG="logs/error_log"
+     -D AP_TYPES_CONFIG_FILE="conf/mime.types"
+     -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
 
 class nginxCtl:
@@ -197,6 +223,26 @@ def parse_nginx_config(wholeconfig):
             server_start = 0
             #print ""
     return nginx_stanzas
+
+def parse_apache_config(wholeconfig):
+    """
+    <VirtualHost *:80>
+    DocumentRoot /var/www/vhosts/example.com/httpdocs
+    ServerName example.com
+    ServerAlias www.example.com
+    <Directory /var/www/vhosts/example.com/httpdocs>
+    </Directory>
+    CustomLog /var/log/httpd/example.com-access_log combined
+    ErrorLog /var/log/httpd/example.com-error_log
+    </VirtualHost>
+    """
+
+"""
+need to check directory permissions
+[root@localhost vhosts]# ll
+total 4
+drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
+"""
 
 n = nginxCtl()
 try:
