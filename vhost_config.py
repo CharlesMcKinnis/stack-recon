@@ -38,6 +38,32 @@ class apache:
      -D AP_TYPES_CONFIG_FILE="conf/mime.types"
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
+    def get_conf_parameters(self):
+        """
+        Finds nginx configuration parameters
+
+        :returns: list of nginx configuration parameters
+        """
+        conf = "httpd -V 2>&1 | grep 'configure arguments:'"
+        p = subprocess.Popen(
+            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, err = p.communicate()
+        output = re.sub('configure arguments:', '', output)
+        dict = {}
+        for item in output.split(" "):
+            if len(item.split("=")) == 2:
+                dict[item.split("=")[0]] = item.split("=")[1]
+        return dict
+
+    def get_conf(self):
+        """
+        :returns: nginx configuration path location
+        """
+        try:
+            return self.get_conf_parameters()['--conf-path']
+        except KeyError:
+            #print "nginx is not installed!!!"
+            sys.exit(1)
 
 class nginxCtl:
 
@@ -124,22 +150,38 @@ class AutoVivification(dict):
             value = self[item] = type(self)()
             return value
 
-def importfile(filename, keyword_regex):
+def importfile(filename, keyword_regex, **kwargs):
     """
     pass the filename of the base config file, and a keyword regular expression to identify the include directive.
     The regexp should include parantheses ( ) around the filename part of the match
+    
+    keywords: base_path = "/some/path"
+    trailing / will be stripped
+    kwargs["base_path"] will be added to filename that do not include and absolute path. i.e. Apache includes
     
     Examples (the regexp is case insensitive):
     nginx
         wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
     httpd
-        wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
+        wholeconfig = importfile(conffile,'\s*include\s+(\S+);', base_path="/etc/httpd")
     """
-    files = glob.iglob(filename)
+    # make the base_path incoming keyword a little more fault tolerant by removing the trailing slash
+    if "base_path" in kwargs:
+        base_path = kwargs["base_path"].rstrip("/")
+    else:
+        base_path = ""
+    def full_file_path(right_file):
+        # If the right side of the full name doesn't have a leading slash, it is a relative path.
+        #     Add the base_path to the left and return the value
+        # else just return the name
+        if right_file[0] not in "/":
+            return(base_path+"/"+right_file)
+        else:
+            return(filename)
+    files = glob.iglob( full_file_path(filename) )
     combined = ""
 
     for onefile in files:
-        #infile = open(filename, 'r')
         try:
             infile = open(onefile, 'r')
         except:
@@ -152,8 +194,10 @@ def importfile(filename, keyword_regex):
             #result = re.match('(include.*)', line.strip(), re.I | re.U )
             if result:
                 combined += "#"+line+"\n"
+                combined += "## START "+line+"\n"
                 #print "#include %s " % result.group(1)
-                combined += importfile(result.group(1),keyword_regex)
+                combined += importfile(result.group(1),keyword_regex, **kwargs)
+                combined += "## END "+line+"\n"
             else:
                 combined += line
                 #print line.rstrip()
