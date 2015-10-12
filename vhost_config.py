@@ -9,7 +9,7 @@ import os
 conffile = "etc/nginx/nginx.conf"
 conffile = "etc/nginx/nginx.conf"
 
-class apache:
+class apacheCtl:
     """
     [root@527387-db1 26594]# httpd -V
     Server version: Apache/2.2.15 (Unix)
@@ -42,35 +42,87 @@ class apache:
     """
     def get_conf_parameters(self):
         """
-        Finds nginx configuration parameters
+        Finds configuration parameters
 
-        :returns: list of nginx configuration parameters
+        :returns: list of configuration parameters
+        Server version - Apache/2.2.15 (Unix)
+        Server built - Aug 18 2015 02:00:22
+        Server's Module Magic Number - 20051115:25
+        Server loaded - APR 1.3.9, APR-Util 1.3.9
+        Compiled using - APR 1.3.9, APR-Util 1.3.9
+        Architecture - 64-bit
+        Server MPM - Prefork
+        threaded - no
+        forked - yes (variable process count)
+
+        APACHE_MPM_DIR - server/mpm/prefork
+        APR_HAS_SENDFILE - 
+        APR_HAS_MMAP - 
+        APR_HAVE_IPV6 (IPv4-mapped addresses enabled) - 
+        APR_USE_SYSVSEM_SERIALIZE - 
+        APR_USE_PTHREAD_SERIALIZE - 
+        SINGLE_LISTEN_UNSERIALIZED_ACCEPT - 
+        APR_HAS_OTHER_CHILD - 
+        AP_HAVE_RELIABLE_PIPED_LOGS - 
+        DYNAMIC_MODULE_LIMIT - 128
+        HTTPD_ROOT - /etc/httpd
+        SUEXEC_BIN - /usr/sbin/suexec
+        DEFAULT_PIDLOG - run/httpd.pid
+        DEFAULT_SCOREBOARD - logs/apache_runtime_status
+        DEFAULT_LOCKFILE - logs/accept.lock
+        DEFAULT_ERRORLOG - logs/error_log
+        AP_TYPES_CONFIG_FILE - conf/mime.types
+        SERVER_CONFIG_FILE - conf/httpd.conf
         """
-        conf = "httpd -V 2>&1 | grep 'configure arguments:'"
+        conf = "httpd -V 2>&1"
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
-        output = re.sub('configure arguments:', '', output)
         dict = {}
-        for item in output.split(" "):
-            if len(item.split("=")) == 2:
-                dict[item.split("=")[0]] = item.split("=")[1]
+        compiled=0
+        for i in output.splitlines():
+            if i.strip()=="Server compiled with....":
+                compiled=1
+                continue
+            if compiled == 0:
+                result = re.match('\s*([^:]+):\s*(.+)', i.strip())
+                if result:
+                    dict[result.group(1)]=result.group(2)
+            else:
+                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
+                if result:
+                    dict[result.group(1)]=result.group(2)
         return dict
+
+    def get_root(self):
+        try:
+            return self.get_conf_parameters()['HTTPD_ROOT']
+        except KeyError:
+            return()
 
     def get_conf(self):
         """
-        :returns: nginx configuration path location
+        :returns: configuration path location
+        HTTPD_ROOT/SERVER_CONFIG_FILE
         """
         try:
-            return self.get_conf_parameters()['--conf-path']
+            return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'],self.get_conf_parameters()['SERVER_CONFIG_FILE'])
         except KeyError:
-            #print "nginx is not installed!!!"
-            sys.exit(1)
+            #print " is not installed!!!"
+            return()
 
 class nginxCtl:
 
     """
     A class for nginxCtl functionalities
+    """
+
+    """
+    # nginx -V
+    nginx version: nginx/1.0.15
+    built by gcc 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC) 
+    TLS SNI support enabled
+    configure arguments: --prefix=/usr/share/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --http-client-body-temp-path=/var/lib/nginx/tmp/client_body --http-proxy-temp-path=/var/lib/nginx/tmp/proxy --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi --http-scgi-temp-path=/var/lib/nginx/tmp/scgi --pid-path=/var/run/nginx.pid --lock-path=/var/lock/subsys/nginx --user=nginx --group=nginx --with-file-aio --with-ipv6 --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_xslt_module --with-http_image_filter_module --with-http_geoip_module --with-http_sub_module --with-http_dav_module --with-http_flv_module --with-http_mp4_module --with-http_gzip_static_module --with-http_random_index_module --with-http_secure_link_module --with-http_degradation_module --with-http_stub_status_module --with-http_perl_module --with-mail --with-mail_ssl_module --with-debug --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' --with-ld-opt=-Wl,-E
     """
 
     def get_version(self):
@@ -130,7 +182,7 @@ class nginxCtl:
             return self.get_conf_parameters()['--pid-path']
         except:
             #print "nginx is not installed!!!"
-            sys.exit(1)
+            return()
 
     def get_nginx_lock(self):
         """
@@ -141,7 +193,7 @@ class nginxCtl:
             return self.get_conf_parameters()['--lock-path']
         except:
             #print "nginx is not installed!!!"
-            sys.exit(1)
+            return()
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
@@ -312,7 +364,11 @@ print "Using config %s" % nginx_conf_path
 #nginx
 #wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/")
 
-apache_conf_path = "conf/httpd.conf"
+a = apacheCtl()
+apache_conf_path = a.get_conf()
+print apache_conf_path
+#exit(0)
+#apache_conf_path = "conf/httpd.conf"
 #apache
 wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd")
 if wholeconfig:
@@ -320,3 +376,5 @@ if wholeconfig:
     #for one in sorted(nginx_stanzas.keys(),key=int):
         #print "%s %s" % (one,nginx_stanzas[one])
     print wholeconfig
+
+#apacheCtl.get_conf_parameters()
