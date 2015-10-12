@@ -4,8 +4,10 @@ import re
 import glob
 import subprocess
 import sys
+import os
 
-conffile = "./etc/nginx/nginx.conf"
+conffile = "etc/nginx/nginx.conf"
+conffile = "etc/nginx/nginx.conf"
 
 class apache:
     """
@@ -161,9 +163,9 @@ def importfile(filename, keyword_regex, **kwargs):
     
     Examples (the regexp is case insensitive):
     nginx
-        wholeconfig = importfile(conffile,'\s*include\s+(\S+);')
+        wholeconfig = importfile(conffile,'\s*include\s+(\S+)')
     httpd
-        wholeconfig = importfile(conffile,'\s*include\s+(\S+);', base_path="/etc/httpd")
+        wholeconfig = importfile(conffile,'\s*include\s+(\S+)', base_path="/etc/httpd")
     """
     # make the base_path incoming keyword a little more fault tolerant by removing the trailing slash
     if "base_path" in kwargs:
@@ -178,29 +180,41 @@ def importfile(filename, keyword_regex, **kwargs):
             return(base_path+"/"+right_file)
         else:
             return(filename)
-    files = glob.iglob( full_file_path(filename) )
+    print "full path to file: %s" % full_file_path(filename)
+    files = glob.iglob( full_file_path(filename) ) # either an absolute path to a file, or absolute path to a glob
+    #print "%r" % files
     combined = ""
 
     for onefile in files:
+        # for each file in the glob (may be just one file), open it
         try:
-            infile = open(onefile, 'r')
+            onefile_handle = open(onefile, 'r')
+            # onefile should always be a file
+            if os.path.isfile(onefile):
+                #print "STA onefile: %s" % onefile
+                combined += "## START "+onefile+"\n"
         except:
             return()
 
-        for line in infile:
-            #print "%s" % line.rstrip()
-            #print "%s" % line.strip() # removes whitespace on left and right
+        # go through the file, line by line
+        # if it has an include, go follow it
+        for line in onefile_handle:
             result = re.match(keyword_regex, line.strip(), re.IGNORECASE )
             #result = re.match('(include.*)', line.strip(), re.I | re.U )
+            # if it is an include, remark out the line,
+            # figure out the full filename
+            # and import it inline
             if result:
+                #print "nested! %s" % result.group(1)
                 combined += "#"+line+"\n"
-                combined += "## START "+line+"\n"
-                #print "#include %s " % result.group(1)
-                combined += importfile(result.group(1),keyword_regex, **kwargs)
-                combined += "## END "+line+"\n"
+                nestedfile = full_file_path(result.group(1))
+                combined += importfile(nestedfile, keyword_regex, **kwargs)
             else:
                 combined += line
-                #print line.rstrip()
+        # END of the file import, if it was a file and not a glob, make the ending. onefile should always be a file
+        if os.path.isfile(onefile):
+            #print "END onefile: %s" % onefile
+            combined += "## END "+onefile+"\n"
     return combined
 
 
@@ -295,8 +309,14 @@ except:
     print "nginx is not installed"
     nginx_conf_path = conffile
 print "Using config %s" % nginx_conf_path
-wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);')
+#nginx
+#wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/")
+
+apache_conf_path = "conf/httpd.conf"
+#apache
+wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd")
 if wholeconfig:
-    nginx_stanzas = parse_nginx_config(wholeconfig)
-    for one in sorted(nginx_stanzas.keys(),key=int):
-        print "%s %s" % (one,nginx_stanzas[one])
+    #nginx_stanzas = parse_nginx_config(wholeconfig)
+    #for one in sorted(nginx_stanzas.keys(),key=int):
+        #print "%s %s" % (one,nginx_stanzas[one])
+    print wholeconfig
