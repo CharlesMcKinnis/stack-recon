@@ -7,7 +7,6 @@ import sys
 import os
 
 conffile = "etc/nginx/nginx.conf"
-conffile = "etc/nginx/nginx.conf"
 
 class apacheCtl:
     """
@@ -270,6 +269,18 @@ def importfile(filename, keyword_regex, **kwargs):
             combined += "## END "+onefile+"\n"
     return combined
 
+def kwsearch(keywords,line):
+    stanza = {}
+    for word in keywords:
+        #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
+        result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+        if result:
+            #print "keyword match %s" % word
+            if not word in stanza:
+                stanza[word] = []
+            if not result.group(2).strip('"') in stanza[word]:
+                stanza[word] += [result.group(2).strip('"')]
+    return(stanza)
 
 def parse_nginx_config(wholeconfig):
     """
@@ -366,6 +377,7 @@ def parse_apache_config(wholeconfig):
     location_start = 0
     linenum = 0
     filechain = []
+    stanza_flags = []
     stanzas = {} #AutoVivification()
     base_keywords = ["serverroot", "startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen"]
     vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
@@ -400,6 +412,8 @@ def parse_apache_config(wholeconfig):
         if stanza_count == 0:
             keywords = base_keywords
             keywords += vhost_keywords
+        stanzas.update(kwsearch(keywords,line))
+        """
             for word in keywords:
                 #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
                 result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
@@ -409,6 +423,37 @@ def parse_apache_config(wholeconfig):
                         stanzas[word] = []
                     if not result.group(2).strip('"') in stanzas[word]:
                         stanzas[word] += [result.group(2).strip('"')]
+        """
+
+        result = re.match('<ifmodule\s+prefork.c', line.strip(), re.IGNORECASE )
+        if result:
+            print "+start prefork"
+            print line
+            stanza_flags.append({"type" : "prefork", "linenum" : linenum, "stanza_count" : stanza_count})
+            #stanza_flags["prefork"]["linenum"] = linenum
+            #stanza_flags["prefork"]["stanza_count"] = stanza_count
+            # start prefork
+            print "%r" % stanza_flags[-1]
+            print "-start prefork"
+        result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
+        if result:
+            # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
+            if len(stanza_flags) > 0:
+                if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
+                    print "+end prefork"
+                    print line
+                    print stanza_flags.pop()
+                    print "-end prefork"
+        # If we are in a prefork stanza
+        """
+        if len(stanza_flags) > 0:
+            if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                print line
+                if not "prefork" in stanzas:
+                    stanzas["prefork"] = {}
+                stanzas["prefork"][ =
+        """
+
 
         # virtual host matching
         result = re.match('<virtualhost\s+([^>]+)', line.strip(), re.IGNORECASE )
