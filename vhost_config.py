@@ -279,20 +279,37 @@ def parse_nginx_config(wholeconfig):
     server_start = 0
     location_start = 0
     linenum = 0
+    filechain = []
     nginx_stanzas = {} #AutoVivification()
     for line in wholeconfig.splitlines():
         linenum += 1
+        # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
+        # as they are opened, we add them to a list, and remove them as they close.
+        # then we can use their name to identify where it is configured
+        filechange = re.match("## START (.*)",line)
+        if filechange:
+            filechain.append(filechange.goup(1))
+        filechange = re.match("## END (.*)",line)
+        if filechange:
+            filechain.pop()
+        # filechain[-1] for the most recent element
         # this doesn't do well if you open and close a stanza on the same line
         if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
             print "This script does not consistently support opening { and closing } stanzas on the same line."
         stanza_count+=len(re.findall('{',line))
         stanza_count-=len(re.findall('}',line))
+        # is this a "server {" line?
         result = re.match('^\s*server\s', line.strip() )
         if result:
             server_start = stanza_count
             server_line = str(linenum)
             if not server_line in nginx_stanzas:
                 nginx_stanzas[server_line] = { }
+            if not config_file in nginx_stanzas[server_line]:
+                nginx_stanzas[server_line]["config_file"] = []
+            # there should only be one config file, but just in case, we will append it
+            if not filechain[-1] in nginx_stanzas[server_line]["config_file"]:
+                nginx_stanzas[server_line]["config_file"].append(filechain[-1])
         # are we in a server block, and not a child stanza of the server block? is so, look for keywords
         # this is so we don't print the root directive for location as an example. That might be useful, but isn't implemented at this time.
         if server_start == stanza_count:
@@ -306,29 +323,29 @@ def parse_nginx_config(wholeconfig):
                         nginx_stanzas[server_line][result.group(1)] = []
                     nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
                     #print "listen %s" % result.group(2)
-                if result.group(1)=="access_log":
+                elif result.group(1)=="access_log":
                     if not result.group(1) in nginx_stanzas[server_line]:
                         nginx_stanzas[server_line][result.group(1)] = []
                     nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
                     #print "listen %s" % result.group(2)
-                if result.group(1)=="error_log":
+                elif result.group(1)=="error_log":
                     if not result.group(1) in nginx_stanzas[server_line]:
                         nginx_stanzas[server_line][result.group(1)] = []
                     nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
                     #print "listen %s" % result.group(2)
-                if result.group(1)=="server_name":
+                elif result.group(1)=="server_name":
                     if not result.group(1) in nginx_stanzas[server_line]:
                         nginx_stanzas[server_line][result.group(1)] = []
                     nginx_stanzas[server_line][result.group(1)] += result.group(2).split()
                     #print "server_name %s" % result.group(2)
-                if result.group(1)=="root":
+                elif result.group(1)=="root":
                     #if not result.group(1) in nginx_stanzas[server_line]:
                     #    nginx_stanzas[server_line][result.group(1)] = {}
                     nginx_stanzas[server_line][result.group(1)] = result.group(2)
                     #print "root %s" % result.group(2)
-        # if the server block is bigger than the current stanza, we have left the server stanza we were in
-        # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
-        if server_start > stanza_count:
+        elif stanza_count < server_start:
+            # if the server block is bigger than the current stanza, we have left the server stanza we were in
+            # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
             # we are no longer in the server { block
             server_start = 0
             #print ""
