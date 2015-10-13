@@ -285,7 +285,7 @@ def kwsearch(keywords,line, **kwargs):
     stanza = {}
     for word in keywords:
         #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
-        result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+        result = re.search("\s*({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
         if result:
             #print "keyword match %s" % word
             if not "single_value" in kwargs:
@@ -293,9 +293,9 @@ def kwsearch(keywords,line, **kwargs):
                     stanza[word] = []
                 if not result.group(2).strip('"') in stanza[word]:
                     if not "split_list" in kwargs:
-                        stanza[word] += [result.group(2).strip('"')]
+                        stanza[word] += [result.group(2).strip(';"')]
                     else:
-                        stanza[word] += [result.group(2).strip('"').split()]
+                        stanza[word] += [result.group(2).strip(';"').split()]
             else:
                 stanza[word] = result.group(2).strip('"')
     return(stanza) #once we have a match, move on
