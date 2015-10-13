@@ -233,7 +233,7 @@ def importfile(filename, keyword_regex, **kwargs):
             return(base_path+"/"+right_file)
         else:
             return(filename)
-    print "full path to file: %s" % full_file_path(filename)
+    #print "full path to file: %s" % full_file_path(filename)
     files = glob.iglob( full_file_path(filename) ) # either an absolute path to a file, or absolute path to a glob
     #print "%r" % files
     combined = ""
@@ -274,14 +274,14 @@ def importfile(filename, keyword_regex, **kwargs):
 def parse_nginx_config(wholeconfig):
     """
     list structure
-    [ server stanza { line : { listen: [ ], server_name : [ ], root { location : path } } } ]
+    { line : { listen: [ ], server_name : [ ], root : path } }
     """
     stanza_count = 0
     server_start = 0
     location_start = 0
     linenum = 0
     filechain = []
-    nginx_stanzas = {} #AutoVivification()
+    stanzas = {} #AutoVivification()
     for line in wholeconfig.splitlines():
         linenum += 1
         # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
@@ -289,7 +289,7 @@ def parse_nginx_config(wholeconfig):
         # then we can use their name to identify where it is configured
         filechange = re.match("## START (.*)",line)
         if filechange:
-            filechain.append(filechange.goup(1))
+            filechain.append(filechange.group(1))
         filechange = re.match("## END (.*)",line)
         if filechange:
             filechain.pop()
@@ -299,61 +299,48 @@ def parse_nginx_config(wholeconfig):
             print "This script does not consistently support opening { and closing } stanzas on the same line."
         stanza_count+=len(re.findall('{',line))
         stanza_count-=len(re.findall('}',line))
+
+        # start server { section
         # is this a "server {" line?
         result = re.match('^\s*server\s', line.strip() )
         if result:
             server_start = stanza_count
             server_line = str(linenum)
-            if not server_line in nginx_stanzas:
-                nginx_stanzas[server_line] = { }
-            if not config_file in nginx_stanzas[server_line]:
-                nginx_stanzas[server_line]["config_file"] = []
+            if not server_line in stanzas:
+                stanzas[server_line] = { }
+            if not "config_file" in stanzas[server_line]:
+                stanzas[server_line]["config_file"] = []
             # there should only be one config file, but just in case, we will append it
-            if not filechain[-1] in nginx_stanzas[server_line]["config_file"]:
-                nginx_stanzas[server_line]["config_file"].append(filechain[-1])
+            if not filechain[-1] in stanzas[server_line]["config_file"]:
+                stanzas[server_line]["config_file"].append(filechain[-1])
+            #continue # if this is a server { start, there shouldn't be anything else on the line
         # are we in a server block, and not a child stanza of the server block? is so, look for keywords
         # this is so we don't print the root directive for location as an example. That might be useful, but isn't implemented at this time.
         if server_start == stanza_count:
             # we are in a server block
             #result = re.match('\s*(listen|server|root)', line.strip())
-            result = re.match('\s*(listen|server_name|root)\s*(.*)', line.strip("\s\t;"))
-            if result:
-                #print line.strip()
-                if result.group(1)=="listen":
-                    if not result.group(1) in nginx_stanzas[server_line]:
-                        nginx_stanzas[server_line][result.group(1)] = []
-                    nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
-                    #print "listen %s" % result.group(2)
-                elif result.group(1)=="access_log":
-                    if not result.group(1) in nginx_stanzas[server_line]:
-                        nginx_stanzas[server_line][result.group(1)] = []
-                    nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
-                    #print "listen %s" % result.group(2)
-                elif result.group(1)=="error_log":
-                    if not result.group(1) in nginx_stanzas[server_line]:
-                        nginx_stanzas[server_line][result.group(1)] = []
-                    nginx_stanzas[server_line][result.group(1)] += [result.group(2)]
-                    #print "listen %s" % result.group(2)
-                elif result.group(1)=="server_name":
-                    if not result.group(1) in nginx_stanzas[server_line]:
-                        nginx_stanzas[server_line][result.group(1)] = []
-                    nginx_stanzas[server_line][result.group(1)] += result.group(2).split()
-                    #print "server_name %s" % result.group(2)
-                elif result.group(1)=="root":
-                    #if not result.group(1) in nginx_stanzas[server_line]:
-                    #    nginx_stanzas[server_line][result.group(1)] = {}
-                    nginx_stanzas[server_line][result.group(1)] = result.group(2)
-                    #print "root %s" % result.group(2)
+            keywords = ["listen", "server_name", "root"]
+            for word in keywords:
+                result = re.match("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                if result:
+                    if not word in stanzas[server_line]:
+                        stanzas[server_line][word] = []
+                    stanzas[server_line][word] += [result.group(2)]
         elif stanza_count < server_start:
             # if the server block is bigger than the current stanza, we have left the server stanza we were in
             # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
             # we are no longer in the server { block
             server_start = 0
             #print ""
-    return nginx_stanzas
+        # end server { section
+        
+    return stanzas
 
 def parse_apache_config(wholeconfig):
     """
+    list structure
+    { line : { listen: [ ], server_name : [ ], root : path } }
+
     <VirtualHost *:80>
     DocumentRoot /var/www/vhosts/example.com/httpdocs
     ServerName example.com
@@ -363,7 +350,101 @@ def parse_apache_config(wholeconfig):
     CustomLog /var/log/httpd/example.com-access_log combined
     ErrorLog /var/log/httpd/example.com-error_log
     </VirtualHost>
+    <VirtualHost _default_:443>
+    ErrorLog logs/ssl_error_log
+    TransferLog logs/ssl_access_log
+    LogLevel warn
+    SSLEngine on
+    SSLProtocol all -SSLv2 -SSLv3 -TLSv1
+    SSLCipherSuite DEFAULT:!EXP:!SSLv2:!DES:!IDEA:!SEED:+3DES
+    SSLCertificateFile /etc/pki/tls/certs/localhost.crt
+    SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
+    </VirtualHost>
     """
+    stanza_count = 0
+    vhost_start = -1
+    location_start = 0
+    linenum = 0
+    filechain = []
+    stanzas = {} #AutoVivification()
+    base_keywords = ["serverroot", "startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen"]
+    vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
+    for line in wholeconfig.splitlines():
+        linenum += 1
+        # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
+        # as they are opened, we add them to a list, and remove them as they close.
+        # then we can use their name to identify where it is configured
+        filechange = re.match("## START (.*)",line)
+        if filechange:
+            filechain.append(filechange.group(1))
+            if vhost_start == -1:
+                if not "config_file" in stanzas:
+                    stanzas["config_file"] = []
+                stanzas["config_file"].append(filechange.group(1)) 
+            continue
+            #print "filechain: %r" % filechange
+        filechange = re.match("## END (.*)",line)
+        if filechange:
+            filechain.pop()
+            continue
+        # listen, documentroot
+        # opening VirtualHost
+        result = re.match('<[^/]', line.strip() )
+        if result:
+            stanza_count += 1
+        result = re.match('</', line.strip() )
+        if result:
+            stanza_count -= 1
+
+        # base configuration
+        if stanza_count == 0:
+            keywords = base_keywords
+            keywords += vhost_keywords
+            for word in keywords:
+                #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
+                result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                if result:
+                    #print "keyword match %s" % word
+                    if not word in stanzas:
+                        stanzas[word] = []
+                    if not result.group(2).strip('"') in stanzas[word]:
+                        stanzas[word] += [result.group(2).strip('"')]
+
+        # virtual host matching
+        result = re.match('<virtualhost\s+([^>]+)', line.strip(), re.IGNORECASE )
+        if result:
+            #print "matched vhost %s" % result.group(1)
+            server_line = str(linenum)
+            vhost_start = stanza_count
+            if not server_line in stanzas:
+                stanzas[server_line] = { }
+            stanzas[server_line]["VirtualHost"] = result.group(1)
+            if not "config_file" in stanzas[server_line]:
+                stanzas[server_line]["config_file"] = []
+            # there should only be one config file, but just in case, we will append it
+            if not filechain[-1] in stanzas[server_line]["config_file"]:
+                stanzas[server_line]["config_file"].append(filechain[-1])
+            continue # if this is a server { start, there shouldn't be anything else on the line
+        # only match these in a virtual host
+        if vhost_start == stanza_count:
+            keywords = vhost_keywords
+            for word in keywords:
+                #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
+                result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                if result:
+                    #print "keyword match %s" % word
+                    if not word in stanzas[server_line]:
+                        stanzas[server_line][word] = []
+                    stanzas[server_line][word] += [result.group(2)]
+        # closing VirtualHost
+        result = re.match('</VirtualHost\s+([^>]+)', line.strip(), re.IGNORECASE )
+        if result:
+            vhost_start = -1
+            continue
+        # end virtual host matching
+
+    #print "parsed apache: %r" % stanzas
+    return stanzas
 
 """
 need to check directory permissions
@@ -372,6 +453,7 @@ total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
+"""
 nginx = nginxCtl()
 try:
     nginx_conf_path = nginx.get_conf()
@@ -379,8 +461,16 @@ except:
     print "nginx is not installed"
     nginx_conf_path = conffile
 print "Using config %s" % nginx_conf_path
-#nginx
-#wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/")
+wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/")
+nginx_config = parse_nginx_config(wholeconfig)
+
+stanzas = nginx_config
+print "nginx"
+for one in sorted(stanzas.keys(),key=int):
+    print "%s %s\n" % (one,stanzas[one])
+
+print "\n\n"
+"""
 
 apache = apacheCtl()
 try:
@@ -388,16 +478,23 @@ try:
     apache_root_path = apache.get_root()
 except:
     print "apache is not installed"
-print apache_conf_path
 #exit(0)
-#apache_conf_path = "conf/httpd.conf"
+apache_conf_path = "conf/httpd.conf"
+print apache_conf_path
 #apache
 wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd")
 #wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path = apache_root_path)
-if wholeconfig:
-    #nginx_stanzas = parse_nginx_config(wholeconfig)
-    #for one in sorted(nginx_stanzas.keys(),key=int):
-        #print "%s %s" % (one,nginx_stanzas[one])
-    print wholeconfig
+#if wholeconfig:
+    #stanzas = parse_nginx_config(wholeconfig)
+    #for one in sorted(stanzas.keys(),key=int):
+        #print "%s %s" % (one,stanzas[one])
+    #print wholeconfig
+apache_config = parse_apache_config(wholeconfig)
 
+stanzas = apache_config
+#print "apache dict %r" % apache_config
+print "apache"
+#for one in sorted(stanzas.keys(),key=int):
+for one in sorted(stanzas.keys()):
+    print "%s %s\n" % (one,stanzas[one])
 #apacheCtl.get_conf_parameters()
