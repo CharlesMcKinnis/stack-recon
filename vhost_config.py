@@ -98,7 +98,7 @@ class apacheCtl:
         try:
             return self.get_conf_parameters()['HTTPD_ROOT']
         except KeyError:
-            return()
+            sys.exit(1)
 
     def get_conf(self):
         """
@@ -109,7 +109,13 @@ class apacheCtl:
             return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'],self.get_conf_parameters()['SERVER_CONFIG_FILE'])
         except KeyError:
             #print " is not installed!!!"
-            return()
+            sys.exit(1)
+
+    def get_mpm(self):
+        try:
+            return self.get_conf_parameters()['Server MPM']
+        except KeyError:
+            sys.exit(1)
 
 class nginxCtl:
 
@@ -269,18 +275,30 @@ def importfile(filename, keyword_regex, **kwargs):
             combined += "## END "+onefile+"\n"
     return combined
 
-def kwsearch(keywords,line):
+def kwsearch(keywords,line, **kwargs):
+    """
+    pass:
+        a list of keywords
+        a string to check for keywords and extract a value (the value is everything right of the keyword)
+        optional: single_value=True returns a list of the values found, unless single_value is True
+    """
     stanza = {}
     for word in keywords:
         #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
         result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
         if result:
             #print "keyword match %s" % word
-            if not word in stanza:
-                stanza[word] = []
-            if not result.group(2).strip('"') in stanza[word]:
-                stanza[word] += [result.group(2).strip('"')]
-    return(stanza)
+            if not "single_value" in kwargs:
+                if not word in stanza:
+                    stanza[word] = []
+                if not result.group(2).strip('"') in stanza[word]:
+                    if not "split_list" in kwargs:
+                        stanza[word] += [result.group(2).strip('"')]
+                    else:
+                        stanza[word] += [result.group(2).strip('"').split()]
+            else:
+                stanza[word] = result.group(2).strip('"')
+    return(stanza) #once we have a match, move on
 
 def parse_nginx_config(wholeconfig):
     """
@@ -288,11 +306,14 @@ def parse_nginx_config(wholeconfig):
     { line : { listen: [ ], server_name : [ ], root : path } }
     """
     stanza_count = 0
-    server_start = 0
+    server_start = -1
+    #server_line = -1
     location_start = 0
     linenum = 0
     filechain = []
     stanzas = {} #AutoVivification()
+    server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
+    server_keywords_split = ["server_name"]
     for line in wholeconfig.splitlines():
         linenum += 1
         # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
@@ -330,18 +351,33 @@ def parse_nginx_config(wholeconfig):
         if server_start == stanza_count:
             # we are in a server block
             #result = re.match('\s*(listen|server|root)', line.strip())
-            keywords = ["listen", "server_name", "root"]
+            keywords = server_keywords
+            if not server_line in stanzas:
+                stanzas[server_line] = { }
+            stanzas[server_line].update(kwsearch(keywords,line))
+            keywords = server_keywords_split
+            if not server_line in stanzas:
+                stanzas[server_line] = { }
+            if not "server_name" in stanzas[server_line]:
+                stanzas[server_line]["server_name"] = []
+            if kwsearch(["server_name"],line):
+                #print kwsearch(["server_name"],line)
+                #print kwsearch(["server_name"],line)["server_name"]
+                #print kwsearch(["server_name"],line)["server_name"][0].split()
+                stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
+            """
             for word in keywords:
                 result = re.match("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
                 if result:
                     if not word in stanzas[server_line]:
                         stanzas[server_line][word] = []
                     stanzas[server_line][word] += [result.group(2)]
+            """
         elif stanza_count < server_start:
             # if the server block is bigger than the current stanza, we have left the server stanza we were in
             # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
             # we are no longer in the server { block
-            server_start = 0
+            server_start = -1
             #print ""
         # end server { section
         
@@ -381,6 +417,8 @@ def parse_apache_config(wholeconfig):
     stanzas = {} #AutoVivification()
     base_keywords = ["serverroot", "startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen"]
     vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
+    prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
+    worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
     for line in wholeconfig.splitlines():
         linenum += 1
         # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
@@ -412,48 +450,48 @@ def parse_apache_config(wholeconfig):
         if stanza_count == 0:
             keywords = base_keywords
             keywords += vhost_keywords
-        stanzas.update(kwsearch(keywords,line))
-        """
-            for word in keywords:
-                #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
-                result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
-                if result:
-                    #print "keyword match %s" % word
-                    if not word in stanzas:
-                        stanzas[word] = []
-                    if not result.group(2).strip('"') in stanzas[word]:
-                        stanzas[word] += [result.group(2).strip('"')]
-        """
+            stanzas.update(kwsearch(keywords,line))
 
+        # prefork matching
         result = re.match('<ifmodule\s+prefork.c', line.strip(), re.IGNORECASE )
         if result:
-            print "+start prefork"
-            print line
             stanza_flags.append({"type" : "prefork", "linenum" : linenum, "stanza_count" : stanza_count})
-            #stanza_flags["prefork"]["linenum"] = linenum
-            #stanza_flags["prefork"]["stanza_count"] = stanza_count
-            # start prefork
-            print "%r" % stanza_flags[-1]
-            print "-start prefork"
+            continue
+        # prefork ending
         result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
         if result:
             # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
-                    print "+end prefork"
-                    print line
-                    print stanza_flags.pop()
-                    print "-end prefork"
+                    stanza_flags.pop()
+                    continue
         # If we are in a prefork stanza
-        """
         if len(stanza_flags) > 0:
             if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                print line
+                #print line
                 if not "prefork" in stanzas:
                     stanzas["prefork"] = {}
-                stanzas["prefork"][ =
-        """
+                stanzas["prefork"].update(kwsearch(prefork_keywords,line,single_value=True))
+                continue
 
+        # worker matching
+        result = re.match('<ifmodule\s+worker.c', line.strip(), re.IGNORECASE )
+        if result:
+            stanza_flags.append({"type" : "worker", "linenum" : linenum, "stanza_count" : stanza_count})
+        result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
+        if result:
+            # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
+            if len(stanza_flags) > 0:
+                if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
+                    stanza_flags.pop()
+        # If we are in a prefork stanza
+        if len(stanza_flags) > 0:
+            if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                #print line
+                if not "worker" in stanzas:
+                    stanzas["worker"] = {}
+                stanzas["worker"].update(kwsearch(worker_keywords,line,single_value=True))
+                continue
 
         # virtual host matching
         result = re.match('<virtualhost\s+([^>]+)', line.strip(), re.IGNORECASE )
@@ -461,6 +499,7 @@ def parse_apache_config(wholeconfig):
             #print "matched vhost %s" % result.group(1)
             server_line = str(linenum)
             vhost_start = stanza_count
+            
             if not server_line in stanzas:
                 stanzas[server_line] = { }
             stanzas[server_line]["VirtualHost"] = result.group(1)
@@ -473,6 +512,10 @@ def parse_apache_config(wholeconfig):
         # only match these in a virtual host
         if vhost_start == stanza_count:
             keywords = vhost_keywords
+            #print "in a vhost file %s: %s" % (stanzas[server_line]["config_file"][-1],line.strip())
+            #print kwsearch(keywords,line.strip() )
+            stanzas[server_line].update( kwsearch(keywords,line.strip() ) )
+            """
             for word in keywords:
                 #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
                 result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
@@ -481,6 +524,7 @@ def parse_apache_config(wholeconfig):
                     if not word in stanzas[server_line]:
                         stanzas[server_line][word] = []
                     stanzas[server_line][word] += [result.group(2)]
+            """
         # closing VirtualHost
         result = re.match('</VirtualHost\s+([^>]+)', line.strip(), re.IGNORECASE )
         if result:
@@ -498,7 +542,6 @@ total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
-"""
 nginx = nginxCtl()
 try:
     nginx_conf_path = nginx.get_conf()
@@ -506,40 +549,61 @@ except:
     print "nginx is not installed"
     nginx_conf_path = conffile
 print "Using config %s" % nginx_conf_path
-wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/")
+wholeconfig = importfile(nginx_conf_path, '\s*include\s+(\S+);', base_path = "/home/charles/Documents/Rackspace/ecommstatustuning/")
 nginx_config = parse_nginx_config(wholeconfig)
 
 stanzas = nginx_config
 print "nginx"
-for one in sorted(stanzas.keys(),key=int):
+#for one in sorted(stanzas.keys(),key=int):
+for one in sorted(stanzas.keys()):
     print "%s %s\n" % (one,stanzas[one])
 
 print "\n\n"
-"""
 
 apache = apacheCtl()
 try:
     apache_conf_path = apache.get_conf()
     apache_root_path = apache.get_root()
+    apache_mpm = apache.get_mpm()
 except:
     print "apache is not installed"
-#exit(0)
-apache_conf_path = "conf/httpd.conf"
-print apache_conf_path
+    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
+    apache_conf_path = "conf/httpd.conf"
+print "Using config %s" % apache_root_path+apache_conf_path
 #apache
-wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd")
-#wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path = apache_root_path)
-#if wholeconfig:
-    #stanzas = parse_nginx_config(wholeconfig)
-    #for one in sorted(stanzas.keys(),key=int):
-        #print "%s %s" % (one,stanzas[one])
-    #print wholeconfig
+wholeconfig = importfile(apache_conf_path, '\s*include\s+(\S+)', base_path = apache_root_path)
 apache_config = parse_apache_config(wholeconfig)
 
 stanzas = apache_config
 #print "apache dict %r" % apache_config
 print "apache"
-#for one in sorted(stanzas.keys(),key=int):
 for one in sorted(stanzas.keys()):
     print "%s %s\n" % (one,stanzas[one])
 #apacheCtl.get_conf_parameters()
+
+"""
+apache
+{
+299 {
+'customlog': ['/var/www/vhosts/domain.com/logs/access.log common'],
+'config_file': ['/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd/vhosts.d/domain.conf'],
+'errorlog': ['/var/www/vhosts/domain.com/logs/error.log'],
+'documentroot': ['/var/www/vhosts/domain.com/current/'],
+'serveralias': ['www.domain.com'],
+'servername': ['domain.com'],
+'VirtualHost': '192.168.112.218:80'}
+prefork {'startservers': '8', 'maxclients': '350', 'maxspareservers': '20', 'minspareservers': '5', 'serverlimit': '350', 'maxrequestsperchild': '4000'}
+serverroot ['/etc/httpd']
+worker {'startservers': '4', 'minsparethreads': '25', 'maxclients': '300', 'maxsparethreads': '75', 'maxrequestsperchild': '0', 'threadsperchild': '25'}
+}
+
+print "Domains: "
+
+nginx
+294 {
+'root': ['/var/www/domain.net/web'],
+'config_file': ['/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/sites-enabled/100-domain.net.vhost'],
+'server_name': ['domain.net', 'www.domain.net'],
+'listen': ['*:80']}
+
+"""
