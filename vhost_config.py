@@ -44,7 +44,8 @@ class apacheCtl:
         """
         Finds configuration parameters
 
-        :returns: list of configuration parameters
+        :returns: dict of configuration parameters
+        
         Server version - Apache/2.2.15 (Unix)
         Server built - Aug 18 2015 02:00:22
         Server's Module Magic Number - 20051115:25
@@ -153,7 +154,7 @@ class nginxCtl:
                 dict[item.split("=")[0]] = item.split("=")[1]
         return dict
 
-    def get_nginx_conf(self):
+    def get_conf(self):
         """
         :returns: nginx configuration path location
         """
@@ -163,7 +164,7 @@ class nginxCtl:
             #print "nginx is not installed!!!"
             sys.exit(1)
 
-    def get_nginx_bin(self):
+    def get_bin(self):
         """
         :returns: nginx binary location
         """
@@ -173,7 +174,7 @@ class nginxCtl:
             #print "nginx is not installed!!!"
             sys.exit(1)
 
-    def get_nginx_pid(self):
+    def get_pid(self):
         """
         :returns: nginx pid location which is required by nginx services
         """
@@ -184,7 +185,7 @@ class nginxCtl:
             #print "nginx is not installed!!!"
             return()
 
-    def get_nginx_lock(self):
+    def get_lock(self):
         """
         :returns: nginx lock file location which is required for nginx services
         """
@@ -371,9 +372,9 @@ total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
-n = nginxCtl()
+nginx = nginxCtl()
 try:
-    nginx_conf_path = n.get_nginx_conf()
+    nginx_conf_path = nginx.get_conf()
 except:
     print "nginx is not installed"
     nginx_conf_path = conffile
@@ -381,13 +382,18 @@ print "Using config %s" % nginx_conf_path
 #nginx
 #wholeconfig = importfile(nginx_conf_path,'\s*include\s+(\S+);',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/")
 
-a = apacheCtl()
-apache_conf_path = a.get_conf()
+apache = apacheCtl()
+try:
+    apache_conf_path = apache.get_conf()
+    apache_root_path = apache.get_root()
+except:
+    print "apache is not installed"
 print apache_conf_path
 #exit(0)
 #apache_conf_path = "conf/httpd.conf"
 #apache
-wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path="/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd")
+wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd")
+#wholeconfig = importfile(apache_conf_path,'\s*include\s+(\S+)',base_path = apache_root_path)
 if wholeconfig:
     #nginx_stanzas = parse_nginx_config(wholeconfig)
     #for one in sorted(nginx_stanzas.keys(),key=int):
