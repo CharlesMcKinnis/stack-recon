@@ -284,20 +284,21 @@ def kwsearch(keywords,line, **kwargs):
     """
     stanza = {}
     for word in keywords:
-        #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
         result = re.search("\s*({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
+        #result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
+        #result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str,keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
         if result:
             #print "keyword match %s" % word
             if not "single_value" in kwargs:
-                if not word in stanza:
-                    stanza[word] = []
-                if not result.group(2).strip('"') in stanza[word]:
+                if not result.group(1) in stanza:
+                    stanza[result.group(1)] = []
+                if not result.group(2).strip('"') in stanza[result.group(1)]:
                     if not "split_list" in kwargs:
-                        stanza[word] += [result.group(2).strip(';"')]
+                        stanza[result.group(1)] += [result.group(2).strip(';"')]
                     else:
-                        stanza[word] += [result.group(2).strip(';"').split()]
+                        stanza[result.group(1)] += [result.group(2).strip(';"').split()]
             else:
-                stanza[word] = result.group(2).strip('"')
+                stanza[result.group(1)] = result.group(2).strip('"')
     return(stanza) #once we have a match, move on
 
 def parse_nginx_config(wholeconfig):
@@ -334,7 +335,7 @@ def parse_nginx_config(wholeconfig):
 
         # start server { section
         # is this a "server {" line?
-        result = re.match('^\s*server\s', line.strip() )
+        result = re.match('^\s*server\s', line.strip(), re.IGNORECASE )
         if result:
             server_start = stanza_count
             server_line = str(linenum)
@@ -361,9 +362,6 @@ def parse_nginx_config(wholeconfig):
             if not "server_name" in stanzas[server_line]:
                 stanzas[server_line]["server_name"] = []
             if kwsearch(["server_name"],line):
-                #print kwsearch(["server_name"],line)
-                #print kwsearch(["server_name"],line)["server_name"]
-                #print kwsearch(["server_name"],line)["server_name"][0].split()
                 stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
             """
             for word in keywords:
@@ -380,6 +378,12 @@ def parse_nginx_config(wholeconfig):
             server_start = -1
             #print ""
         # end server { section
+        
+        # keywords is a list of keywords to search for
+        # look for keywords in the line
+        # pass the keywords to the function and it will extract the keyword and value
+        keywords = ["worker_processes"]
+        stanzas.update(kwsearch(keywords,line))
         
     return stanzas
 
@@ -571,7 +575,9 @@ except:
     apache_conf_path = "conf/httpd.conf"
 print "Using config %s" % apache_root_path+apache_conf_path
 #apache
+print "whole"
 wholeconfig = importfile(apache_conf_path, '\s*include\s+(\S+)', base_path = apache_root_path)
+print "apache_config"
 apache_config = parse_apache_config(wholeconfig)
 
 stanzas = apache_config
