@@ -40,37 +40,33 @@ def processlist(var_filter=""):
 #    print "%6d %s" % (int(key),value)
 
 import psutil
-#print psutil.version_info
-
-class AutoVivification(dict):
-    """Implementation of perl's autovivification feature."""
-    def __getitem__(self, item):
-        try:
-            return dict.__getitem__(self, item)
-        except KeyError:
-            value = self[item] = type(self)()
-            return value
-
+import os
 var_filter = "http"
 
-daemons = {}
+def daemon_exe(match_exe):
+    daemons = {}
+    
+    pidlist = psutil.get_pid_list()
+    for pid in pidlist:
+        p = psutil.Process(pid)
+        try:
+            if p.exe:
+                #match_exe = ["httpd", "apache2", "nginx", "bash"]
+                for daemon_name in match_exe:
+                    if os.path.basename(p.exe) == daemon_name:
+                        if not "daemon_name" in daemons:
+                            daemons[daemon_name] = { "exe" : [] }
+                        daemons[daemon_name]["exe"] += [p.exe]
+                        #print p.exe
+        except:
+            #print "You should run this as root"
+            pass
+    return daemons
 
-pidlist = psutil.get_pid_list()
-for pid in pidlist:
-    p = psutil.Process(pid)
-    if p.exe:
-        #ps_filter = re.search(var_filter,p.exe)
-        #print os.path.basename(p.exe)
-        match_exe = ["httpd", "apache2", "nginx"]
-        for daemon_name in match_exe:
-            if os.path.basename(p.exe) == daemon_name:
-                #if ps_filter:
-                if not "daemon_name" in daemons:
-                    daemons[daemon_name] = {}
-                if not "exe" in daemons[daemon_name]:
-                    daemons[daemon_name]["exe"] = []
-                daemons[daemon_name]["exe"] += [p.exe]
-                print p.exe
-
-for key,value in daemons.iteritems():
-    print "%s %r" % (key,value)
+daemons = daemon_exe(["httpd", "apache2", "nginx", "bash"])
+#for key,value in daemons.iteritems():
+#    print "%s %r" % (key,value)
+if "apache2" in daemons:
+    print "apache2 on Debian/Ubuntu %s" % daemons["apache2"]["exe"][0]
+if "httpd" in daemons:
+    print "httpd on Red Hat/CentOS %s" % daemons["httpd"]["exe"][0]
