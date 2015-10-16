@@ -5,12 +5,21 @@ import glob
 import subprocess
 import sys
 import os
+import psutil
 
-conffile = "etc/nginx/nginx.conf"
+globalconfig = {
+    "apache" : {},
+    "nginx" : {}
+}
 
 class apacheCtl:
+    def __init__(self,**kwargs):
+        self.kwargs = kwargs
+        if not "exe" in self.kwargs:
+            self.kwargs["exe"] = "httpd"
     """
     [root@527387-db1 26594]# httpd -V
+    # returns key: value
     Server version: Apache/2.2.15 (Unix)
     Server built:   Aug 25 2015 04:30:38
     Server's Module Magic Number: 20051115:25
@@ -21,6 +30,7 @@ class apacheCtl:
       threaded:     no
         forked:     yes (variable process count)
     Server compiled with....
+    # returns key=value
      -D APACHE_MPM_DIR="server/mpm/prefork"
      -D APR_HAS_SENDFILE
      -D APR_HAS_MMAP
@@ -40,44 +50,12 @@ class apacheCtl:
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
     def get_conf_parameters(self):
-        """
-        Finds configuration parameters
-
-        :returns: dict of configuration parameters
-        
-        Server version - Apache/2.2.15 (Unix)
-        Server built - Aug 18 2015 02:00:22
-        Server's Module Magic Number - 20051115:25
-        Server loaded - APR 1.3.9, APR-Util 1.3.9
-        Compiled using - APR 1.3.9, APR-Util 1.3.9
-        Architecture - 64-bit
-        Server MPM - Prefork
-        threaded - no
-        forked - yes (variable process count)
-
-        APACHE_MPM_DIR - server/mpm/prefork
-        APR_HAS_SENDFILE - 
-        APR_HAS_MMAP - 
-        APR_HAVE_IPV6 (IPv4-mapped addresses enabled) - 
-        APR_USE_SYSVSEM_SERIALIZE - 
-        APR_USE_PTHREAD_SERIALIZE - 
-        SINGLE_LISTEN_UNSERIALIZED_ACCEPT - 
-        APR_HAS_OTHER_CHILD - 
-        AP_HAVE_RELIABLE_PIPED_LOGS - 
-        DYNAMIC_MODULE_LIMIT - 128
-        HTTPD_ROOT - /etc/httpd
-        SUEXEC_BIN - /usr/sbin/suexec
-        DEFAULT_PIDLOG - run/httpd.pid
-        DEFAULT_SCOREBOARD - logs/apache_runtime_status
-        DEFAULT_LOCKFILE - logs/accept.lock
-        DEFAULT_ERRORLOG - logs/error_log
-        AP_TYPES_CONFIG_FILE - conf/mime.types
-        SERVER_CONFIG_FILE - conf/httpd.conf
-        """
-        conf = "httpd -V 2>&1"
+        conf = self.kwargs["exe"]+" -V 2>&1"
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
+        if p.returncode > 0:
+            return()
         dict = {}
         compiled=0
         for i in output.splitlines():
@@ -117,10 +95,14 @@ class apacheCtl:
         except KeyError:
             sys.exit(1)
 
-class nginxCtl:
-
+class nginxCtl():
+    def __init__(self,**kwargs):
+        self.kwargs = kwargs
+        if not "exe" in self.kwargs:
+            self.kwargs["exe"] = "nginx"
     """
     A class for nginxCtl functionalities
+    
     """
 
     """
@@ -135,12 +117,13 @@ class nginxCtl:
         """
         Discovers installed nginx version
         """
-        version = "nginx -v"
+        version = self.kwargs["exe"]+" -v"
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
         output, err = p.communicate()
-        return err
+        if p.returncode > 0:
+            return()
 
     def get_conf_parameters(self):
         """
@@ -148,10 +131,13 @@ class nginxCtl:
 
         :returns: list of nginx configuration parameters
         """
-        conf = "nginx -V 2>&1 | grep 'configure arguments:'"
+        conf = self.kwargs["exe"]+" -V 2>&1 | grep 'configure arguments:'"
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+
         output = re.sub('configure arguments:', '', output)
         dict = {}
         for item in output.split(" "):
@@ -200,6 +186,26 @@ class nginxCtl:
         except:
             #print "nginx is not installed!!!"
             return()
+
+def daemon_exe(match_exe):
+    daemons = {}
+    
+    pidlist = psutil.get_pid_list()
+    for pid in pidlist:
+        p = psutil.Process(pid)
+        try:
+            if p.exe:
+                #match_exe = ["httpd", "apache2", "nginx", "bash"]
+                for daemon_name in match_exe:
+                    if os.path.basename(p.exe) == daemon_name:
+                        if not "daemon_name" in daemons:
+                            daemons[daemon_name] = { "exe" : [] }
+                        daemons[daemon_name]["exe"] += [p.exe]
+                        #print p.exe
+        except:
+            #print "You should run this as root"
+            pass
+    return daemons
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
@@ -290,13 +296,13 @@ def kwsearch(keywords,line, **kwargs):
         if result:
             #print "keyword match %s" % word
             if not "single_value" in kwargs:
-                if not result.group(1) in stanza:
-                    stanza[result.group(1)] = []
-                if not result.group(2).strip('"') in stanza[result.group(1)]:
+                if not result.group(1).lower() in stanza:
+                    stanza[result.group(1).lower()] = []
+                if not result.group(2).strip('"') in stanza[result.group(1).lower()]:
                     if not "split_list" in kwargs:
-                        stanza[result.group(1)] += [result.group(2).strip(';"')]
+                        stanza[result.group(1).lower()] += [result.group(2).strip(';"')]
                     else:
-                        stanza[result.group(1)] += [result.group(2).strip(';"').split()]
+                        stanza[result.group(1).lower()] += [result.group(2).strip(';"').split()]
             else:
                 stanza[result.group(1)] = result.group(2).strip('"')
     return(stanza) #once we have a match, move on
@@ -384,7 +390,30 @@ def parse_nginx_config(wholeconfig):
         # pass the keywords to the function and it will extract the keyword and value
         keywords = ["worker_processes"]
         stanzas.update(kwsearch(keywords,line))
-        
+
+    # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
+    # think magento location
+    configuration = {}
+    configuration["sites"] =  []
+    #print "parsed apache: %r" % stanzas
+    for i in stanzas.keys():
+        #print "i %s" %i
+        #print "pre-match %r" % stanzas[i]
+        if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
+            #print "matched %r" % stanzas[i]
+            configuration["sites"].append( { } )
+            if "server_name" in stanzas[i]:
+                if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
+            if "listen" in stanzas[i]:
+                if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                configuration["sites"][-1]["listening"] += [stanzas[i]["listen"]]
+            if "root" in stanzas[i]:
+                configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
+            if "config_file" in stanzas[i]:
+                configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+    stanzas.update(configuration)
+
     return stanzas
 
 def parse_apache_config(wholeconfig):
@@ -452,9 +481,10 @@ def parse_apache_config(wholeconfig):
 
         # base configuration
         if stanza_count == 0:
-            keywords = base_keywords
-            keywords += vhost_keywords
-            stanzas.update(kwsearch(keywords,line))
+            keywords = base_keywords + vhost_keywords
+            if not "config" in stanzas:
+                stanzas["config"] = { }
+            stanzas["config"].update(kwsearch(keywords,line))
 
         # prefork matching
         result = re.match('<ifmodule\s+prefork.c', line.strip(), re.IGNORECASE )
@@ -506,7 +536,7 @@ def parse_apache_config(wholeconfig):
             
             if not server_line in stanzas:
                 stanzas[server_line] = { }
-            stanzas[server_line]["VirtualHost"] = result.group(1)
+            stanzas[server_line]["virtualhost"] = result.group(1)
             if not "config_file" in stanzas[server_line]:
                 stanzas[server_line]["config_file"] = []
             # there should only be one config file, but just in case, we will append it
@@ -536,7 +566,37 @@ def parse_apache_config(wholeconfig):
             continue
         # end virtual host matching
 
+    # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
+    # think magento location
+    configuration = {}
+    configuration["sites"] =  []
     #print "parsed apache: %r" % stanzas
+    for i in stanzas.keys():
+        #print "i %s" %i
+        #print "pre-match %r" % stanzas[i]
+        if ("documentroot" in stanzas[i]) or ("servername" in stanzas[i]) or ("serveralias" in stanzas[i]) or ("virtualhost" in stanzas[i]):
+            #print "matched %r" % stanzas[i]
+            configuration["sites"].append( { } )
+            #configuration["sites"].append( {
+            #    "domains" : [],
+            #    "doc_root" : "",
+            #    "config_file" : "",
+            #    "listening" : [] } )
+            
+            if "servername" in stanzas[i]:
+                if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                configuration["sites"][-1]["domains"] += stanzas[i]["servername"]
+            if "serveralias" in stanzas[i]:
+                if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                configuration["sites"][-1]["domains"] += stanzas[i]["serveralias"]
+            if "virtualhost" in stanzas[i]:
+                if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                configuration["sites"][-1]["listening"] += [stanzas[i]["virtualhost"]]
+            if "documentroot" in stanzas[i]:
+                configuration["sites"][-1]["doc_root"] = stanzas[i]["documentroot"][0]
+            if "config_file" in stanzas[i]:
+                configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+    stanzas.update(configuration)
     return stanzas
 
 """
@@ -546,48 +606,114 @@ total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
-nginx = nginxCtl()
-try:
-    nginx_conf_path = nginx.get_conf()
-except:
-    print "nginx is not installed"
-    nginx_conf_path = conffile
-print "Using config %s" % nginx_conf_path
-wholeconfig = importfile(nginx_conf_path, '\s*include\s+(\S+);', base_path = "/home/charles/Documents/Rackspace/ecommstatustuning/")
-nginx_config = parse_nginx_config(wholeconfig)
+daemons = daemon_exe(["httpd", "apache2", "nginx", "bash"])
 
-stanzas = nginx_config
-print "nginx"
-#for one in sorted(stanzas.keys(),key=int):
-for one in sorted(stanzas.keys()):
-    print "%s %s\n" % (one,stanzas[one])
+if not "apache2" in daemons or "httpd" in daemons:
+    print "Apache is not running"
+else:
+    if "apache2" in daemons:
+        apache_exe = daemons["apache2"]["exe"][0]
+        apache = apacheCtl(exe = daemons["apache2"]["exe"][0])
+    elif "httpd" in daemons:
+        apache_exe = daemons["httpd"]["exe"][0]
+        apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
+    try:
+        apache_conf_path = apache.get_conf()
+        apache_root_path = apache.get_root()
+        apache_mpm = apache.get_mpm()
+    except:
+        print "There was an error getting the apache daemon configuration"
+        apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
+        apache_conf_path = "conf/httpd.conf"
+    print "Using config %s" % apache_root_path+apache_conf_path
+    wholeconfig = importfile(apache_conf_path, '\s*include\s+(\S+)', base_path = apache_root_path)
+    apache_config = parse_apache_config(wholeconfig)
 
-print "\n\n"
+    globalconfig["apache"] = apache_config
+    daemon_config = apache.get_conf_parameters()
+    if daemon_config:
+        if not "daemon" in globalconfig["apache"]:
+            globalconfig["apache"]["daemon"] = daemon_config
+        
+if not "nginx" in daemons:
+    print "nginx is not running"
+else:
+    nginx = nginxCtl(exe = daemons["nginx"]["exe"][0])
+    try:
+        nginx_conf_path = nginx.get_conf()
+    except:
+        print "There was an error getting the nginx daemon configuration"
+        nginx_conf_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
+    print "Using config %s" % nginx_conf_path
+    
+    # configuration fetch and parse
+    wholeconfig = importfile(nginx_conf_path, '\s*include\s+(\S+);')
+    nginx_config = parse_nginx_config(wholeconfig)
+    
+    globalconfig["nginx"] = nginx_config
+    daemon_config = nginx.get_conf_parameters()
+    if daemon_config:
+        if not "daemon" in globalconfig["nginx"]:
+            globalconfig["nginx"]["daemon"] = daemon_config
 
-apache = apacheCtl()
-try:
-    apache_conf_path = apache.get_conf()
-    apache_root_path = apache.get_root()
-    apache_mpm = apache.get_mpm()
-except:
-    print "apache is not installed"
-    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
-    apache_conf_path = "conf/httpd.conf"
-print "Using config %s" % apache_root_path+apache_conf_path
-#apache
-print "whole"
-wholeconfig = importfile(apache_conf_path, '\s*include\s+(\S+)', base_path = apache_root_path)
-print "apache_config"
-apache_config = parse_apache_config(wholeconfig)
 
-stanzas = apache_config
-#print "apache dict %r" % apache_config
-print "apache"
-for one in sorted(stanzas.keys()):
-    print "%s %s\n" % (one,stanzas[one])
-#apacheCtl.get_conf_parameters()
+if "sites" in  globalconfig["nginx"]:
+    print "nginx sites:"
+    for one in sorted(globalconfig["nginx"]["sites"]):
+        print "%r\n" % (one)
+if "daemon" in globalconfig["nginx"]:
+    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
+
+if "sites" in  globalconfig["apache"]:
+    print "Apache sites:"
+    for one in sorted(globalconfig["apache"]["sites"]):
+        print "%r\n" % (one)
+if "daemon" in globalconfig["apache"]:
+    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
+What kind of unified data structure do I want?
+{ "apache" :
+    [
+        sites [ "domains": [servername+serveralias|server_name],
+                "doc_root" : "documentroot[0]|root[0]",
+                "listening" : [+= VirtualHost|listen],
+                "config_file" : "config_file"
+                ],
+        daemon_config = apache.get_conf_parameters()
+        config
+    ]
+}
+
+get_conf_parameters()
+
+configuration = {}
+configuration["sites"] =  []
+
+for i in stanzas.keys():
+    if "documentroot" in stanzas[i] or "servername" in stanzas[i] or "serveralias" in stanzas[i] or "virtualhost" in stanzas[i]:
+        configuration["sites"].append( {
+            "domains" : servername+serveralias,
+            "doc_root" : stanzas[i]["documentroot"][0],
+            config_file : stanzas[i]["config_file"][0],
+            listening : [stanzas[i]["VirtualHost"]] } )
+        
+
 apache
 {
 299 {
