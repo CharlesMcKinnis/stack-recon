@@ -192,8 +192,8 @@ def daemon_exe(match_exe):
     
     pidlist = psutil.get_pid_list()
     for pid in pidlist:
-        p = psutil.Process(pid)
         try:
+            p = psutil.Process(pid)
             if p.exe:
                 #match_exe = ["httpd", "apache2", "nginx", "bash"]
                 for daemon_name in match_exe:
@@ -312,6 +312,7 @@ def parse_nginx_config(wholeconfig):
     list structure
     { line : { listen: [ ], server_name : [ ], root : path } }
     """
+    stanza_chain = []
     stanza_count = 0
     server_start = -1
     #server_line = -1
@@ -338,6 +339,13 @@ def parse_nginx_config(wholeconfig):
             print "This script does not consistently support opening { and closing } stanzas on the same line."
         stanza_count+=len(re.findall('{',line))
         stanza_count-=len(re.findall('}',line))
+        result = re.match("(\S+)\s*{",line.strip())
+        if result:
+            stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
+            print "stanza_chain len %d" % len(stanza_chain)
+        if len(re.findall('}',line)):
+            stanza_chain.pop()
+        #print "stanza_chain len %d" % len(stanza_chain)
 
         # start server { section
         # is this a "server {" line?
