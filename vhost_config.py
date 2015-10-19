@@ -342,7 +342,7 @@ def parse_nginx_config(wholeconfig):
         result = re.match("(\S+)\s*{",line.strip())
         if result:
             stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-            print "stanza_chain len %d" % len(stanza_chain)
+            #print "stanza_chain len %d" % len(stanza_chain)
         if len(re.findall('}',line)):
             stanza_chain.pop()
         #print "stanza_chain len %d" % len(stanza_chain)
@@ -449,6 +449,7 @@ def parse_apache_config(wholeconfig):
     SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
     </VirtualHost>
     """
+    stanza_chain = []
     stanza_count = 0
     vhost_start = -1
     location_start = 0
@@ -480,12 +481,16 @@ def parse_apache_config(wholeconfig):
             continue
         # listen, documentroot
         # opening VirtualHost
-        result = re.match('<[^/]', line.strip() )
+        result = re.match('<[^/]\s*(\S+)', line.strip() )
         if result:
             stanza_count += 1
+            stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
+            #print "stanza_chain len %d" % len(stanza_chain)
         result = re.match('</', line.strip() )
         if result:
             stanza_count -= 1
+            stanza_chain.pop()
+
 
         # base configuration
         if stanza_count == 0:
