@@ -542,20 +542,23 @@ def importfile(filename, keyword_regex, **kwargs):
         base_path = kwargs["base_path"].rstrip("/")
     else:
         base_path = ""
-    def full_file_path(right_file):
+    def full_file_path(right_file, base_path):
         # If the right side of the full name doesn't have a leading slash, it is a relative path.
         #     Add the base_path to the left and return the value
         # else just return the name
         if right_file[0] not in "/":
-            return(base_path+"/"+right_file)
+            #return(base_path+"/"+right_file)
+            return(os.path.join(base_path, right_file))
         else:
-            return(filename)
+            return(right_file) # this is the fix!
     #print "full path to file: %s" % full_file_path(filename)
-    files = glob.iglob( full_file_path(filename) ) # either an absolute path to a file, or absolute path to a glob
+    #print "globbing %r" % full_file_path(filename, base_path)
+    files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
     #print "%r" % files
     combined = ""
 
     for onefile in files:
+        #print "onefile: %r" % onefile
         # for each file in the glob (may be just one file), open it
         try:
             onefile_handle = open(onefile, 'r')
@@ -577,7 +580,9 @@ def importfile(filename, keyword_regex, **kwargs):
             if result:
                 #print "nested! %s" % result.group(1)
                 combined += "#"+line+"\n"
-                nestedfile = full_file_path(result.group(1))
+                nestedfile = full_file_path(result.group(1), base_path)
+                #print "nestedfile: %r" % nestedfile
+                #print "line %r" % line.strip()
                 combined += importfile(nestedfile, keyword_regex, **kwargs)
             else:
                 combined += line
@@ -585,6 +590,7 @@ def importfile(filename, keyword_regex, **kwargs):
         if os.path.isfile(onefile):
             #print "END onefile: %s" % onefile
             combined += "## END "+onefile+"\n"
+        onefile_handle.close()
     return combined
 
 def kwsearch(keywords,line, **kwargs):
