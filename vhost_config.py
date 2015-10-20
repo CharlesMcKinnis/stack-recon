@@ -694,6 +694,8 @@ if "sites" in  globalconfig["nginx"]:
 if "daemon" in globalconfig["nginx"]:
     print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
 
+print "\n"
+
 if "sites" in  globalconfig["apache"]:
     print "Apache sites:"
     for one in sorted(globalconfig["apache"]["sites"]):
