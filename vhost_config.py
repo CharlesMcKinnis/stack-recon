@@ -621,23 +621,23 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker"])
-
-if not "apache2" in daemons or "httpd" in daemons:
-    print "Apache is not running"
+print 
+# what if they have multiple apache daemons on different MPMs?
+if "apache2" in daemons:
+    apache_exe = daemons["apache2"]["exe"][0]
+    apache = apacheCtl(exe = daemons["apache2"]["exe"][0])
+elif "httpd" in daemons:
+    apache_exe = daemons["httpd"]["exe"][0]
+    apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
+elif "httpd.event" in daemons:
+    apache_exe = daemons["httpd.event"]["exe"][0]
+    apache = apacheCtl(exe = daemons["httpd.event"]["exe"][0])
+elif "httpd.worker" in daemons:
+    apache_exe = daemons["httpd.worker"]["exe"][0]
+    apache = apacheCtl(exe = daemons["httpd.worker"]["exe"][0])
 else:
-    # what if they have multiple apache daemons on different MPMs?
-    if "apache2" in daemons:
-        apache_exe = daemons["apache2"]["exe"][0]
-        apache = apacheCtl(exe = daemons["apache2"]["exe"][0])
-    elif "httpd" in daemons:
-        apache_exe = daemons["httpd"]["exe"][0]
-        apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
-    elif "httpd.event" in daemons:
-        apache_exe = daemons["httpd"]["exe"][0]
-        apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
-    elif "httpd.worker" in daemons:
-        apache_exe = daemons["httpd"]["exe"][0]
-        apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
+    print "Apache is not running"
+if apache_exe:
     try:
         apache_conf_path = apache.get_conf()
         apache_root_path = apache.get_root()
