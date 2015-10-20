@@ -409,7 +409,7 @@ class nginxCtl(object):
             if result:
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
                 #print "stanza_chain len %d" % len(stanza_chain)
-            if len(re.findall('}',line)):
+            if len(re.findall('}',line)) and len(stanza_chain) > 0:
                 stanza_chain.pop()
             #print "stanza_chain len %d" % len(stanza_chain)
     
@@ -629,7 +629,8 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker"])
-print 
+#print #why did I have something to print an empty line?
+apache_exe = "" # to fix not defined
 # what if they have multiple apache daemons on different MPMs?
 if "apache2" in daemons:
     apache_exe = daemons["apache2"]["exe"][0]
@@ -663,7 +664,7 @@ if apache_exe:
     if daemon_config:
         if not "daemon" in globalconfig["apache"]:
             globalconfig["apache"]["daemon"] = daemon_config
-        
+
 if not "nginx" in daemons:
     print "nginx is not running"
 else:
