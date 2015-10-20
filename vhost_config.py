@@ -5,7 +5,6 @@ import glob
 import subprocess
 import sys
 import os
-import psutil
 
 globalconfig = {
     "apache" : {},
@@ -492,24 +491,27 @@ class nginxCtl(object):
         return stanzas
 
 def daemon_exe(match_exe):
+    """
+    var_filter = "text to search with"
+    using this as the filter will find an executable by name whether it was call by absolute path or bare
+    "^(\S*/bash|bash)"
+    """
     daemons = {}
+    pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
     
-    pidlist = psutil.get_pid_list()
-    for pid in pidlist:
+    for pid in pids:
         try:
-            p = psutil.Process(pid)
-            if p.exe:
-                #match_exe = ["httpd", "apache2", "nginx", "bash"]
-                for daemon_name in match_exe:
-                    if os.path.basename(p.exe) == daemon_name:
-                        if not "daemon_name" in daemons:
-                            daemons[daemon_name] = { "exe" : [] }
-                        daemons[daemon_name]["exe"] += [p.exe]
-                        #print p.exe
-        except:
-            #print "You should run this as root"
-            pass
-    return daemons
+            #pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
+            pscmd = os.path.realpath(os.path.join('/proc', pid, 'exe'))
+        except (IOError,OSError): # proc has already terminated, you may not be root
+            continue
+        if pscmd:
+            for daemon_name in match_exe:
+                if os.path.basename(pscmd) == daemon_name:
+                    if not "daemon_name" in daemons:
+                        daemons[daemon_name] = { "exe" : [] }
+                    daemons[daemon_name]["exe"] += [os.path.basename(pscmd)]
+    return(daemons)
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""

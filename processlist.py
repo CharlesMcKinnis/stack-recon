@@ -3,28 +3,28 @@
 import re
 import os
 
-def processlist(var_filter=""):
+def processlist(match_exe):
     """
     var_filter = "text to search with"
     using this as the filter will find an executable by name whether it was call by absolute path or bare
     "^(\S*/bash|bash)"
     """
-    processlist = {}
+    daemons = {}
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
     
     for pid in pids:
         try:
-            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
-        except IOError: # proc has already terminated
+            #pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
+            pscmd = os.path.realpath(os.path.join('/proc', pid, 'exe'))
+        except (IOError,OSError): # proc has already terminated, you may not be root
             continue
         if pscmd:
-            if var_filter:
-                ps_filter = re.search(var_filter,pscmd)
-                if ps_filter:
-                    processlist[pid] = pscmd
-            else:
-                processlist[pid] = pscmd
-    return(processlist)
+            for daemon_name in match_exe:
+                if os.path.basename(pscmd) == daemon_name:
+                    if not "daemon_name" in daemons:
+                        daemons[daemon_name] = { "exe" : [] }
+                    daemons[daemon_name]["exe"] += [os.path.basename(pscmd)]
+    return(daemons)
 
 # works
 #pslist = processlist("^(\S*/bash|bash)")
@@ -64,6 +64,7 @@ def daemon_exe(match_exe):
     return daemons
 
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash"])
+daemons = processlist(["httpd", "apache2", "nginx", "bash"])
 #for key,value in daemons.iteritems():
 #    print "%s %r" % (key,value)
 if "apache2" in daemons:
