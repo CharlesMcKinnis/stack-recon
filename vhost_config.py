@@ -12,7 +12,7 @@ globalconfig = {
     "nginx" : {}
 }
 
-class apacheCtl:
+class apacheCtl(object):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
         if not "exe" in self.kwargs:
@@ -94,8 +94,195 @@ class apacheCtl:
             return self.get_conf_parameters()['Server MPM']
         except KeyError:
             sys.exit(1)
+    def parse_config(self,wholeconfig):
+        """
+        list structure
+        { line : { listen: [ ], server_name : [ ], root : path } }
+    
+        <VirtualHost *:80>
+        DocumentRoot /var/www/vhosts/example.com/httpdocs
+        ServerName example.com
+        ServerAlias www.example.com
+        <Directory /var/www/vhosts/example.com/httpdocs>
+        </Directory>
+        CustomLog /var/log/httpd/example.com-access_log combined
+        ErrorLog /var/log/httpd/example.com-error_log
+        </VirtualHost>
+        <VirtualHost _default_:443>
+        ErrorLog logs/ssl_error_log
+        TransferLog logs/ssl_access_log
+        LogLevel warn
+        SSLEngine on
+        SSLProtocol all -SSLv2 -SSLv3 -TLSv1
+        SSLCipherSuite DEFAULT:!EXP:!SSLv2:!DES:!IDEA:!SEED:+3DES
+        SSLCertificateFile /etc/pki/tls/certs/localhost.crt
+        SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
+        </VirtualHost>
+        """
+        stanza_chain = []
+        stanza_count = 0
+        vhost_start = -1
+        location_start = 0
+        linenum = 0
+        filechain = []
+        stanza_flags = []
+        stanzas = {} #AutoVivification()
+        base_keywords = ["serverroot", "startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen"]
+        vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
+        prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
+        worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
+        for line in wholeconfig.splitlines():
+            linenum += 1
+            # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
+            # as they are opened, we add them to a list, and remove them as they close.
+            # then we can use their name to identify where it is configured
+            filechange = re.match("## START (.*)",line)
+            if filechange:
+                filechain.append(filechange.group(1))
+                if vhost_start == -1:
+                    if not "config_file" in stanzas:
+                        stanzas["config_file"] = []
+                    stanzas["config_file"].append(filechange.group(1)) 
+                continue
+                #print "filechain: %r" % filechange
+            filechange = re.match("## END (.*)",line)
+            if filechange:
+                filechain.pop()
+                continue
+            # listen, documentroot
+            # opening VirtualHost
+            result = re.match('<[^/]\s*(\S+)', line.strip() )
+            if result:
+                stanza_count += 1
+                stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
+                #print "stanza_chain len %d" % len(stanza_chain)
+            result = re.match('</', line.strip() )
+            if result:
+                stanza_count -= 1
+                stanza_chain.pop()
+    
+    
+            # base configuration
+            if stanza_count == 0:
+                keywords = base_keywords + vhost_keywords
+                if not "config" in stanzas:
+                    stanzas["config"] = { }
+                stanzas["config"].update(kwsearch(keywords,line))
+    
+            # prefork matching
+            result = re.match('<ifmodule\s+prefork.c', line.strip(), re.IGNORECASE )
+            if result:
+                stanza_flags.append({"type" : "prefork", "linenum" : linenum, "stanza_count" : stanza_count})
+                continue
+            # prefork ending
+            result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
+            if result:
+                # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
+                if len(stanza_flags) > 0:
+                    if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
+                        stanza_flags.pop()
+                        continue
+            # If we are in a prefork stanza
+            if len(stanza_flags) > 0:
+                if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                    #print line
+                    if not "prefork" in stanzas:
+                        stanzas["prefork"] = {}
+                    stanzas["prefork"].update(kwsearch(prefork_keywords,line,single_value=True))
+                    continue
+    
+            # worker matching
+            result = re.match('<ifmodule\s+worker.c', line.strip(), re.IGNORECASE )
+            if result:
+                stanza_flags.append({"type" : "worker", "linenum" : linenum, "stanza_count" : stanza_count})
+            result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
+            if result:
+                # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
+                if len(stanza_flags) > 0:
+                    if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
+                        stanza_flags.pop()
+            # If we are in a prefork stanza
+            if len(stanza_flags) > 0:
+                if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                    #print line
+                    if not "worker" in stanzas:
+                        stanzas["worker"] = {}
+                    stanzas["worker"].update(kwsearch(worker_keywords,line,single_value=True))
+                    continue
+    
+            # virtual host matching
+            result = re.match('<virtualhost\s+([^>]+)', line.strip(), re.IGNORECASE )
+            if result:
+                #print "matched vhost %s" % result.group(1)
+                server_line = str(linenum)
+                vhost_start = stanza_count
+                
+                if not server_line in stanzas:
+                    stanzas[server_line] = { }
+                stanzas[server_line]["virtualhost"] = result.group(1)
+                if not "config_file" in stanzas[server_line]:
+                    stanzas[server_line]["config_file"] = []
+                # there should only be one config file, but just in case, we will append it
+                if not filechain[-1] in stanzas[server_line]["config_file"]:
+                    stanzas[server_line]["config_file"].append(filechain[-1])
+                continue # if this is a server { start, there shouldn't be anything else on the line
+            # only match these in a virtual host
+            if vhost_start == stanza_count:
+                keywords = vhost_keywords
+                #print "in a vhost file %s: %s" % (stanzas[server_line]["config_file"][-1],line.strip())
+                #print kwsearch(keywords,line.strip() )
+                stanzas[server_line].update( kwsearch(keywords,line.strip() ) )
+                """
+                for word in keywords:
+                    #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
+                    result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                    if result:
+                        #print "keyword match %s" % word
+                        if not word in stanzas[server_line]:
+                            stanzas[server_line][word] = []
+                        stanzas[server_line][word] += [result.group(2)]
+                """
+            # closing VirtualHost
+            result = re.match('</VirtualHost\s+([^>]+)', line.strip(), re.IGNORECASE )
+            if result:
+                vhost_start = -1
+                continue
+            # end virtual host matching
+    
+        # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
+        # think magento location
+        configuration = {}
+        configuration["sites"] =  []
+        #print "parsed apache: %r" % stanzas
+        for i in stanzas.keys():
+            #print "i %s" %i
+            #print "pre-match %r" % stanzas[i]
+            if ("documentroot" in stanzas[i]) or ("servername" in stanzas[i]) or ("serveralias" in stanzas[i]) or ("virtualhost" in stanzas[i]):
+                #print "matched %r" % stanzas[i]
+                configuration["sites"].append( { } )
+                #configuration["sites"].append( {
+                #    "domains" : [],
+                #    "doc_root" : "",
+                #    "config_file" : "",
+                #    "listening" : [] } )
+                
+                if "servername" in stanzas[i]:
+                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    configuration["sites"][-1]["domains"] += stanzas[i]["servername"]
+                if "serveralias" in stanzas[i]:
+                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    configuration["sites"][-1]["domains"] += stanzas[i]["serveralias"]
+                if "virtualhost" in stanzas[i]:
+                    if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                    configuration["sites"][-1]["listening"] += [stanzas[i]["virtualhost"]]
+                if "documentroot" in stanzas[i]:
+                    configuration["sites"][-1]["doc_root"] = stanzas[i]["documentroot"][0]
+                if "config_file" in stanzas[i]:
+                    configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+        stanzas.update(configuration)
+        return stanzas
 
-class nginxCtl():
+class nginxCtl(object):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
         if not "exe" in self.kwargs:
@@ -186,6 +373,123 @@ class nginxCtl():
         except:
             #print "nginx is not installed!!!"
             return()
+
+    def parse_config(self,wholeconfig):
+        """
+        list structure
+        { line : { listen: [ ], server_name : [ ], root : path } }
+        """
+        stanza_chain = []
+        stanza_count = 0
+        server_start = -1
+        #server_line = -1
+        location_start = 0
+        linenum = 0
+        filechain = []
+        stanzas = {} #AutoVivification()
+        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
+        server_keywords_split = ["server_name"]
+        for line in wholeconfig.splitlines():
+            linenum += 1
+            # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
+            # as they are opened, we add them to a list, and remove them as they close.
+            # then we can use their name to identify where it is configured
+            filechange = re.match("## START (.*)",line)
+            if filechange:
+                filechain.append(filechange.group(1))
+            filechange = re.match("## END (.*)",line)
+            if filechange:
+                filechain.pop()
+            # filechain[-1] for the most recent element
+            # this doesn't do well if you open and close a stanza on the same line
+            if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
+                print "This script does not consistently support opening { and closing } stanzas on the same line."
+            stanza_count+=len(re.findall('{',line))
+            stanza_count-=len(re.findall('}',line))
+            result = re.match("(\S+)\s*{",line.strip())
+            if result:
+                stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
+                #print "stanza_chain len %d" % len(stanza_chain)
+            if len(re.findall('}',line)):
+                stanza_chain.pop()
+            #print "stanza_chain len %d" % len(stanza_chain)
+    
+            # start server { section
+            # is this a "server {" line?
+            result = re.match('^\s*server\s', line.strip(), re.IGNORECASE )
+            if result:
+                server_start = stanza_count
+                server_line = str(linenum)
+                if not server_line in stanzas:
+                    stanzas[server_line] = { }
+                if not "config_file" in stanzas[server_line]:
+                    stanzas[server_line]["config_file"] = []
+                # there should only be one config file, but just in case, we will append it
+                if not filechain[-1] in stanzas[server_line]["config_file"]:
+                    stanzas[server_line]["config_file"].append(filechain[-1])
+                #continue # if this is a server { start, there shouldn't be anything else on the line
+            # are we in a server block, and not a child stanza of the server block? is so, look for keywords
+            # this is so we don't print the root directive for location as an example. That might be useful, but isn't implemented at this time.
+            if server_start == stanza_count:
+                # we are in a server block
+                #result = re.match('\s*(listen|server|root)', line.strip())
+                keywords = server_keywords
+                if not server_line in stanzas:
+                    stanzas[server_line] = { }
+                stanzas[server_line].update(kwsearch(keywords,line))
+                keywords = server_keywords_split
+                if not server_line in stanzas:
+                    stanzas[server_line] = { }
+                if not "server_name" in stanzas[server_line]:
+                    stanzas[server_line]["server_name"] = []
+                if kwsearch(["server_name"],line):
+                    stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
+                """
+                for word in keywords:
+                    result = re.match("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                    if result:
+                        if not word in stanzas[server_line]:
+                            stanzas[server_line][word] = []
+                        stanzas[server_line][word] += [result.group(2)]
+                """
+            elif stanza_count < server_start:
+                # if the server block is bigger than the current stanza, we have left the server stanza we were in
+                # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
+                # we are no longer in the server { block
+                server_start = -1
+                #print ""
+            # end server { section
+            
+            # keywords is a list of keywords to search for
+            # look for keywords in the line
+            # pass the keywords to the function and it will extract the keyword and value
+            keywords = ["worker_processes"]
+            stanzas.update(kwsearch(keywords,line))
+    
+        # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
+        # think magento location
+        configuration = {}
+        configuration["sites"] =  []
+        #print "parsed apache: %r" % stanzas
+        for i in stanzas.keys():
+            #print "i %s" %i
+            #print "pre-match %r" % stanzas[i]
+            if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
+                #print "matched %r" % stanzas[i]
+                configuration["sites"].append( { } )
+                if "server_name" in stanzas[i]:
+                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
+                if "listen" in stanzas[i]:
+                    if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                    configuration["sites"][-1]["listening"] += [stanzas[i]["listen"]]
+                if "root" in stanzas[i]:
+                    configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
+                if "config_file" in stanzas[i]:
+                    configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+        stanzas.update(configuration)
+    
+        return stanzas
 
 def daemon_exe(match_exe):
     daemons = {}
@@ -307,310 +611,7 @@ def kwsearch(keywords,line, **kwargs):
                 stanza[result.group(1)] = result.group(2).strip('"')
     return(stanza) #once we have a match, move on
 
-def parse_nginx_config(wholeconfig):
-    """
-    list structure
-    { line : { listen: [ ], server_name : [ ], root : path } }
-    """
-    stanza_chain = []
-    stanza_count = 0
-    server_start = -1
-    #server_line = -1
-    location_start = 0
-    linenum = 0
-    filechain = []
-    stanzas = {} #AutoVivification()
-    server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
-    server_keywords_split = ["server_name"]
-    for line in wholeconfig.splitlines():
-        linenum += 1
-        # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
-        # as they are opened, we add them to a list, and remove them as they close.
-        # then we can use their name to identify where it is configured
-        filechange = re.match("## START (.*)",line)
-        if filechange:
-            filechain.append(filechange.group(1))
-        filechange = re.match("## END (.*)",line)
-        if filechange:
-            filechain.pop()
-        # filechain[-1] for the most recent element
-        # this doesn't do well if you open and close a stanza on the same line
-        if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
-            print "This script does not consistently support opening { and closing } stanzas on the same line."
-        stanza_count+=len(re.findall('{',line))
-        stanza_count-=len(re.findall('}',line))
-        result = re.match("(\S+)\s*{",line.strip())
-        if result:
-            stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-            #print "stanza_chain len %d" % len(stanza_chain)
-        if len(re.findall('}',line)):
-            stanza_chain.pop()
-        #print "stanza_chain len %d" % len(stanza_chain)
 
-        # start server { section
-        # is this a "server {" line?
-        result = re.match('^\s*server\s', line.strip(), re.IGNORECASE )
-        if result:
-            server_start = stanza_count
-            server_line = str(linenum)
-            if not server_line in stanzas:
-                stanzas[server_line] = { }
-            if not "config_file" in stanzas[server_line]:
-                stanzas[server_line]["config_file"] = []
-            # there should only be one config file, but just in case, we will append it
-            if not filechain[-1] in stanzas[server_line]["config_file"]:
-                stanzas[server_line]["config_file"].append(filechain[-1])
-            #continue # if this is a server { start, there shouldn't be anything else on the line
-        # are we in a server block, and not a child stanza of the server block? is so, look for keywords
-        # this is so we don't print the root directive for location as an example. That might be useful, but isn't implemented at this time.
-        if server_start == stanza_count:
-            # we are in a server block
-            #result = re.match('\s*(listen|server|root)', line.strip())
-            keywords = server_keywords
-            if not server_line in stanzas:
-                stanzas[server_line] = { }
-            stanzas[server_line].update(kwsearch(keywords,line))
-            keywords = server_keywords_split
-            if not server_line in stanzas:
-                stanzas[server_line] = { }
-            if not "server_name" in stanzas[server_line]:
-                stanzas[server_line]["server_name"] = []
-            if kwsearch(["server_name"],line):
-                stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
-            """
-            for word in keywords:
-                result = re.match("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
-                if result:
-                    if not word in stanzas[server_line]:
-                        stanzas[server_line][word] = []
-                    stanzas[server_line][word] += [result.group(2)]
-            """
-        elif stanza_count < server_start:
-            # if the server block is bigger than the current stanza, we have left the server stanza we were in
-            # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
-            # we are no longer in the server { block
-            server_start = -1
-            #print ""
-        # end server { section
-        
-        # keywords is a list of keywords to search for
-        # look for keywords in the line
-        # pass the keywords to the function and it will extract the keyword and value
-        keywords = ["worker_processes"]
-        stanzas.update(kwsearch(keywords,line))
-
-    # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
-    # think magento location
-    configuration = {}
-    configuration["sites"] =  []
-    #print "parsed apache: %r" % stanzas
-    for i in stanzas.keys():
-        #print "i %s" %i
-        #print "pre-match %r" % stanzas[i]
-        if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
-            #print "matched %r" % stanzas[i]
-            configuration["sites"].append( { } )
-            if "server_name" in stanzas[i]:
-                if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
-                configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
-            if "listen" in stanzas[i]:
-                if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
-                configuration["sites"][-1]["listening"] += [stanzas[i]["listen"]]
-            if "root" in stanzas[i]:
-                configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
-            if "config_file" in stanzas[i]:
-                configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
-    stanzas.update(configuration)
-
-    return stanzas
-
-def parse_apache_config(wholeconfig):
-    """
-    list structure
-    { line : { listen: [ ], server_name : [ ], root : path } }
-
-    <VirtualHost *:80>
-    DocumentRoot /var/www/vhosts/example.com/httpdocs
-    ServerName example.com
-    ServerAlias www.example.com
-    <Directory /var/www/vhosts/example.com/httpdocs>
-    </Directory>
-    CustomLog /var/log/httpd/example.com-access_log combined
-    ErrorLog /var/log/httpd/example.com-error_log
-    </VirtualHost>
-    <VirtualHost _default_:443>
-    ErrorLog logs/ssl_error_log
-    TransferLog logs/ssl_access_log
-    LogLevel warn
-    SSLEngine on
-    SSLProtocol all -SSLv2 -SSLv3 -TLSv1
-    SSLCipherSuite DEFAULT:!EXP:!SSLv2:!DES:!IDEA:!SEED:+3DES
-    SSLCertificateFile /etc/pki/tls/certs/localhost.crt
-    SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
-    </VirtualHost>
-    """
-    stanza_chain = []
-    stanza_count = 0
-    vhost_start = -1
-    location_start = 0
-    linenum = 0
-    filechain = []
-    stanza_flags = []
-    stanzas = {} #AutoVivification()
-    base_keywords = ["serverroot", "startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen"]
-    vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
-    prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
-    worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
-    for line in wholeconfig.splitlines():
-        linenum += 1
-        # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
-        # as they are opened, we add them to a list, and remove them as they close.
-        # then we can use their name to identify where it is configured
-        filechange = re.match("## START (.*)",line)
-        if filechange:
-            filechain.append(filechange.group(1))
-            if vhost_start == -1:
-                if not "config_file" in stanzas:
-                    stanzas["config_file"] = []
-                stanzas["config_file"].append(filechange.group(1)) 
-            continue
-            #print "filechain: %r" % filechange
-        filechange = re.match("## END (.*)",line)
-        if filechange:
-            filechain.pop()
-            continue
-        # listen, documentroot
-        # opening VirtualHost
-        result = re.match('<[^/]\s*(\S+)', line.strip() )
-        if result:
-            stanza_count += 1
-            stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-            #print "stanza_chain len %d" % len(stanza_chain)
-        result = re.match('</', line.strip() )
-        if result:
-            stanza_count -= 1
-            stanza_chain.pop()
-
-
-        # base configuration
-        if stanza_count == 0:
-            keywords = base_keywords + vhost_keywords
-            if not "config" in stanzas:
-                stanzas["config"] = { }
-            stanzas["config"].update(kwsearch(keywords,line))
-
-        # prefork matching
-        result = re.match('<ifmodule\s+prefork.c', line.strip(), re.IGNORECASE )
-        if result:
-            stanza_flags.append({"type" : "prefork", "linenum" : linenum, "stanza_count" : stanza_count})
-            continue
-        # prefork ending
-        result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
-        if result:
-            # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
-            if len(stanza_flags) > 0:
-                if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
-                    stanza_flags.pop()
-                    continue
-        # If we are in a prefork stanza
-        if len(stanza_flags) > 0:
-            if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                #print line
-                if not "prefork" in stanzas:
-                    stanzas["prefork"] = {}
-                stanzas["prefork"].update(kwsearch(prefork_keywords,line,single_value=True))
-                continue
-
-        # worker matching
-        result = re.match('<ifmodule\s+worker.c', line.strip(), re.IGNORECASE )
-        if result:
-            stanza_flags.append({"type" : "worker", "linenum" : linenum, "stanza_count" : stanza_count})
-        result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
-        if result:
-            # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
-            if len(stanza_flags) > 0:
-                if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
-                    stanza_flags.pop()
-        # If we are in a prefork stanza
-        if len(stanza_flags) > 0:
-            if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                #print line
-                if not "worker" in stanzas:
-                    stanzas["worker"] = {}
-                stanzas["worker"].update(kwsearch(worker_keywords,line,single_value=True))
-                continue
-
-        # virtual host matching
-        result = re.match('<virtualhost\s+([^>]+)', line.strip(), re.IGNORECASE )
-        if result:
-            #print "matched vhost %s" % result.group(1)
-            server_line = str(linenum)
-            vhost_start = stanza_count
-            
-            if not server_line in stanzas:
-                stanzas[server_line] = { }
-            stanzas[server_line]["virtualhost"] = result.group(1)
-            if not "config_file" in stanzas[server_line]:
-                stanzas[server_line]["config_file"] = []
-            # there should only be one config file, but just in case, we will append it
-            if not filechain[-1] in stanzas[server_line]["config_file"]:
-                stanzas[server_line]["config_file"].append(filechain[-1])
-            continue # if this is a server { start, there shouldn't be anything else on the line
-        # only match these in a virtual host
-        if vhost_start == stanza_count:
-            keywords = vhost_keywords
-            #print "in a vhost file %s: %s" % (stanzas[server_line]["config_file"][-1],line.strip())
-            #print kwsearch(keywords,line.strip() )
-            stanzas[server_line].update( kwsearch(keywords,line.strip() ) )
-            """
-            for word in keywords:
-                #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
-                result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
-                if result:
-                    #print "keyword match %s" % word
-                    if not word in stanzas[server_line]:
-                        stanzas[server_line][word] = []
-                    stanzas[server_line][word] += [result.group(2)]
-            """
-        # closing VirtualHost
-        result = re.match('</VirtualHost\s+([^>]+)', line.strip(), re.IGNORECASE )
-        if result:
-            vhost_start = -1
-            continue
-        # end virtual host matching
-
-    # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
-    # think magento location
-    configuration = {}
-    configuration["sites"] =  []
-    #print "parsed apache: %r" % stanzas
-    for i in stanzas.keys():
-        #print "i %s" %i
-        #print "pre-match %r" % stanzas[i]
-        if ("documentroot" in stanzas[i]) or ("servername" in stanzas[i]) or ("serveralias" in stanzas[i]) or ("virtualhost" in stanzas[i]):
-            #print "matched %r" % stanzas[i]
-            configuration["sites"].append( { } )
-            #configuration["sites"].append( {
-            #    "domains" : [],
-            #    "doc_root" : "",
-            #    "config_file" : "",
-            #    "listening" : [] } )
-            
-            if "servername" in stanzas[i]:
-                if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
-                configuration["sites"][-1]["domains"] += stanzas[i]["servername"]
-            if "serveralias" in stanzas[i]:
-                if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
-                configuration["sites"][-1]["domains"] += stanzas[i]["serveralias"]
-            if "virtualhost" in stanzas[i]:
-                if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
-                configuration["sites"][-1]["listening"] += [stanzas[i]["virtualhost"]]
-            if "documentroot" in stanzas[i]:
-                configuration["sites"][-1]["doc_root"] = stanzas[i]["documentroot"][0]
-            if "config_file" in stanzas[i]:
-                configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
-    stanzas.update(configuration)
-    return stanzas
 
 """
 need to check directory permissions
@@ -619,15 +620,22 @@ total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
-daemons = daemon_exe(["httpd", "apache2", "nginx", "bash"])
+daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker"])
 
 if not "apache2" in daemons or "httpd" in daemons:
     print "Apache is not running"
 else:
+    # what if they have multiple apache daemons on different MPMs?
     if "apache2" in daemons:
         apache_exe = daemons["apache2"]["exe"][0]
         apache = apacheCtl(exe = daemons["apache2"]["exe"][0])
     elif "httpd" in daemons:
+        apache_exe = daemons["httpd"]["exe"][0]
+        apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
+    elif "httpd.event" in daemons:
+        apache_exe = daemons["httpd"]["exe"][0]
+        apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
+    elif "httpd.worker" in daemons:
         apache_exe = daemons["httpd"]["exe"][0]
         apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
     try:
@@ -640,7 +648,7 @@ else:
         apache_conf_path = "conf/httpd.conf"
     print "Using config %s" % apache_root_path+apache_conf_path
     wholeconfig = importfile(apache_conf_path, '\s*include\s+(\S+)', base_path = apache_root_path)
-    apache_config = parse_apache_config(wholeconfig)
+    apache_config = apache.parse_config(wholeconfig)
 
     globalconfig["apache"] = apache_config
     daemon_config = apache.get_conf_parameters()
@@ -661,7 +669,7 @@ else:
     
     # configuration fetch and parse
     wholeconfig = importfile(nginx_conf_path, '\s*include\s+(\S+);')
-    nginx_config = parse_nginx_config(wholeconfig)
+    nginx_config = nginx.parse_config(wholeconfig)
     
     globalconfig["nginx"] = nginx_config
     daemon_config = nginx.get_conf_parameters()
