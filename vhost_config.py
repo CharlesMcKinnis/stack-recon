@@ -542,6 +542,15 @@ def importfile(filename, keyword_regex, **kwargs):
         base_path = kwargs["base_path"].rstrip("/")
     else:
         base_path = ""
+    if "recurse_count" in kwargs:
+        kwargs["recurse_count"] += 1
+        kwargs["recurse_count"] += 1
+    else:
+        kwargs["recurse_count"] = 0
+    if kwargs["recurse_count"] > 10:
+        #arbitrary number
+        print "Too many recursions while importing %s, the config is probably a loop." % filename
+        sys.exit(1)
     def full_file_path(right_file, base_path):
         # If the right side of the full name doesn't have a leading slash, it is a relative path.
         #     Add the base_path to the left and return the value
@@ -628,7 +637,7 @@ total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 
-daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker"])
+daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm"])
 #print #why did I have something to print an empty line?
 apache_exe = "" # to fix not defined
 # what if they have multiple apache daemons on different MPMs?
