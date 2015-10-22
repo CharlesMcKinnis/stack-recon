@@ -530,7 +530,7 @@ class phpfpmCtl(object):
                 #continue
             
             # stanza change
-            result = re.match('[;', line.strip() )
+            result = re.match('[;#]', line.strip() )
             if result:
                 continue
             result = re.match('\[(\S+)\]', line.strip() )
@@ -551,6 +551,8 @@ class phpfpmCtl(object):
                     key = result.group(1)
                     value = result.group(2)
                     print "Current stanza: %r" % stanza_chain
+                    if not "title" in stanzas[stanza_chain[-1]]:
+                        stanzas[stanza_chain[-1]]["title"] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
         return(stanzas)
 
