@@ -699,7 +699,7 @@ else:
 if not "php-fpm" in daemons:
     print "php-fpm is not running"
 else:
-    wholeconfig = importfile(nginx_conf_path, '\s*include[\s=]+(\S+)')
+    wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
     pass
 
 
