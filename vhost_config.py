@@ -8,8 +8,7 @@ import os
 
 globalconfig = {
     "apache" : {},
-    "nginx" : {},
-    "php-fpm" : {}
+    "nginx" : {}
 }
 
 class apacheCtl(object):
@@ -700,25 +699,6 @@ for one in daemons:
     print "%s: %r\n" % (one,daemons[one])
 
 ################################################
-# PHP-FPM
-################################################
-#phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-if not "php-fpm" in daemons:
-    print "php-fpm is not running"
-else:
-    phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-    try:
-        phpfpm_conf = phpfpm.get_conf()
-    except:
-        print "There was an error getting the php-fpm daemon configuration"
-        phpfpm_conf=""
-        pass
-    if phpfpm_conf:
-        #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
-        wholeconfig = importfile(phpfpm_conf, '\s*include[\s=]+(\S+)')
-        print wholeconfig
-
-################################################
 # APACHE
 ################################################
 apache_exe = "" # to fix not defined
@@ -739,15 +719,15 @@ else:
     print "Apache is not running"
 if apache_exe:
     try:
-        apache_conf_path = apache.get_conf()
+        apache_conf_file = apache.get_conf()
         apache_root_path = apache.get_root()
         apache_mpm = apache.get_mpm()
     except:
         print "There was an error getting the apache daemon configuration"
         apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
-        apache_conf_path = "conf/httpd.conf"
-    print "Using config %s" % apache_root_path+apache_conf_path
-    wholeconfig = importfile(apache_conf_path, '\s*include\s+(\S+)', base_path = apache_root_path)
+        apache_conf_file = "conf/httpd.conf"
+    print "Using config %s" % apache_root_path+apache_conf_file
+    wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
     apache_config = apache.parse_config(wholeconfig)
 
     globalconfig["apache"] = apache_config
@@ -764,14 +744,14 @@ if not "nginx" in daemons:
 else:
     nginx = nginxCtl(exe = daemons["nginx"]["exe"])
     try:
-        nginx_conf = nginx.get_conf()
+        nginx_conf_file = nginx.get_conf()
     except:
         print "There was an error getting the nginx daemon configuration"
-        nginx_conf = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
+        nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
     print "Using config %s" % nginx_conf
     
     # configuration fetch and parse
-    wholeconfig = importfile(nginx_conf, '\s*include\s+(\S+);')
+    wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
     nginx_config = nginx.parse_config(wholeconfig)
     
     globalconfig["nginx"] = nginx_config
@@ -780,6 +760,24 @@ else:
         if not "daemon" in globalconfig["nginx"]:
             globalconfig["nginx"]["daemon"] = daemon_config
 
+################################################
+# PHP-FPM
+################################################
+#phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+if not "php-fpm" in daemons:
+    print "php-fpm is not running"
+else:
+    phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+    try:
+        phpfpm_conf_file = phpfpm.get_conf()
+    except:
+        print "There was an error getting the php-fpm daemon configuration"
+        phpfpm_conf_file = ""
+    if phpfpm_conf_file:
+        #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
+        wholeconfig = importfile(phpfpm_conf, '\s*include[\s=]+(\S+)')
+        phpfpm_config = phpfpm.parse_config(wholeconfig)
+        globalconfig["php-fpm"] = nginx_config
 
 
 
@@ -806,7 +804,10 @@ if "sites" in  globalconfig["apache"]:
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
 
-
+if "php-fpm" in globalconfig:
+    print "php-fpm configs:"
+    for one in sorted(globalconfig["php-fpm"]):
+        print "%r\n" % (one)
 
 
 
