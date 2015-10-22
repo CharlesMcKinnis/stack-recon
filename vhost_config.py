@@ -530,7 +530,7 @@ class phpfpmCtl(object):
                 #continue
             
             # stanza change
-            result = re.match('[;', line.strip() )
+            result = re.match('[;#]', line.strip() )
             if result:
                 continue
             result = re.match('\[(\S+)\]', line.strip() )
