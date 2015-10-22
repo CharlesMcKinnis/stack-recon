@@ -822,7 +822,7 @@ if "daemon" in globalconfig["apache"]:
 if "php-fpm" in globalconfig:
     print "php-fpm configs:"
     for one in sorted(globalconfig["php-fpm"]):
-        print "%r\n" % (one)
+        print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
 
 
