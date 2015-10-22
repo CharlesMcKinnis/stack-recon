@@ -523,11 +523,11 @@ class phpfpmCtl(object):
             filechange = re.match("## START (.*)",line)
             if filechange:
                 filechain.append(filechange.group(1))
-                continue
+                #continue
             filechange = re.match("## END (.*)",line)
             if filechange:
                 filechain.pop()
-                continue
+                #continue
             
             # stanza change
             result = re.match('[;', line.strip() )
@@ -546,7 +546,7 @@ class phpfpmCtl(object):
             else:
                 print "else line: %r" % line.strip()
                 #match not spaces or =, then match = and spaces, then not spaces
-                result = re.match('([^=\s]+)[\s=]+(\S+)', line.strip() )
+                result = re.match('([^=\s]+)\s*=\s*(\S+)', line.strip() )
                 if result:
                     key = result.group(1)
                     value = result.group(2)
