@@ -510,6 +510,7 @@ class phpfpmCtl(object):
         sys.exit(1)
     def parse_config(self,wholeconfig):
         linenum = 0
+        filechain = []
         stanzas = {} #AutoVivification()
         server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
         server_keywords_split = ["server_name"]
