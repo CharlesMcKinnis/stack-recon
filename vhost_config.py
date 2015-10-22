@@ -542,12 +542,14 @@ class phpfpmCtl(object):
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
                 #print "stanza_chain len %d" % len(stanza_chain)
             else:
+                print "else line: %r" % line.strip()
                 #match not spaces or =, then match = and spaces, then not spaces
                 result = re.match('([^=\s]+)[\s=]+(\S+)', line.strip() )
-                key = result.group(1)
-                value = result.group(2)
-                print "Current stanza: %r" % stanza_chain
-                stanzas[stanza_chain[-1]["title"]][key] = value
+                if result:
+                    key = result.group(1)
+                    value = result.group(2)
+                    print "Current stanza: %r" % stanza_chain
+                    stanzas[stanza_chain[-1]["title"]][key] = value
         return(stanzas)
 
 def daemon_exe(match_exe):
