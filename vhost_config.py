@@ -550,11 +550,12 @@ class phpfpmCtl(object):
                 if result:
                     key = result.group(1)
                     value = result.group(2)
-                    print "Current stanza: %r" % stanza_chain
+                    #print "Current stanza: %r" % stanza_chain
                     print "stanza chain -1 %r" % stanza_chain[-1]
+                    print "stanza title -1 %r" % stanza_chain[-1]["title"]
                     print "stanzas %r" % stanzas
-                    if not "title" in stanzas[stanza_chain[-1]]:
-                        stanzas[stanza_chain[-1]]["title"] = {}
+                    if not stanza_chain[-1]["title"] in stanzas:
+                        stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
                 else:
                     print "not match"
