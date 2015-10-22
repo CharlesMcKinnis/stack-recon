@@ -803,6 +803,7 @@ else:
 # Output body for checking values below
 ################################################
 
+# maxclients or number of processes is "worker_processes"
 if "sites" in  globalconfig["nginx"]:
     print "nginx sites:"
     for one in sorted(globalconfig["nginx"]["sites"]):
@@ -812,6 +813,8 @@ if "daemon" in globalconfig["nginx"]:
 
 print "\n"
 
+# I need to fetch the MPM and then put the maxclients, etc in the array
+# The default is to have a prefetch and worker ifs, but there can be a global too
 if "sites" in  globalconfig["apache"]:
     print "Apache sites:"
     for one in sorted(globalconfig["apache"]["sites"]):
@@ -819,17 +822,14 @@ if "sites" in  globalconfig["apache"]:
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
 
+print "\n"
+
+# maxclients is per stanza, and is pm.max_children
+# for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
     print "php-fpm configs:"
     for one in sorted(globalconfig["php-fpm"]):
         print "%s %r\n" % (one,globalconfig["php-fpm"][one])
-
-
-
-
-print
-print globalconfig["nginx"]
-print
 
 
 
