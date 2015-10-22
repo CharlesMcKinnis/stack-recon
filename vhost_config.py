@@ -540,7 +540,7 @@ class phpfpmCtl(object):
                 #print "stanza_chain len %d" % len(stanza_chain)
             else:
                 #match not spaces or =, then match = and spaces, then not spaces
-                result = re.match('(([^=\s]+)[\s=]+(\S+)', line.strip() )
+                result = re.match('([^=\s]+)[\s=]+(\S+)', line.strip() )
                 key = result.group(1)
                 value = result.group(2)
                 stanzas[stanza_chain[-1]["title"]][key] = value
