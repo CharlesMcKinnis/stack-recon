@@ -535,8 +535,10 @@ class phpfpmCtl(object):
             if result:
                 # the previous one ends when the new one starts
                 # end
-                stanza_chain.pop()
+                if len(stanza_chain) > 0:
+                    stanza_chain.pop()
                 # start
+                print "stanza match ln 541: %r" % result.group(1)
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
                 #print "stanza_chain len %d" % len(stanza_chain)
             else:
