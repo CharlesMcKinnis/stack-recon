@@ -827,8 +827,9 @@ if "php-fpm" in globalconfig:
 
 
 
-
-
+print
+print globalconfig["nginx"]
+print
 
 
 
