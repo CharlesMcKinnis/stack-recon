@@ -491,6 +491,60 @@ class nginxCtl(object):
     
         return stanzas
 
+class phpfpmCtl(object):
+    def __init__(self,**kwargs):
+        self.kwargs = kwargs
+        if not "exe" in self.kwargs:
+            self.kwargs["exe"] = "php-fpm"
+            
+    def get_conf(self):
+        """
+        :returns: configuration path location
+        HTTPD_ROOT/SERVER_CONFIG_FILE
+        """
+        phpfpm_process = daemon_exe(["php-fpm"]) # phpfpm_process["cmd"][0]
+        if phpfpm_process:
+            # the cmd line looks like: php-fpm: master process (/etc/php-fpm.conf)
+            result = re.search('\((\S+)\)',phpfpm_process["php-fpm"]["cmd"])
+            if result:
+                return(result.group(1))
+        sys.exit(1)
+    def parse_config(self,wholeconfig):
+        stanzas = {} #AutoVivification()
+        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
+        server_keywords_split = ["server_name"]
+        for line in wholeconfig.splitlines():
+            linenum += 1
+            # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
+            # as they are opened, we add them to a list, and remove them as they close.
+            # then we can use their name to identify where it is configured
+            filechange = re.match("## START (.*)",line)
+            if filechange:
+                filechain.append(filechange.group(1))
+            filechange = re.match("## END (.*)",line)
+            if filechange:
+                filechain.pop()
+            
+            # stanza change
+            result = re.match(';', line.strip() )
+            if result:
+                continue
+            result = re.match('\[(\S+)\]', line.strip() )
+            if result:
+                # the previous one ends when the new one starts
+                # end
+                stanza_chain.pop()
+                # start
+                stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
+                #print "stanza_chain len %d" % len(stanza_chain)
+            else:
+                #match not spaces or =, then match = and spaces, then not spaces
+                result = re.match('(([^=\s]+)[\s=]+(\S+)', line.strip() )
+                key = result.group(1)
+                value = result.group(2)
+                stanzas[stanza_chain[-1]["title"]][key] = value
+        return(stanzas)
+
 def daemon_exe(match_exe):
     """
     var_filter = "text to search with"
@@ -501,17 +555,20 @@ def daemon_exe(match_exe):
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
     
     for pid in pids:
+        psexe = ""
         try:
-            #pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
-            pscmd = os.path.realpath(os.path.join('/proc', pid, 'exe'))
+            ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
+            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
+            psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-        if pscmd:
-            for daemon_name in match_exe:
-                if os.path.basename(pscmd) == daemon_name:
-                    if not "daemon_name" in daemons:
-                        daemons[daemon_name] = { "exe" : [] }
-                    daemons[daemon_name]["exe"] += [os.path.basename(pscmd)]
+        if psexe:
+            if os.path.basename(psexe) in match_exe:
+                #if os.path.basename(psexe) == daemon_name:
+                if ppid == "1" or not os.path.basename(psexe) in daemons:
+                    daemons[os.path.basename(psexe)] = { "exe" : [], "cmd" : [] }
+                    daemons[os.path.basename(psexe)]["exe"] = psexe
+                    daemons[os.path.basename(psexe)]["cmd"] = pscmd
     return(daemons)
 
 class AutoVivification(dict):
@@ -637,23 +694,47 @@ need to check directory permissions
 total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
+# these are the daemon executable names we are looking for
+daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
+for one in daemons:
+    print "%s: %r\n" % (one,daemons[one])
 
-daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm"])
-#print #why did I have something to print an empty line?
+################################################
+# PHP-FPM
+################################################
+#phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+if not "php-fpm" in daemons:
+    print "php-fpm is not running"
+else:
+    phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+    try:
+        phpfpm_conf = phpfpm.get_conf()
+    except:
+        print "There was an error getting the php-fpm daemon configuration"
+        phpfpm_conf=""
+        pass
+    if phpfpm_conf:
+        #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
+        wholeconfig = importfile(phpfpm_conf, '\s*include[\s=]+(\S+)')
+        print wholeconfig
+
+################################################
+# APACHE
+################################################
 apache_exe = "" # to fix not defined
 # what if they have multiple apache daemons on different MPMs?
 if "apache2" in daemons:
-    apache_exe = daemons["apache2"]["exe"][0]
-    apache = apacheCtl(exe = daemons["apache2"]["exe"][0])
+    apache_exe = daemons["apache2"]["exe"]
+    apache = apacheCtl(exe = daemons["apache2"]["exe"])
 elif "httpd" in daemons:
-    apache_exe = daemons["httpd"]["exe"][0]
-    apache = apacheCtl(exe = daemons["httpd"]["exe"][0])
+    apache_exe = daemons["httpd"]["exe"]
+    apache = apacheCtl(exe = daemons["httpd"]["exe"])
 elif "httpd.event" in daemons:
-    apache_exe = daemons["httpd.event"]["exe"][0]
-    apache = apacheCtl(exe = daemons["httpd.event"]["exe"][0])
+    apache_exe = daemons["httpd.event"]["exe"]
+    apache = apacheCtl(exe = daemons["httpd.event"]["exe"])
 elif "httpd.worker" in daemons:
-    apache_exe = daemons["httpd.worker"]["exe"][0]
-    apache = apacheCtl(exe = daemons["httpd.worker"]["exe"][0])
+    apache_exe = daemons["httpd.worker"]["exe"]
+    apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
 else:
     print "Apache is not running"
 if apache_exe:
@@ -675,19 +756,22 @@ if apache_exe:
         if not "daemon" in globalconfig["apache"]:
             globalconfig["apache"]["daemon"] = daemon_config
 
+################################################
+# NGINX
+################################################
 if not "nginx" in daemons:
     print "nginx is not running"
 else:
-    nginx = nginxCtl(exe = daemons["nginx"]["exe"][0])
+    nginx = nginxCtl(exe = daemons["nginx"]["exe"])
     try:
-        nginx_conf_path = nginx.get_conf()
+        nginx_conf = nginx.get_conf()
     except:
         print "There was an error getting the nginx daemon configuration"
-        nginx_conf_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
-    print "Using config %s" % nginx_conf_path
+        nginx_conf = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
+    print "Using config %s" % nginx_conf
     
     # configuration fetch and parse
-    wholeconfig = importfile(nginx_conf_path, '\s*include\s+(\S+);')
+    wholeconfig = importfile(nginx_conf, '\s*include\s+(\S+);')
     nginx_config = nginx.parse_config(wholeconfig)
     
     globalconfig["nginx"] = nginx_config
@@ -696,12 +780,15 @@ else:
         if not "daemon" in globalconfig["nginx"]:
             globalconfig["nginx"]["daemon"] = daemon_config
 
-if not "php-fpm" in daemons:
-    print "php-fpm is not running"
-else:
-    wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
-    pass
 
+
+
+
+
+
+################################################
+# Output body for checking values below
+################################################
 
 if "sites" in  globalconfig["nginx"]:
     print "nginx sites:"
@@ -733,7 +820,9 @@ if "daemon" in globalconfig["apache"]:
 
 
 
-
+################################################
+# Data structure comments
+################################################
 """
 What kind of unified data structure do I want?
 { "apache" :
