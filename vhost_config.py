@@ -8,7 +8,8 @@ import os
 
 globalconfig = {
     "apache" : {},
-    "nginx" : {}
+    "nginx" : {},
+    "php-fpm" : {}
 }
 
 class apacheCtl(object):
@@ -694,6 +695,12 @@ else:
     if daemon_config:
         if not "daemon" in globalconfig["nginx"]:
             globalconfig["nginx"]["daemon"] = daemon_config
+
+if not "php-fpm" in daemons:
+    print "php-fpm is not running"
+else:
+    wholeconfig = importfile(nginx_conf_path, '\s*include[\s=]+(\S+)')
+    pass
 
 
 if "sites" in  globalconfig["nginx"]:
