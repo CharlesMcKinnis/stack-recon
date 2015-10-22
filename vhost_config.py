@@ -540,25 +540,23 @@ class phpfpmCtl(object):
                 if len(stanza_chain) > 0:
                     stanza_chain.pop()
                 # start
-                print "stanza match ln 541: %r" % result.group(1)
+                #print "stanza match ln 541: %r" % result.group(1)
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
                 #print "stanza_chain len %d" % len(stanza_chain)
             else:
-                print "else line: %r" % line.strip()
+                #print "else line: %r" % line.strip()
                 #match not spaces or =, then match = and spaces, then not spaces
                 result = re.match('([^=\s]+)\s*=\s*(\S+)', line.strip() )
                 if result:
                     key = result.group(1)
                     value = result.group(2)
                     #print "Current stanza: %r" % stanza_chain
-                    print "stanza chain -1 %r" % stanza_chain[-1]
-                    print "stanza title -1 %r" % stanza_chain[-1]["title"]
-                    print "stanzas %r" % stanzas
+                    #print "stanza chain -1 %r" % stanza_chain[-1]
+                    #print "stanza title -1 %r" % stanza_chain[-1]["title"]
+                    #print "stanzas %r" % stanzas
                     if not stanza_chain[-1]["title"] in stanzas:
                         stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
-                else:
-                    print "not match"
         return(stanzas)
 
 def daemon_exe(match_exe):
