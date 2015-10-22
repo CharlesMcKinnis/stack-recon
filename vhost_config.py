@@ -523,12 +523,14 @@ class phpfpmCtl(object):
             filechange = re.match("## START (.*)",line)
             if filechange:
                 filechain.append(filechange.group(1))
+                continue
             filechange = re.match("## END (.*)",line)
             if filechange:
                 filechain.pop()
+                continue
             
             # stanza change
-            result = re.match(';', line.strip() )
+            result = re.match('[;', line.strip() )
             if result:
                 continue
             result = re.match('\[(\S+)\]', line.strip() )
