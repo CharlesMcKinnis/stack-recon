@@ -792,7 +792,7 @@ else:
         #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
         wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
         phpfpm_config = phpfpm.parse_config(wholeconfig)
-        globalconfig["php-fpm"] = nginx_config
+        globalconfig["php-fpm"] = phpfpm_config
 
 
 
