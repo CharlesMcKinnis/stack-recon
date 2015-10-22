@@ -544,6 +544,7 @@ class phpfpmCtl(object):
                 result = re.match('([^=\s]+)[\s=]+(\S+)', line.strip() )
                 key = result.group(1)
                 value = result.group(2)
+                print "Current stanza: %r" % stanza_chain[-1]["title"]
                 stanzas[stanza_chain[-1]["title"]][key] = value
         return(stanzas)
 
