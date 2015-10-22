@@ -14,16 +14,17 @@ def processlist(match_exe):
     
     for pid in pids:
         try:
-            #pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
-            pscmd = os.path.realpath(os.path.join('/proc', pid, 'exe'))
+            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
+            psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-        if pscmd:
+        if psexe:
             for daemon_name in match_exe:
-                if os.path.basename(pscmd) == daemon_name:
+                if os.path.basename(psexe) == daemon_name:
                     if not "daemon_name" in daemons:
-                        daemons[daemon_name] = { "exe" : [] }
-                    daemons[daemon_name]["exe"] += [os.path.basename(pscmd)]
+                        daemons[daemon_name] = { "exe" : [], "cmd" : [] }
+                    daemons[daemon_name]["exe"] += [os.path.basename(psexe)]
+                    daemons[daemon_name]["cmd"] += [pscmd]
     return(daemons)
 
 # works
