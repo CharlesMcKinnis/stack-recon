@@ -509,6 +509,7 @@ class phpfpmCtl(object):
                 return(result.group(1))
         sys.exit(1)
     def parse_config(self,wholeconfig):
+        stanza_chain = []
         linenum = 0
         filechain = []
         stanzas = {} #AutoVivification()
