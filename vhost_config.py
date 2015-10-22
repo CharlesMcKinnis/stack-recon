@@ -748,7 +748,7 @@ else:
     except:
         print "There was an error getting the nginx daemon configuration"
         nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
-    print "Using config %s" % nginx_conf
+    print "Using config %s" % nginx_conf_file
     
     # configuration fetch and parse
     wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
