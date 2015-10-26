@@ -93,6 +93,7 @@ class apacheCtl(object):
             return self.get_conf_parameters()['Server MPM']
         except KeyError:
             sys.exit(1)
+
     def parse_config(self,wholeconfig):
         """
         list structure
@@ -282,22 +283,22 @@ class apacheCtl(object):
         stanzas.update(configuration)
         if not "maxclients" in stanzas["config"]:
             mpm = self.get_mpm().lower()
-            print "mpm: %r" % mpm
-            print "config %r" % stanzas["prefork"]
+            #print "mpm: %r" % mpm
+            #print "config %r" % stanzas["prefork"]
             if mpm == "prefork":
                 if "prefork" in stanzas:
                     if "maxclients" in stanzas["prefork"]:
-                        print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
+                        #print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
                         stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
             elif mpm == "event":
                 if "event" in stanzas:
                     if "maxclients" in stanzas["event"]:
-                        print "event maxclients %s" % stanzas["event"]["maxclients"]
+                        #print "event maxclients %s" % stanzas["event"]["maxclients"]
                         stanzas["maxclients"]=stanzas["event"]["maxclients"]
             elif mpm == "worker":
                 if "worker" in stanzas:
                     if "maxclients" in stanzas["worker"]:
-                        print "worker maxclients %s" % stanzas["worker"]["maxclients"]
+                        #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
                         stanzas["maxclients"]=stanzas["worker"]["maxclients"]
             else:
                 print "Could not identify mpm in use."
@@ -513,6 +514,8 @@ class nginxCtl(object):
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
+        if "worker_processes" in stanzas:
+            stanzas["maxclients"] = stanzas["worker_processes"]
     
         return stanzas
 
@@ -534,12 +537,15 @@ class phpfpmCtl(object):
             if result:
                 return(result.group(1))
         sys.exit(1)
+
     def parse_config(self,wholeconfig):
         stanza_chain = []
         linenum = 0
         filechain = []
         stanzas = {} #AutoVivification()
-        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
+        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"
+                           "pm", "pm.max_children", "pm.start_servers", "pm.min_spare_servers", "pm.max_spare_servers"
+                           ]
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
@@ -584,6 +590,11 @@ class phpfpmCtl(object):
                     if not stanza_chain[-1]["title"] in stanzas:
                         stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
+        stanzas["maxclients"] = 0
+        for one in stanzas:
+            #print "%s %r\n" % (one,stanzas[one])
+            if stanzas[one]["pm.max_children"]:
+                stanzas["maxclients"] += stanzas[one]["pm.max_children"]
         return(stanzas)
 
 def daemon_exe(match_exe):
@@ -728,6 +739,41 @@ def kwsearch(keywords,line, **kwargs):
                 stanza[result.group(1)] = result.group(2).strip('"')
     return(stanza) #once we have a match, move on
 
+def memory_estimate(process_name, **kwargs):
+    """
+    line_count 16
+    biggest 17036
+    free_mem 1092636
+    line_sum 61348
+    """
+    status = { "line_sum":0, "line_count":0, "biggest":0, "free_mem":0 }
+
+    #freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
+    conf = "free"
+    p = subprocess.Popen(
+        conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate()
+    if not output:
+        raise NameError("Fail: %s" % err)
+    for line in output.splitlines():
+        result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+        if result:
+            status["free_mem"] = int(result.group(4))
+
+    conf = "ps aux | grep %s" % process_name
+    p = subprocess.Popen(
+        conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate()
+    if not output:
+        raise NameError("Fail: %s" % err)
+    for line in output.splitlines():
+        status["line_count"] += 1
+        result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+', line)
+        if result:
+            status["line_sum"] += int(result.group(6))
+            if int(result.group(6)) > status["biggest"]:
+                status["biggest"] = int(result.group(6))
+    return(status)
 
 
 """
@@ -767,17 +813,20 @@ if apache_exe:
         apache_mpm = apache.get_mpm()
     except:
         print "There was an error getting the apache daemon configuration"
-        apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
-        apache_conf_file = "conf/httpd.conf"
-    print "Using config %s" % apache_root_path+apache_conf_file
-    wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
-    apache_config = apache.parse_config(wholeconfig)
-
-    globalconfig["apache"] = apache_config
-    daemon_config = apache.get_conf_parameters()
-    if daemon_config:
-        if not "daemon" in globalconfig["apache"]:
-            globalconfig["apache"]["daemon"] = daemon_config
+        apache_conf_file = ""
+        apache_root_path = ""
+    #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
+    #    apache_conf_file = "conf/httpd.conf"
+    if apache_conf_file and apache_root_path:
+        print "Using config %s" % apache_root_path+apache_conf_file
+        wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
+        apache_config = apache.parse_config(wholeconfig)
+    
+        globalconfig["apache"] = apache_config
+        daemon_config = apache.get_conf_parameters()
+        if daemon_config:
+            if not "daemon" in globalconfig["apache"]:
+                globalconfig["apache"]["daemon"] = daemon_config
 
 ################################################
 # NGINX
@@ -790,18 +839,20 @@ else:
         nginx_conf_file = nginx.get_conf()
     except:
         print "There was an error getting the nginx daemon configuration"
-        nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
-    print "Using config %s" % nginx_conf_file
-    
-    # configuration fetch and parse
-    wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
-    nginx_config = nginx.parse_config(wholeconfig)
-    
-    globalconfig["nginx"] = nginx_config
-    daemon_config = nginx.get_conf_parameters()
-    if daemon_config:
-        if not "daemon" in globalconfig["nginx"]:
-            globalconfig["nginx"]["daemon"] = daemon_config
+        #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
+        nginx_conf_file = ""
+    if nginx_conf_file:
+        print "Using config %s" % nginx_conf_file
+        
+        # configuration fetch and parse
+        wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+        nginx_config = nginx.parse_config(wholeconfig)
+        
+        globalconfig["nginx"] = nginx_config
+        daemon_config = nginx.get_conf_parameters()
+        if daemon_config:
+            if not "daemon" in globalconfig["nginx"]:
+                globalconfig["nginx"]["daemon"] = daemon_config
 
 ################################################
 # PHP-FPM
@@ -834,22 +885,62 @@ else:
 # maxclients or number of processes is "worker_processes"
 if "sites" in  globalconfig["nginx"]:
     print "nginx sites:"
+    """
+    "sites" : [
+        blah :{
+            'domains': [
+                'example.com', 'www.example.com new.example.com'
+                ],
+            'config_file': '/etc/httpd/conf/httpd.conf',
+            'doc_root': '/var/www/html',
+            'listening': [
+                '*:80'
+                ]
+        }
+    ]
+    """
     for one in sorted(globalconfig["nginx"]["sites"]):
+        if "domains" in one:
+            print "Domains: %s" % " ".join(one["domains"])
+        if "config_file" in one:
+            print "Config file: %s" % one["config_file"]
+        if "doc_root" in one:
+            print "Doc root: %s" % one["doc_root"]
+        if "listening" in one:
+            print "Listening on: %s" % " ".join(one["listening"])
         print "%r\n" % (one)
 if "daemon" in globalconfig["nginx"]:
     print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
 
+#globalconfig["nginx"]["maxclients"]
 print "\n"
 
 # I need to fetch the MPM and then put the maxclients, etc in the array
 # The default is to have a prefetch and worker ifs, but there can be a global too
 if "sites" in  globalconfig["apache"]:
     print "Apache sites:"
+    """
+    {'domains':
+    ['example.com', 'www.example.com new.example.com'],
+    'config_file': '/etc/httpd/conf/httpd.conf',
+    'doc_root': '/var/www/html',
+    'listening': ['*:80']}
+    """
     for one in sorted(globalconfig["apache"]["sites"]):
-        print "%r\n" % (one)
+        out_string = "Domains:"
+        if "domains" in one:
+            print "Domains: %s" % " ".join(one["domains"])
+        if "config_file" in one:
+            print "Config file: %s" % one["config_file"]
+        if "doc_root" in one:
+            print "Doc root: %s" % one["doc_root"]
+        if "listening" in one:
+            print "Listening on: %s" % " ".join(one["listening"])
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
 #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
+
+#globalconfig["nginx"]["maxclients"]
 
 print "\n"
 
@@ -860,65 +951,12 @@ if "php-fpm" in globalconfig:
     for one in sorted(globalconfig["php-fpm"]):
         print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
+#globalconfig["nginx"]["maxclients"]
 
-
-
-
-
-
-################################################
-# Data structure comments
-################################################
 """
-What kind of unified data structure do I want?
-{ "apache" :
-    [
-        sites [ "domains": [servername+serveralias|server_name],
-                "doc_root" : "documentroot[0]|root[0]",
-                "listening" : [+= VirtualHost|listen],
-                "config_file" : "config_file"
-                ],
-        daemon_config = apache.get_conf_parameters()
-        config
-    ]
-}
-
-get_conf_parameters()
-
-configuration = {}
-configuration["sites"] =  []
-
-for i in stanzas.keys():
-    if "documentroot" in stanzas[i] or "servername" in stanzas[i] or "serveralias" in stanzas[i] or "virtualhost" in stanzas[i]:
-        configuration["sites"].append( {
-            "domains" : servername+serveralias,
-            "doc_root" : stanzas[i]["documentroot"][0],
-            config_file : stanzas[i]["config_file"][0],
-            listening : [stanzas[i]["VirtualHost"]] } )
-        
-
-apache
-{
-299 {
-'customlog': ['/var/www/vhosts/domain.com/logs/access.log common'],
-'config_file': ['/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd/vhosts.d/domain.conf'],
-'errorlog': ['/var/www/vhosts/domain.com/logs/error.log'],
-'documentroot': ['/var/www/vhosts/domain.com/current/'],
-'serveralias': ['www.domain.com'],
-'servername': ['domain.com'],
-'VirtualHost': '192.168.112.218:80'}
-prefork {'startservers': '8', 'maxclients': '350', 'maxspareservers': '20', 'minspareservers': '5', 'serverlimit': '350', 'maxrequestsperchild': '4000'}
-serverroot ['/etc/httpd']
-worker {'startservers': '4', 'minsparethreads': '25', 'maxclients': '300', 'maxsparethreads': '75', 'maxrequestsperchild': '0', 'threadsperchild': '25'}
-}
-
-print "Domains: "
-
-nginx
-294 {
-'root': ['/var/www/domain.net/web'],
-'config_file': ['/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/sites-enabled/100-domain.net.vhost'],
-'server_name': ['domain.net', 'www.domain.net'],
-'listen': ['*:80']}
-
+{'domains':
+    ['example.com', 'www.example.com new.example.com'],
+    'config_file': '/etc/httpd/conf/httpd.conf',
+    'doc_root': '/var/www/html',
+    'listening': ['*:80']}
 """
