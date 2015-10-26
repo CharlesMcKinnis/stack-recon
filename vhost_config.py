@@ -898,8 +898,8 @@ if not "php-fpm" in daemons:
     print "php-fpm is not running"
 else:
     print "php-fpm pools:"
-    for one in stanzas:
-        if type(stanzas[one]) is dict:
+    for one in globalconfig["php-fpm"]:
+        if type(globalconfig["php-fpm"][one]) is dict:
             print "%s" % (one,)
     #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
 
