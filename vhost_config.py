@@ -283,18 +283,20 @@ class apacheCtl(object):
             mpm = self.get_mpm().lower()
             print "mpm: %r" % mpm
             if mpm == "prefork":
-                if "maxclients" in stanzas["config"]["prefork"]:
-                    print "prefork maxclients %s" % stanzas["config"]["prefork"]["maxclients"]
-                    stanzas["maxclients"]=stanzas["config"]["prefork"]["maxclients"]
-                pass
+                if "prefork" in stanzas["config"]:
+                    if "maxclients" in stanzas["config"]["prefork"]:
+                        print "prefork maxclients %s" % stanzas["config"]["prefork"]["maxclients"]
+                        stanzas["maxclients"]=stanzas["config"]["prefork"]["maxclients"]
             elif mpm == "event":
-                if "maxclients" in stanzas["config"]["event"]:
-                    print "event maxclients %s" % stanzas["config"]["event"]["maxclients"]
-                    stanzas["maxclients"]=stanzas["config"]["event"]["maxclients"]
+                if "event" in stanzas["config"]:
+                    if "maxclients" in stanzas["config"]["event"]:
+                        print "event maxclients %s" % stanzas["config"]["event"]["maxclients"]
+                        stanzas["maxclients"]=stanzas["config"]["event"]["maxclients"]
             elif mpm == "worker":
-                if "maxclients" in stanzas["config"]["worker"]:
-                    print "worker maxclients %s" % stanzas["config"]["worker"]["maxclients"]
-                    stanzas["maxclients"]=stanzas["config"]["worker"]["maxclients"]
+                if "worker" in stanzas["config"]:
+                    if "maxclients" in stanzas["config"]["worker"]:
+                        print "worker maxclients %s" % stanzas["config"]["worker"]["maxclients"]
+                        stanzas["maxclients"]=stanzas["config"]["worker"]["maxclients"]
             else:
                 print "Could not identify mpm in use."
                 sys.exit(1)
