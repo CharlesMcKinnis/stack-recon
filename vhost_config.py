@@ -596,8 +596,7 @@ class phpfpmCtl(object):
         print "stanzas: %r" % stanzas
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
-            print "one: %r" % (one,)
-            
+            print "one: %r stanzas[one]" % (one,stanzas[one])
             if "pm.max_children" in stanzas[one]:
                 stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
