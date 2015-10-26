@@ -780,10 +780,8 @@ def memory_estimate(process_name, **kwargs):
 
 def memory_print(result, proc_name, proc_max):
     print "%d %s processes are currently using %d KB of memory." % (result["line_count"], proc_name, result["line_sum"])
-    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (
-        result["line_sum"]/result["line_count"], int(result["line_sum"]/result["line_count"]*proc_max), proc_max)
-    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (
-        result["biggest"], result["biggest"]*proc_max)
+    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"]/result["line_count"]*proc_max), proc_max)
+    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
     #print "Based on the largest process, use this as a health check: %d" % (int(
     #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
     #    ))
@@ -796,8 +794,7 @@ def memory_print(result, proc_name, proc_max):
     #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )*.8)
     #    )
     #print "How many max clients you can handle based on largest process and 100%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
-    
-    print "A safe number of maximum clients based on the largest process and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
+    print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
 """
 need to check directory permissions
