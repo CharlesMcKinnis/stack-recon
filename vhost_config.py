@@ -283,7 +283,7 @@ class apacheCtl(object):
         if not "maxclients" in stanzas["config"]:
             mpm = self.get_mpm().lower()
             print "mpm: %r" % mpm
-            print "config %r" % stanzas["config"]
+            print "config %r" % stanzas["prefork"]
             if mpm == "prefork":
                 if "prefork" in stanzas["config"]:
                     if "maxclients" in stanzas["config"]["prefork"]:
