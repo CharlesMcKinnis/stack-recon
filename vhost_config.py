@@ -1004,8 +1004,8 @@ print "\n"
 # for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
     print "php-fpm configs:"
-    for one in sorted(globalconfig["php-fpm"]):
-        print "%s %r\n" % (one,globalconfig["php-fpm"][one])
+    #for one in sorted(globalconfig["php-fpm"]):
+    #    print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
     if "basename" in globalconfig["php-fpm"] and "maxclients" in globalconfig["php-fpm"]:
         proc_name = globalconfig["php-fpm"]["basename"]
