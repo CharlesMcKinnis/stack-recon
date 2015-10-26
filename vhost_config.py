@@ -991,7 +991,8 @@ if "sites" in  globalconfig["apache"]:
         proc_mem = result
         proc_avg = proc_mem["line_sum"]/proc_mem["line_count"]
         proc_a = (proc_mem["line_sum"] / proc_mem["line_count"])
-        proc_avg_total = int( proc_a * proc_max)
+        #proc_avg_total = int( proc_a * proc_max)
+        proc_avg_total = proc_a * proc_max
         proc_max_total = proc_mem["biggest"]*proc_max
         proc_eighty = int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8 )
         #memory_print(result, proc_name, proc_max)
