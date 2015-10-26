@@ -707,6 +707,7 @@ def kwsearch(keywords,line, **kwargs):
         a string to check for keywords and extract a value (the value is everything right of the keyword)
         optional: single_value=True returns a list of the values found, unless single_value is True
     """
+    line = line.lower()
     stanza = {}
     for word in keywords:
         result = re.match("({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
