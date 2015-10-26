@@ -284,16 +284,16 @@ class apacheCtl(object):
             print "mpm: %r" % mpm
             if mpm == "prefork":
                 if "maxclients" in stanzas["config"]["prefork"]:
-                    print "maxclients %s" % stanzas["config"]["prefork"]["maxclients"]
+                    print "prefork maxclients %s" % stanzas["config"]["prefork"]["maxclients"]
                     stanzas["maxclients"]=stanzas["config"]["prefork"]["maxclients"]
                 pass
             elif mpm == "event":
                 if "maxclients" in stanzas["config"]["event"]:
-                    print "maxclients %s" % stanzas["config"]["event"]["maxclients"]
+                    print "event maxclients %s" % stanzas["config"]["event"]["maxclients"]
                     stanzas["maxclients"]=stanzas["config"]["event"]["maxclients"]
             elif mpm == "worker":
                 if "maxclients" in stanzas["config"]["worker"]:
-                    print "maxclients %s" % stanzas["config"]["worker"]["maxclients"]
+                    print "worker maxclients %s" % stanzas["config"]["worker"]["maxclients"]
                     stanzas["maxclients"]=stanzas["config"]["worker"]["maxclients"]
             else:
                 print "Could not identify mpm in use."
@@ -704,7 +704,7 @@ def kwsearch(keywords,line, **kwargs):
     """
     stanza = {}
     for word in keywords:
-        result = re.search("\s*({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
+        result = re.match("({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str,keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
         if result:
