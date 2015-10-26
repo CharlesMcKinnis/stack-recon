@@ -784,8 +784,10 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 # these are the daemon executable names we are looking for
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
+"""
 for one in daemons:
     print "%s: %r\n" % (one,daemons[one])
+"""
 
 ################################################
 # APACHE
@@ -806,6 +808,7 @@ elif "httpd.worker" in daemons:
     apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
 else:
     print "Apache is not running"
+
 if apache_exe:
     try:
         apache_conf_file = apache.get_conf()
@@ -900,14 +903,15 @@ if "sites" in  globalconfig["nginx"]:
     ]
     """
     for one in sorted(globalconfig["nginx"]["sites"]):
-        if "domains" in one:
-            print "Domains: %s" % " ".join(one["domains"])
-        if "config_file" in one:
-            print "Config file: %s" % one["config_file"]
-        if "doc_root" in one:
-            print "Doc root: %s" % one["doc_root"]
         if "listening" in one:
             print "Listening on: %s" % " ".join(one["listening"])
+        if "domains" in one:
+            print "Domains: %s" % " ".join(one["domains"])
+        if "doc_root" in one:
+            print "Doc root: %s" % one["doc_root"]
+        if "config_file" in one:
+            print "Config file: %s" % one["config_file"]
+        print # an empty line between sections
         print "%r\n" % (one)
 if "daemon" in globalconfig["nginx"]:
     print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
@@ -928,14 +932,15 @@ if "sites" in  globalconfig["apache"]:
     """
     for one in sorted(globalconfig["apache"]["sites"]):
         out_string = "Domains:"
-        if "domains" in one:
-            print "Domains: %s" % " ".join(one["domains"])
-        if "config_file" in one:
-            print "Config file: %s" % one["config_file"]
-        if "doc_root" in one:
-            print "Doc root: %s" % one["doc_root"]
         if "listening" in one:
             print "Listening on: %s" % " ".join(one["listening"])
+        if "domains" in one:
+            print "Domains: %s" % " ".join(one["domains"])
+        if "doc_root" in one:
+            print "Doc root: %s" % one["doc_root"]
+        if "config_file" in one:
+            print "Config file: %s" % one["config_file"]
+        print # an empty line between sections
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
 #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
