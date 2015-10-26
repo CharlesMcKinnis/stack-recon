@@ -69,6 +69,7 @@ class apacheCtl(object):
                 result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
                 if result:
                     dict[result.group(1)]=result.group(2)
+        print "dict: %r" % dict
         return dict
 
     def get_root(self):
@@ -279,6 +280,24 @@ class apacheCtl(object):
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
+        if not "maxclients" in stanzas:
+            mpm = self.get_mpm()
+            print "mpm: %r" % mpm
+            if mpm == "prefork":
+                if maxclients in stanzas["worker"]:
+                    stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
+                pass
+            elif mpm == "event":
+                stanzas["maxclients"]=stanzas["event"]["maxclients"]
+                pass
+            elif mpm == "worker":
+                stanzas["maxclients"]=stanzas["worker"]["maxclients"]
+                pass
+            else:
+                print "Could not identify mpm in use."
+                sys.exit(1)
+            pass
+
         return stanzas
 
 class nginxCtl(object):
