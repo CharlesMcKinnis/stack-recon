@@ -132,6 +132,7 @@ class apacheCtl(object):
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
         for line in wholeconfig.splitlines():
             linenum += 1
+            linecomp = line.strip().lower()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
@@ -150,12 +151,12 @@ class apacheCtl(object):
                 continue
             # listen, documentroot
             # opening VirtualHost
-            result = re.match('<[^/]\s*(\S+)', line.strip() )
+            result = re.match('<[^/]\s*(\S+)', linecomp )
             if result:
                 stanza_count += 1
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
                 #print "stanza_chain len %d" % len(stanza_chain)
-            result = re.match('</', line.strip() )
+            result = re.match('</', linecomp )
             if result:
                 stanza_count -= 1
                 stanza_chain.pop()
@@ -166,15 +167,15 @@ class apacheCtl(object):
                 keywords = base_keywords + vhost_keywords
                 if not "config" in stanzas:
                     stanzas["config"] = { }
-                stanzas["config"].update(kwsearch(keywords,line))
+                stanzas["config"].update(kwsearch(keywords,linecomp))
     
             # prefork matching
-            result = re.match('<ifmodule\s+prefork.c', line.strip(), re.IGNORECASE )
+            result = re.match('<ifmodule\s+prefork.c', linecomp, re.IGNORECASE )
             if result:
                 stanza_flags.append({"type" : "prefork", "linenum" : linenum, "stanza_count" : stanza_count})
                 continue
             # prefork ending
-            result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
             if result:
                 # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
                 if len(stanza_flags) > 0:
@@ -191,10 +192,10 @@ class apacheCtl(object):
                     continue
     
             # worker matching
-            result = re.match('<ifmodule\s+worker.c', line.strip(), re.IGNORECASE )
+            result = re.match('<ifmodule\s+worker.c', linecomp, re.IGNORECASE )
             if result:
                 stanza_flags.append({"type" : "worker", "linenum" : linenum, "stanza_count" : stanza_count})
-            result = re.match('</ifmodule>', line.strip(), re.IGNORECASE )
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
             if result:
                 # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
                 if len(stanza_flags) > 0:
@@ -206,11 +207,11 @@ class apacheCtl(object):
                     #print line
                     if not "worker" in stanzas:
                         stanzas["worker"] = {}
-                    stanzas["worker"].update(kwsearch(worker_keywords,line,single_value=True))
+                    stanzas["worker"].update(kwsearch(worker_keywords,linecomp,single_value=True))
                     continue
     
             # virtual host matching
-            result = re.match('<virtualhost\s+([^>]+)', line.strip(), re.IGNORECASE )
+            result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE )
             if result:
                 #print "matched vhost %s" % result.group(1)
                 server_line = str(linenum)
@@ -242,7 +243,7 @@ class apacheCtl(object):
                         stanzas[server_line][word] += [result.group(2)]
                 """
             # closing VirtualHost
-            result = re.match('</VirtualHost\s+([^>]+)', line.strip(), re.IGNORECASE )
+            result = re.match('</VirtualHost\s+([^>]+)', linecomp, re.IGNORECASE )
             if result:
                 vhost_start = -1
                 continue
@@ -413,6 +414,7 @@ class nginxCtl(object):
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
+            linecomp = line.strip().lower()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
@@ -428,7 +430,7 @@ class nginxCtl(object):
                 print "This script does not consistently support opening { and closing } stanzas on the same line."
             stanza_count+=len(re.findall('{',line))
             stanza_count-=len(re.findall('}',line))
-            result = re.match("(\S+)\s*{",line.strip())
+            result = re.match("(\S+)\s*{",linecomp)
             if result:
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
                 #print "stanza_chain len %d" % len(stanza_chain)
@@ -438,7 +440,7 @@ class nginxCtl(object):
     
             # start server { section
             # is this a "server {" line?
-            result = re.match('^\s*server\s', line.strip(), re.IGNORECASE )
+            result = re.match('^\s*server\s', linecomp, re.IGNORECASE )
             if result:
                 server_start = stanza_count
                 server_line = str(linenum)
@@ -540,6 +542,7 @@ class phpfpmCtl(object):
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
+            linecomp = line.strip().lower()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
@@ -553,10 +556,10 @@ class phpfpmCtl(object):
                 #continue
             
             # stanza change
-            result = re.match('[;#]', line.strip() )
+            result = re.match('[;#]', linecomp )
             if result:
                 continue
-            result = re.match('\[(\S+)\]', line.strip() )
+            result = re.match('\[(\S+)\]', linecomp )
             if result:
                 # the previous one ends when the new one starts
                 # end
@@ -569,7 +572,7 @@ class phpfpmCtl(object):
             else:
                 #print "else line: %r" % line.strip()
                 #match not spaces or =, then match = and spaces, then not spaces
-                result = re.match('([^=\s]+)\s*=\s*(\S+)', line.strip() )
+                result = re.match('([^=\s]+)\s*=\s*(\S+)', linecomp )
                 if result:
                     key = result.group(1)
                     value = result.group(2)
