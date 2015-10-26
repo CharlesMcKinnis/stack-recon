@@ -782,7 +782,7 @@ def memory_estimate(process_name, **kwargs):
     return(status)
 
 def memory_print(proc_mem, proc_name, proc_max):
-    print "%d %s processes are currently using %d KB of memory." % (proc_mem["line_count"], proc_name, proc_mem["line_sum"])
+    print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (proc_mem["line_count"], proc_name, proc_mem["line_sum"], proc_mem["free"])
     print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (proc_mem["line_sum"]/proc_mem["line_count"], int(proc_mem["line_sum"] / proc_mem["line_count"] * proc_max), proc_max)
     print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (proc_mem["biggest"], proc_mem["biggest"]*proc_max)
     #print "Based on the largest process, use this as a health check: %d" % (int(
@@ -897,6 +897,13 @@ else:
 if not "php-fpm" in daemons:
     print "php-fpm is not running"
 else:
+    print "php-fpm pools:"
+    for one in stanzas:
+        if type(stanzas[one]) is dict:
+            print "%s" % (one,)
+    #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
+
+    print
     phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
     try:
         phpfpm_conf_file = phpfpm.get_conf()
@@ -938,10 +945,10 @@ if "sites" in  globalconfig["nginx"]:
     ]
     """
     for one in sorted(globalconfig["nginx"]["sites"]):
-        if "listening" in one:
-            print "Listening on: %s" % " ".join(one["listening"])
         if "domains" in one:
             print "Domains: %s" % " ".join(one["domains"])
+        if "listening" in one:
+            print "Listening on: %s" % " ".join(one["listening"])
         if "doc_root" in one:
             print "Doc root: %s" % one["doc_root"]
         if "config_file" in one:
@@ -974,10 +981,10 @@ if "sites" in  globalconfig["apache"]:
     """
     for one in sorted(globalconfig["apache"]["sites"]):
         out_string = "Domains:"
-        if "listening" in one:
-            print "Listening on: %s" % " ".join(one["listening"])
         if "domains" in one:
             print "Domains: %s" % " ".join(one["domains"])
+        if "listening" in one:
+            print "Listening on: %s" % " ".join(one["listening"])
         if "doc_root" in one:
             print "Doc root: %s" % one["doc_root"]
         if "config_file" in one:
