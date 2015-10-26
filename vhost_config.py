@@ -284,14 +284,17 @@ class apacheCtl(object):
             print "mpm: %r" % mpm
             if mpm == "prefork":
                 if "maxclients" in stanzas["prefork"]:
+                    print "maxclients %s" % stanzas["prefork"]["maxclients"]
                     stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
                 pass
             elif mpm == "event":
-                stanzas["maxclients"]=stanzas["event"]["maxclients"]
-                pass
+                if "maxclients" in stanzas["event"]:
+                    print "maxclients %s" % stanzas["event"]["maxclients"]
+                    stanzas["maxclients"]=stanzas["event"]["maxclients"]
             elif mpm == "worker":
-                stanzas["maxclients"]=stanzas["worker"]["maxclients"]
-                pass
+                if "maxclients" in stanzas["worker"]:
+                    print "maxclients %s" % stanzas["worker"]["maxclients"]
+                    stanzas["maxclients"]=stanzas["worker"]["maxclients"]
             else:
                 print "Could not identify mpm in use."
                 sys.exit(1)
@@ -839,7 +842,7 @@ if "sites" in  globalconfig["apache"]:
         print "%r\n" % (one)
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
-print "maxclients %r" % globalconfig["apache"]
+print "maxclients %r" % globalconfig["apache"]["maxclients"]
 
 print "\n"
 
