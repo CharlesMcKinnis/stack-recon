@@ -989,11 +989,16 @@ if "sites" in  globalconfig["apache"]:
     print "result %r" % result
     if result:
         proc_mem = result
+        proc_avg = proc_mem["line_sum"]/proc_mem["line_count"]
+        proc_avg_total = int(proc_mem["line_sum"] / proc_mem["line_count"] * proc_max)
+        proc_max_total = proc_mem["biggest"]*proc_max
+        proc_eighty = int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8 )
         #memory_print(result, proc_name, proc_max)
         print "%d %s processes are currently using %d KB of memory." % (proc_mem["line_count"], proc_name, proc_mem["line_sum"])
-        print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (proc_mem["line_sum"]/proc_mem["line_count"], int(proc_mem["line_sum"] / proc_mem["line_count"] * proc_max), proc_max)
-        print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (proc_mem["biggest"], proc_mem["biggest"]*proc_max)
-        print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
+        print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (
+            proc_avg, proc_avg_total, proc_max)
+        print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (proc_mem["biggest"], proc_max_total)
+        print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % proc_eighty
 
 
 #globalconfig["nginx"]["maxclients"]
