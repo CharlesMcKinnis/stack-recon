@@ -793,10 +793,10 @@ def memory_print(result, proc_name, proc_max):
     # yellow else
     #print "Positive numbers may mean you can have more clients. Negative numbers mean you are overcommited."
     #print "See below for numbers advice.\n"
-    #print "How many max clients you may be able to handle based on the average size? %d" % (
-    #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )*.8)
-    #    )
-    #print "How many max clients you can handle based on largest process and 100%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
+    print "How many max clients you may be able to handle based on the average size? %d" % (
+        int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )*.8)
+        )
+    print "How many max clients you can handle based on largest process and 100%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
     print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
 """
