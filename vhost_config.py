@@ -618,9 +618,10 @@ def daemon_exe(match_exe):
             if os.path.basename(psexe) in match_exe:
                 #if os.path.basename(psexe) == daemon_name:
                 if ppid == "1" or not os.path.basename(psexe) in daemons:
-                    daemons[os.path.basename(psexe)] = { "exe" : [], "cmd" : [] }
+                    daemons[os.path.basename(psexe)] = { "exe" : "", "cmd" : "", "basename" : "" }
                     daemons[os.path.basename(psexe)]["exe"] = psexe
                     daemons[os.path.basename(psexe)]["cmd"] = pscmd
+                    daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
     return(daemons)
 
 class AutoVivification(dict):
@@ -775,6 +776,28 @@ def memory_estimate(process_name, **kwargs):
                 status["biggest"] = int(result.group(6))
     return(status)
 
+def memory_print(result, proc_name, proc_max):
+    print "%d %s processes are currently using %d KB of memory." % (result["line_count"], proc_name, result["line_sum"])
+    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (
+        result["line_sum"]/result["line_count"], int(result["line_sum"]/result["line_count"]*proc_max), proc_max
+        )
+    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (
+        result["biggest"], result["biggest"]*proc_max
+        )
+    #print "Based on the largest process, use this as a health check: %d" % (int(
+    #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
+    #    ))
+    # red if proc_max > int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
+    # green elif proc_max <= int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
+    # yellow else
+    #print "Positive numbers may mean you can have more clients. Negative numbers mean you are overcommited."
+    #print "See below for numbers advice.\n"
+    #print "How many max clients you may be able to handle based on the average size? %d" % (
+    #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )*.8)
+    #    )
+    #print "How many max clients you can handle based on largest process and 100%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
+    
+    print "A safe number of maximum clients based on the largest process and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
 """
 need to check directory permissions
@@ -795,15 +818,19 @@ for one in daemons:
 apache_exe = "" # to fix not defined
 # what if they have multiple apache daemons on different MPMs?
 if "apache2" in daemons:
+    apache_basename = daemons["apache2"]["basename"]
     apache_exe = daemons["apache2"]["exe"]
     apache = apacheCtl(exe = daemons["apache2"]["exe"])
 elif "httpd" in daemons:
+    apache_basename = daemons["httpd"]["basename"]
     apache_exe = daemons["httpd"]["exe"]
     apache = apacheCtl(exe = daemons["httpd"]["exe"])
 elif "httpd.event" in daemons:
+    apache_basename = daemons["httpd.event"]["basename"]
     apache_exe = daemons["httpd.event"]["exe"]
     apache = apacheCtl(exe = daemons["httpd.event"]["exe"])
 elif "httpd.worker" in daemons:
+    apache_basename = daemons["httpd.worker"]["basename"]
     apache_exe = daemons["httpd.worker"]["exe"]
     apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
 else:
@@ -830,6 +857,9 @@ if apache_exe:
         if daemon_config:
             if not "daemon" in globalconfig["apache"]:
                 globalconfig["apache"]["daemon"] = daemon_config
+            globalconfig["apache"]["basename"] = apache_basename
+            globalconfig["apache"]["exe"] = daemons[apache_basename]["exe"]
+            globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
 
 ################################################
 # NGINX
@@ -856,6 +886,9 @@ else:
         if daemon_config:
             if not "daemon" in globalconfig["nginx"]:
                 globalconfig["nginx"]["daemon"] = daemon_config
+            globalconfig["nginx"]["basename"] = "nginx"
+            globalconfig["apache"]["exe"] = daemons["nginx"]["exe"]
+            globalconfig["apache"]["cmd"] = daemons["nginx"]["cmd"]
 
 ################################################
 # PHP-FPM
@@ -875,7 +908,9 @@ else:
         wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
         phpfpm_config = phpfpm.parse_config(wholeconfig)
         globalconfig["php-fpm"] = phpfpm_config
-
+        globalconfig["php-fpm"]["basename"]="php-fpm"
+        globalconfig["apache"]["exe"] = daemons["php-fpm"]["exe"]
+        globalconfig["apache"]["cmd"] = daemons["php-fpm"]["cmd"]
 
 
 
@@ -913,8 +948,13 @@ if "sites" in  globalconfig["nginx"]:
             print "Config file: %s" % one["config_file"]
         print # an empty line between sections
         print "%r\n" % (one)
-if "daemon" in globalconfig["nginx"]:
-    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
+#if "daemon" in globalconfig["nginx"]:
+#    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
+
+proc_name = globalconfig["nginx"]["basename"]
+proc_max = globalconfig["nginx"]["maxclients"]
+result = memory_estimate(proc_name)
+memory_print(result, proc_name, proc_max)
 
 #globalconfig["nginx"]["maxclients"]
 print "\n"
@@ -941,9 +981,15 @@ if "sites" in  globalconfig["apache"]:
         if "config_file" in one:
             print "Config file: %s" % one["config_file"]
         print # an empty line between sections
-if "daemon" in globalconfig["apache"]:
-    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
+#if "daemon" in globalconfig["apache"]:
+#    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
 #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
+
+proc_name = globalconfig["apache"]["basename"]
+proc_max = globalconfig["apache"]["maxclients"]
+result = memory_estimate(proc_name)
+memory_print(result, proc_name, proc_max)
+
 
 #globalconfig["nginx"]["maxclients"]
 
@@ -955,6 +1001,11 @@ if "php-fpm" in globalconfig:
     print "php-fpm configs:"
     for one in sorted(globalconfig["php-fpm"]):
         print "%s %r\n" % (one,globalconfig["php-fpm"][one])
+
+proc_name = globalconfig["php-fpm"]["basename"]
+proc_max = globalconfig["php-fpm"]["maxclients"]
+result = memory_estimate(proc_name)
+memory_print(result, proc_name, proc_max)
 
 #globalconfig["nginx"]["maxclients"]
 
