@@ -593,10 +593,10 @@ class phpfpmCtl(object):
                         stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
         stanzas["maxclients"] = 0
-        print "stanzas: %r" % stanzas
+        #print "stanzas: %r" % stanzas
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
-            print "one: %r stanzas[one]: %r" % (one,stanzas[one])
+            #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
             if type(stanzas[one]) is dict:
                 if "pm.max_children" in stanzas[one]:
                     stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
@@ -951,11 +951,12 @@ if "sites" in  globalconfig["nginx"]:
     #if "daemon" in globalconfig["nginx"]:
     #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
     
-    proc_name = globalconfig["nginx"]["basename"]
-    proc_max = int(globalconfig["nginx"]["maxclients"])
-    result = memory_estimate(proc_name)
-    if result:
-        memory_print(result, proc_name, proc_max)
+    if "basename" in globalconfig["nginx"] and "maxclients" in globalconfig["nginx"]:
+        proc_name = globalconfig["nginx"]["basename"]
+        proc_max = int(globalconfig["nginx"]["maxclients"])
+        result = memory_estimate(proc_name)
+        if result:
+            memory_print(result, proc_name, proc_max)
 
 #globalconfig["nginx"]["maxclients"]
 print "\n"
@@ -986,12 +987,13 @@ if "sites" in  globalconfig["apache"]:
     #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
     #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
     
-    proc_name = globalconfig["apache"]["basename"]
-    proc_max = globalconfig["apache"]["maxclients"]
-    result = memory_estimate(proc_name)
-    print "result %r" % result
-    if result:
-        memory_print(result, proc_name, proc_max)
+    if "basename" in globalconfig["apache"] and "maxclients" in globalconfig["apache"]:
+        proc_name = globalconfig["apache"]["basename"]
+        proc_max = globalconfig["apache"]["maxclients"]
+        result = memory_estimate(proc_name)
+        #print "result %r" % result
+        if result:
+            memory_print(result, proc_name, proc_max)
 
 
 #globalconfig["nginx"]["maxclients"]
@@ -1005,11 +1007,12 @@ if "php-fpm" in globalconfig:
     for one in sorted(globalconfig["php-fpm"]):
         print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
-    proc_name = globalconfig["php-fpm"]["basename"]
-    proc_max = int(globalconfig["php-fpm"]["maxclients"])
-    result = memory_estimate(proc_name)
-    if result:
-        memory_print(result, proc_name, proc_max)
+    if "basename" in globalconfig["php-fpm"] and "maxclients" in globalconfig["php-fpm"]:
+        proc_name = globalconfig["php-fpm"]["basename"]
+        proc_max = int(globalconfig["php-fpm"]["maxclients"])
+        result = memory_estimate(proc_name)
+        if result:
+            memory_print(result, proc_name, proc_max)
 
 #globalconfig["nginx"]["maxclients"]
 
