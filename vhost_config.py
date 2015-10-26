@@ -917,8 +917,13 @@ else:
 
 
 
-
-
+"""
+  ___  _   _ _____ ____  _   _ _____ 
+ / _ \| | | |_   _|  _ \| | | |_   _|
+| | | | | | | | | | |_) | | | | | |  
+| |_| | |_| | | | |  __/| |_| | | |  
+ \___/ \___/  |_| |_|    \___/  |_|  
+"""                                    
 ################################################
 # Output body for checking values below
 ################################################
@@ -960,9 +965,9 @@ if "sites" in  globalconfig["nginx"]:
         result = memory_estimate(proc_name)
         if result:
             memory_print(result, proc_name, proc_max)
+    print "\n"
 
 #globalconfig["nginx"]["maxclients"]
-print "\n"
 
 # I need to fetch the MPM and then put the maxclients, etc in the array
 # The default is to have a prefetch and worker ifs, but there can be a global too
@@ -997,11 +1002,11 @@ if "sites" in  globalconfig["apache"]:
         #print "result %r" % result
         if result:
             memory_print(result, proc_name, proc_max)
+    print "\n"
 
 
 #globalconfig["nginx"]["maxclients"]
 
-print "\n"
 
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
@@ -1014,6 +1019,8 @@ if "php-fpm" in globalconfig:
     #for one in sorted(globalconfig["php-fpm"]):
     #    print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
+    print
+    print "php-fpm memory profile:"
     if "basename" in globalconfig["php-fpm"] and "maxclients" in globalconfig["php-fpm"]:
         proc_name = globalconfig["php-fpm"]["basename"]
         proc_max = int(globalconfig["php-fpm"]["maxclients"])
