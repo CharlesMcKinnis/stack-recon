@@ -781,11 +781,9 @@ def memory_estimate(process_name, **kwargs):
 def memory_print(result, proc_name, proc_max):
     print "%d %s processes are currently using %d KB of memory." % (result["line_count"], proc_name, result["line_sum"])
     print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (
-        result["line_sum"]/result["line_count"], int(result["line_sum"]/result["line_count"]*proc_max), proc_max
-        )
+        result["line_sum"]/result["line_count"], int(result["line_sum"]/result["line_count"]*proc_max), proc_max)
     print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (
-        result["biggest"], result["biggest"]*proc_max
-        )
+        result["biggest"], result["biggest"]*proc_max)
     #print "Based on the largest process, use this as a health check: %d" % (int(
     #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
     #    ))
@@ -956,7 +954,8 @@ if "sites" in  globalconfig["nginx"]:
     proc_name = globalconfig["nginx"]["basename"]
     proc_max = globalconfig["nginx"]["maxclients"]
     result = memory_estimate(proc_name)
-    memory_print(result, proc_name, proc_max)
+    if result:
+        memory_print(result, proc_name, proc_max)
 
 #globalconfig["nginx"]["maxclients"]
 print "\n"
@@ -990,7 +989,8 @@ if "sites" in  globalconfig["apache"]:
     proc_name = globalconfig["apache"]["basename"]
     proc_max = globalconfig["apache"]["maxclients"]
     result = memory_estimate(proc_name)
-    memory_print(result, proc_name, proc_max)
+    if result:
+        memory_print(result, proc_name, proc_max)
 
 
 #globalconfig["nginx"]["maxclients"]
@@ -1007,7 +1007,8 @@ if "php-fpm" in globalconfig:
     proc_name = globalconfig["php-fpm"]["basename"]
     proc_max = globalconfig["php-fpm"]["maxclients"]
     result = memory_estimate(proc_name)
-    memory_print(result, proc_name, proc_max)
+    if result:
+        memory_print(result, proc_name, proc_max)
 
 #globalconfig["nginx"]["maxclients"]
 
