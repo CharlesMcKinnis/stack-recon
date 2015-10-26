@@ -285,20 +285,20 @@ class apacheCtl(object):
             print "mpm: %r" % mpm
             print "config %r" % stanzas["prefork"]
             if mpm == "prefork":
-                if "prefork" in stanzas["config"]:
-                    if "maxclients" in stanzas["config"]["prefork"]:
-                        print "prefork maxclients %s" % stanzas["config"]["prefork"]["maxclients"]
-                        stanzas["maxclients"]=stanzas["config"]["prefork"]["maxclients"]
+                if "prefork" in stanzas:
+                    if "maxclients" in stanzas["prefork"]:
+                        print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
+                        stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
             elif mpm == "event":
-                if "event" in stanzas["config"]:
-                    if "maxclients" in stanzas["config"]["event"]:
-                        print "event maxclients %s" % stanzas["config"]["event"]["maxclients"]
-                        stanzas["maxclients"]=stanzas["config"]["event"]["maxclients"]
+                if "event" in stanzas:
+                    if "maxclients" in stanzas["event"]:
+                        print "event maxclients %s" % stanzas["event"]["maxclients"]
+                        stanzas["maxclients"]=stanzas["event"]["maxclients"]
             elif mpm == "worker":
-                if "worker" in stanzas["config"]:
-                    if "maxclients" in stanzas["config"]["worker"]:
-                        print "worker maxclients %s" % stanzas["config"]["worker"]["maxclients"]
-                        stanzas["maxclients"]=stanzas["config"]["worker"]["maxclients"]
+                if "worker" in stanzas:
+                    if "maxclients" in stanzas["worker"]:
+                        print "worker maxclients %s" % stanzas["worker"]["maxclients"]
+                        stanzas["maxclients"]=stanzas["worker"]["maxclients"]
             else:
                 print "Could not identify mpm in use."
                 sys.exit(1)
