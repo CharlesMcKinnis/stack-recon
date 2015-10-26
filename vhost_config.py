@@ -597,8 +597,9 @@ class phpfpmCtl(object):
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
             print "one: %r stanzas[one]: %r" % (one,stanzas[one])
-            if "pm.max_children" in stanzas[one]:
-                stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
+            if stanzas[one].isdict():
+                if "pm.max_children" in stanzas[one]:
+                    stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
 
 def daemon_exe(match_exe):
