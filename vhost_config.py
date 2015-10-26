@@ -69,7 +69,6 @@ class apacheCtl(object):
                 result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
                 if result:
                     dict[result.group(1)]=result.group(2)
-        print "dict: %r" % dict
         return dict
 
     def get_root(self):
@@ -281,7 +280,7 @@ class apacheCtl(object):
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
         if not "maxclients" in stanzas:
-            mpm = self.get_mpm()
+            mpm = self.get_mpm().lower()
             print "mpm: %r" % mpm
             if mpm == "prefork":
                 if maxclients in stanzas["worker"]:
