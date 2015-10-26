@@ -986,6 +986,7 @@ if "sites" in  globalconfig["apache"]:
     proc_name = globalconfig["apache"]["basename"]
     proc_max = globalconfig["apache"]["maxclients"]
     result = memory_estimate(proc_name)
+    print "result %r" % result
     if result:
         memory_print(result, proc_name, proc_max)
 
