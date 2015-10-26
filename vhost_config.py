@@ -897,10 +897,6 @@ else:
 if not "php-fpm" in daemons:
     print "php-fpm is not running"
 else:
-    print "php-fpm pools:"
-    for one in globalconfig["php-fpm"]:
-        if type(globalconfig["php-fpm"][one]) is dict:
-            print "%s" % (one,)
     #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
 
     print
@@ -1010,7 +1006,11 @@ print "\n"
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
-    print "php-fpm configs:"
+    #print "php-fpm configs"
+    print "php-fpm pools:"
+    for one in globalconfig["php-fpm"]:
+        if type(globalconfig["php-fpm"][one]) is dict:
+            print "%s" % (one,)
     #for one in sorted(globalconfig["php-fpm"]):
     #    print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
