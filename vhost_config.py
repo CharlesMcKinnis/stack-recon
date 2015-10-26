@@ -283,7 +283,7 @@ class apacheCtl(object):
             mpm = self.get_mpm().lower()
             print "mpm: %r" % mpm
             if mpm == "prefork":
-                if "maxclients" in stanzas["worker"]:
+                if "maxclients" in stanzas["prefork"]:
                     stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
                 pass
             elif mpm == "event":
