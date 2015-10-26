@@ -765,6 +765,8 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["free_mem"] = int(result.group(4))
+        else:
+            status["free_mem"] = 0
 
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
