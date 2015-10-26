@@ -988,7 +988,12 @@ if "sites" in  globalconfig["apache"]:
     result = memory_estimate(proc_name)
     print "result %r" % result
     if result:
-        memory_print(result, proc_name, proc_max)
+        proc_mem = result
+        #memory_print(result, proc_name, proc_max)
+        print "%d %s processes are currently using %d KB of memory." % (proc_mem["line_count"], proc_name, proc_mem["line_sum"])
+        print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (proc_mem["line_sum"]/proc_mem["line_count"], int(proc_mem["line_sum"] / proc_mem["line_count"] * proc_max), proc_max)
+        print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (proc_mem["biggest"], proc_mem["biggest"]*proc_max)
+        print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
 
 #globalconfig["nginx"]["maxclients"]
