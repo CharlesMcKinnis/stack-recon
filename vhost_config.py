@@ -597,7 +597,7 @@ class phpfpmCtl(object):
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
             print "one: %r stanzas[one]: %r" % (one,stanzas[one])
-            if stanzas[one].isdict():
+            if type(stanzas[one]) is dict:
                 if "pm.max_children" in stanzas[one]:
                     stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
