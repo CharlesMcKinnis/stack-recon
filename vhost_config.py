@@ -1020,6 +1020,7 @@ if "php-fpm" in globalconfig:
         proc_name = globalconfig["php-fpm"]["basename"]
         proc_max = int(globalconfig["php-fpm"]["maxclients"])
         result = memory_estimate(proc_name)
+        print "php-fpm result: %r" % result
         if result:
             memory_print(result, proc_name, proc_max)
 
