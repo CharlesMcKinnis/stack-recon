@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
-
+"""
+git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
+"""
 import re
 import glob
 import subprocess
