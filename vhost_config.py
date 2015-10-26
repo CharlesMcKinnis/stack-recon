@@ -839,6 +839,7 @@ if "sites" in  globalconfig["apache"]:
         print "%r\n" % (one)
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
+print "maxclients %s" % globalconfig["apache"]["maxclients"]
 
 print "\n"
 
