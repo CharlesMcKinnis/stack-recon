@@ -616,7 +616,7 @@ def importfile(filename, keyword_regex, **kwargs):
         base_path = ""
     if "recurse_count" in kwargs:
         kwargs["recurse_count"] += 1
-        kwargs["recurse_count"] += 1
+        # kwargs["recurse_count"] += 1 shouldn't be adding this twice
     else:
         kwargs["recurse_count"] = 0
     if kwargs["recurse_count"] > 10:
