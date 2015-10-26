@@ -279,22 +279,22 @@ class apacheCtl(object):
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
-        if not "maxclients" in stanzas:
+        if not "maxclients" in stanzas["config"]:
             mpm = self.get_mpm().lower()
             print "mpm: %r" % mpm
             if mpm == "prefork":
-                if "maxclients" in stanzas["prefork"]:
-                    print "maxclients %s" % stanzas["prefork"]["maxclients"]
-                    stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
+                if "maxclients" in stanzas["config"]["prefork"]:
+                    print "maxclients %s" % stanzas["config"]["prefork"]["maxclients"]
+                    stanzas["maxclients"]=stanzas["config"]["prefork"]["maxclients"]
                 pass
             elif mpm == "event":
-                if "maxclients" in stanzas["event"]:
-                    print "maxclients %s" % stanzas["event"]["maxclients"]
-                    stanzas["maxclients"]=stanzas["event"]["maxclients"]
+                if "maxclients" in stanzas["config"]["event"]:
+                    print "maxclients %s" % stanzas["config"]["event"]["maxclients"]
+                    stanzas["maxclients"]=stanzas["config"]["event"]["maxclients"]
             elif mpm == "worker":
-                if "maxclients" in stanzas["worker"]:
-                    print "maxclients %s" % stanzas["worker"]["maxclients"]
-                    stanzas["maxclients"]=stanzas["worker"]["maxclients"]
+                if "maxclients" in stanzas["config"]["worker"]:
+                    print "maxclients %s" % stanzas["config"]["worker"]["maxclients"]
+                    stanzas["maxclients"]=stanzas["config"]["worker"]["maxclients"]
             else:
                 print "Could not identify mpm in use."
                 sys.exit(1)
@@ -842,7 +842,7 @@ if "sites" in  globalconfig["apache"]:
         print "%r\n" % (one)
 if "daemon" in globalconfig["apache"]:
     print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
-print "maxclients %r" % globalconfig["apache"]["maxclients"]
+print "maxclients %r" % globalconfig["apache"]["config"]["maxclients"]
 
 print "\n"
 
