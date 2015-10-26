@@ -291,17 +291,17 @@ class apacheCtl(object):
                 if "prefork" in stanzas:
                     if "maxclients" in stanzas["prefork"]:
                         #print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
-                        stanzas["maxclients"]=stanzas["prefork"]["maxclients"]
+                        stanzas["maxclients"] = int(stanzas["prefork"]["maxclients"])
             elif mpm == "event":
                 if "event" in stanzas:
                     if "maxclients" in stanzas["event"]:
                         #print "event maxclients %s" % stanzas["event"]["maxclients"]
-                        stanzas["maxclients"]=stanzas["event"]["maxclients"]
+                        stanzas["maxclients"] = int(stanzas["event"]["maxclients"])
             elif mpm == "worker":
                 if "worker" in stanzas:
                     if "maxclients" in stanzas["worker"]:
                         #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
-                        stanzas["maxclients"]=stanzas["worker"]["maxclients"]
+                        stanzas["maxclients"] = int(stanzas["worker"]["maxclients"])
             else:
                 print "Could not identify mpm in use."
                 sys.exit(1)
@@ -517,7 +517,7 @@ class nginxCtl(object):
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
-            stanzas["maxclients"] = stanzas["worker_processes"]
+            stanzas["maxclients"] = int(stanzas["worker_processes"])
     
         return stanzas
 
@@ -596,7 +596,7 @@ class phpfpmCtl(object):
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
             if stanzas[one]["pm.max_children"]:
-                stanzas["maxclients"] += stanzas[one]["pm.max_children"]
+                stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
 
 def daemon_exe(match_exe):
@@ -949,7 +949,7 @@ if "sites" in  globalconfig["nginx"]:
     #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
     
     proc_name = globalconfig["nginx"]["basename"]
-    proc_max = globalconfig["nginx"]["maxclients"]
+    proc_max = int(globalconfig["nginx"]["maxclients"])
     result = memory_estimate(proc_name)
     if result:
         memory_print(result, proc_name, proc_max)
@@ -988,21 +988,7 @@ if "sites" in  globalconfig["apache"]:
     result = memory_estimate(proc_name)
     print "result %r" % result
     if result:
-        proc_mem = result
-        proc_avg = proc_mem["line_sum"]/proc_mem["line_count"]
-        proc_a = (proc_mem["line_sum"] / proc_mem["line_count"])
-        #proc_avg_total = int( proc_a * proc_max)
-        print "a %d" % (proc_a,)
-        print "max %d" % (proc_max,)
-        proc_avg_total = proc_a * proc_max
-        proc_max_total = proc_mem["biggest"]*proc_max
-        proc_eighty = int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8 )
-        #memory_print(result, proc_name, proc_max)
-        print "%d %s processes are currently using %d KB of memory." % (proc_mem["line_count"], proc_name, proc_mem["line_sum"])
-        print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (
-            proc_avg, proc_avg_total, proc_max)
-        print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (proc_mem["biggest"], proc_max_total)
-        print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % proc_eighty
+        memory_print(result, proc_name, proc_max)
 
 
 #globalconfig["nginx"]["maxclients"]
@@ -1017,7 +1003,7 @@ if "php-fpm" in globalconfig:
         print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
     proc_name = globalconfig["php-fpm"]["basename"]
-    proc_max = globalconfig["php-fpm"]["maxclients"]
+    proc_max = int(globalconfig["php-fpm"]["maxclients"])
     result = memory_estimate(proc_name)
     if result:
         memory_print(result, proc_name, proc_max)
