@@ -765,8 +765,6 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["free_mem"] = int(result.group(4))
-        else:
-            status["free_mem"] = 0
 
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
@@ -783,10 +781,10 @@ def memory_estimate(process_name, **kwargs):
                 status["biggest"] = int(result.group(6))
     return(status)
 
-def memory_print(proc_mem, proc_name, proc_max):
-    print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (proc_mem["line_count"], proc_name, proc_mem["line_sum"], proc_mem["free"])
-    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (proc_mem["line_sum"]/proc_mem["line_count"], int(proc_mem["line_sum"] / proc_mem["line_count"] * proc_max), proc_max)
-    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (proc_mem["biggest"], proc_mem["biggest"]*proc_max)
+def memory_print(result, proc_name, proc_max):
+    print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (result["line_count"], proc_name, result["line_sum"], result["free_mem"])
+    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (result["line_sum"]/result["line_count"], int(proc_mem["line_sum"] / proc_mem["line_count"] * proc_max), proc_max)
+    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
     #print "Based on the largest process, use this as a health check: %d" % (int(
     #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
     #    ))
