@@ -889,8 +889,8 @@ else:
             if not "daemon" in globalconfig["nginx"]:
                 globalconfig["nginx"]["daemon"] = daemon_config
             globalconfig["nginx"]["basename"] = "nginx"
-            globalconfig["apache"]["exe"] = daemons["nginx"]["exe"]
-            globalconfig["apache"]["cmd"] = daemons["nginx"]["cmd"]
+            globalconfig["nginx"]["exe"] = daemons["nginx"]["exe"]
+            globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
 
 ################################################
 # PHP-FPM
@@ -910,9 +910,9 @@ else:
         wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
         phpfpm_config = phpfpm.parse_config(wholeconfig)
         globalconfig["php-fpm"] = phpfpm_config
-        globalconfig["php-fpm"]["basename"]="php-fpm"
-        globalconfig["apache"]["exe"] = daemons["php-fpm"]["exe"]
-        globalconfig["apache"]["cmd"] = daemons["php-fpm"]["cmd"]
+        globalconfig["php-fpm"]["basename"] = "php-fpm"
+        globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
+        globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
 
 
 
