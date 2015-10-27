@@ -599,6 +599,7 @@ class phpfpmCtl(object):
         return(stanzas)
 
 class MagentoCtl(object):
+    
     def version(self, mage_php_file):
         mage = {}
         file_handle = open(mage_php_file, 'r')
@@ -620,6 +621,9 @@ class MagentoCtl(object):
         # join them with periods, unless they are empty, then omit them
         mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
         return(mage)
+    
+    def localxml(self, local_xml_file):
+        pass
 
 def daemon_exe(match_exe):
     """
