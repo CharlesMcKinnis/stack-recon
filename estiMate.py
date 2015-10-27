@@ -26,7 +26,7 @@ class ansi:
     CLR = '\033[2J'
     HOME = '\033[H'
 
-def estiMate(count, process_name, **kwargs):
+def estiMate(process_name, **kwargs):
     """
     line_count 16
     biggest 17036
@@ -71,7 +71,7 @@ def estiMate(count, process_name, **kwargs):
 
 proc_max = 10
 proc_name = "sh"
-result = estiMate(proc_max, proc_name, display=True)
+result = estiMate(proc_name, display=True)
 #for i in result:
 #    print i, result[i]
 
