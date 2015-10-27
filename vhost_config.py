@@ -792,7 +792,7 @@ def memory_print(result, proc_name, proc_max):
     print "What should I set max clients to?"
     print "The safe value would be to use the largest process, and an commit 80%% of memory: %d" % (
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8), )
-    print "If you use the average size, and commit 100% of memory: %d or 80%: %d" % (
+    print "If you use the average size, and commit 100%% of memory: %d or 80%%: %d" % (
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )),
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8),
     )
