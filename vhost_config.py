@@ -8,11 +8,6 @@ import subprocess
 import sys
 import os
 
-globalconfig = {
-    "apache" : {},
-    "nginx" : {}
-}
-
 class apacheCtl(object):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
@@ -812,6 +807,8 @@ for one in daemons:
     print "%s: %r\n" % (one,daemons[one])
 """
 
+globalconfig = {}
+
 ################################################
 # APACHE
 ################################################
@@ -851,7 +848,9 @@ if apache_exe:
         print "Using config %s" % apache_root_path+apache_conf_file
         wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
         apache_config = apache.parse_config(wholeconfig)
-    
+
+        if not "apache" in globalconfig:
+            globalconfig["apache"] = {}
         globalconfig["apache"] = apache_config
         daemon_config = apache.get_conf_parameters()
         if daemon_config:
@@ -881,6 +880,8 @@ else:
         wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
         nginx_config = nginx.parse_config(wholeconfig)
         
+        if not "nginx" in globalconfig:
+            globalconfig["nginx"] = {}
         globalconfig["nginx"] = nginx_config
         daemon_config = nginx.get_conf_parameters()
         if daemon_config:
@@ -910,6 +911,9 @@ else:
         #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
         wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
         phpfpm_config = phpfpm.parse_config(wholeconfig)
+        
+        if not "php-fpm" in globalconfig:
+            globalconfig["php-fpm"] = {}
         globalconfig["php-fpm"] = phpfpm_config
         globalconfig["php-fpm"]["basename"] = "php-fpm"
         globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
