@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 """
+wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/vhost_config.py
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 """
 import re
@@ -943,80 +944,82 @@ else:
 ################################################
 
 # maxclients or number of processes is "worker_processes"
-if "sites" in  globalconfig["nginx"]:
-    print "nginx sites:"
-    """
-    "sites" : [
-        blah :{
-            'domains': [
-                'example.com', 'www.example.com new.example.com'
-                ],
-            'config_file': '/etc/httpd/conf/httpd.conf',
-            'doc_root': '/var/www/html',
-            'listening': [
-                '*:80'
-                ]
-        }
-    ]
-    """
-    for one in sorted(globalconfig["nginx"]["sites"]):
-        if "domains" in one:
-            print "Domains: %s" % " ".join(one["domains"])
-        if "listening" in one:
-            print "Listening on: %s" % " ".join(one["listening"])
-        if "doc_root" in one:
-            print "Doc root: %s" % one["doc_root"]
-        if "config_file" in one:
-            print "Config file: %s" % one["config_file"]
-        print # an empty line between sections
-        print "%r\n" % (one)
-    #if "daemon" in globalconfig["nginx"]:
-    #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
-    
-    if "basename" in globalconfig["nginx"] and "maxclients" in globalconfig["nginx"]:
-        proc_name = globalconfig["nginx"]["basename"]
-        proc_max = int(globalconfig["nginx"]["maxclients"])
-        result = memory_estimate(proc_name)
-        if result:
-            memory_print(result, proc_name, proc_max)
-    print "\n"
+if nginx in globalconfig:
+    if "sites" in  globalconfig["nginx"]:
+        print "nginx sites:"
+        """
+        "sites" : [
+            blah :{
+                'domains': [
+                    'example.com', 'www.example.com new.example.com'
+                    ],
+                'config_file': '/etc/httpd/conf/httpd.conf',
+                'doc_root': '/var/www/html',
+                'listening': [
+                    '*:80'
+                    ]
+            }
+        ]
+        """
+        for one in sorted(globalconfig["nginx"]["sites"]):
+            if "domains" in one:
+                print "Domains: %s" % " ".join(one["domains"])
+            if "listening" in one:
+                print "Listening on: %s" % " ".join(one["listening"])
+            if "doc_root" in one:
+                print "Doc root: %s" % one["doc_root"]
+            if "config_file" in one:
+                print "Config file: %s" % one["config_file"]
+            print # an empty line between sections
+            print "%r\n" % (one)
+        #if "daemon" in globalconfig["nginx"]:
+        #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
+        
+        if "basename" in globalconfig["nginx"] and "maxclients" in globalconfig["nginx"]:
+            proc_name = globalconfig["nginx"]["basename"]
+            proc_max = int(globalconfig["nginx"]["maxclients"])
+            result = memory_estimate(proc_name)
+            if result:
+                memory_print(result, proc_name, proc_max)
+        print "\n"
 
 #globalconfig["nginx"]["maxclients"]
 
 # I need to fetch the MPM and then put the maxclients, etc in the array
 # The default is to have a prefetch and worker ifs, but there can be a global too
-if "sites" in  globalconfig["apache"]:
-    print "Apache sites:"
-    """
-    {'domains':
-    ['example.com', 'www.example.com new.example.com'],
-    'config_file': '/etc/httpd/conf/httpd.conf',
-    'doc_root': '/var/www/html',
-    'listening': ['*:80']}
-    """
-    for one in sorted(globalconfig["apache"]["sites"]):
-        out_string = "Domains:"
-        if "domains" in one:
-            print "Domains: %s" % " ".join(one["domains"])
-        if "listening" in one:
-            print "Listening on: %s" % " ".join(one["listening"])
-        if "doc_root" in one:
-            print "Doc root: %s" % one["doc_root"]
-        if "config_file" in one:
-            print "Config file: %s" % one["config_file"]
-        print # an empty line between sections
-    #if "daemon" in globalconfig["apache"]:
-    #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
-    #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
-    
-    if "basename" in globalconfig["apache"] and "maxclients" in globalconfig["apache"]:
-        proc_name = globalconfig["apache"]["basename"]
-        proc_max = globalconfig["apache"]["maxclients"]
-        result = memory_estimate(proc_name)
-        #print "result %r" % result
-        if result:
-            memory_print(result, proc_name, proc_max)
-    print "\n"
+if "apache" in  globalconfig:
+    if "sites" in  globalconfig["apache"]:
+        print "Apache sites:"
+        """
+        {'domains':
+        ['example.com', 'www.example.com new.example.com'],
+        'config_file': '/etc/httpd/conf/httpd.conf',
+        'doc_root': '/var/www/html',
+        'listening': ['*:80']}
+        """
+        for one in sorted(globalconfig["apache"]["sites"]):
+            out_string = "Domains:"
+            if "domains" in one:
+                print "Domains: %s" % " ".join(one["domains"])
+            if "listening" in one:
+                print "Listening on: %s" % " ".join(one["listening"])
+            if "doc_root" in one:
+                print "Doc root: %s" % one["doc_root"]
+            if "config_file" in one:
+                print "Config file: %s" % one["config_file"]
+            print # an empty line between sections
+        #if "daemon" in globalconfig["apache"]:
+        #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
+        #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
+        
+        if "basename" in globalconfig["apache"] and "maxclients" in globalconfig["apache"]:
+            proc_name = globalconfig["apache"]["basename"]
+            proc_max = globalconfig["apache"]["maxclients"]
+            result = memory_estimate(proc_name)
+            #print "result %r" % result
+            if result:
+                memory_print(result, proc_name, proc_max)
+        print "\n"
 
 
 #globalconfig["nginx"]["maxclients"]
