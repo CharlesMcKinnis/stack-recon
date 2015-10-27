@@ -944,7 +944,7 @@ else:
 ################################################
 
 # maxclients or number of processes is "worker_processes"
-if nginx in globalconfig:
+if "nginx" in globalconfig:
     if "sites" in  globalconfig["nginx"]:
         print "nginx sites:"
         """
