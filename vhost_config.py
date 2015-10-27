@@ -790,12 +790,14 @@ def memory_print(result, proc_name, proc_max):
     #print "Positive numbers may mean you can have more clients. Negative numbers mean you are overcommited."
     #print "See below for numbers advice.\n"
     print "What should I set max clients to?"
-    print "Based on the average process size vs the largest process, and a memory commit of 100% or 80%:"
-    print " 100% avg proc 80%       100% largest 80%"
-    print "danger      warning    cautious      safe"
-    print "  %3d         %3d         %3d         %3d" % (
+    print "The safe value would be to use the largest process, and an commit 80% of memory: %d" % (
+        int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8) )
+    print "If you use the average size, and commit 100% of memory: %d or 80%: %d" % (
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )),
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8),
+    )
+    print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
+    print "     %3d                %3d                %3d              %3d" % (
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"]),
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
     )
@@ -803,6 +805,7 @@ def memory_print(result, proc_name, proc_max):
     #     int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )*.8)
     #     )
     # print "How many max clients you can handle based on largest process and 100%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
+    print
     print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
 """
