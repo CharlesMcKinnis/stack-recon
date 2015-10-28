@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/vhost_config.py
+wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 """
 import re
@@ -514,8 +514,8 @@ class nginxCtl(object):
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
-            print "stanza worker_process: %r" % stanzas["worker_processes"]
-            stanzas["maxclients"] = int(stanzas["worker_processes"])
+            #print "stanza worker_process: %r" % stanzas["worker_processes"]
+            stanzas["maxclients"] = int(stanzas["worker_processes"][0])
     
         return stanzas
 
