@@ -1000,7 +1000,7 @@ if "nginx" in globalconfig:
                 print "Domains: %s" % " ".join(one["domains"])
             if "listening" in one:
                 print "listening: %r" % one["listening"]
-                print "Listening on: %s" % " ".join(one["listening"])
+                #print "Listening on: %s" % " ".join(one["listening"])
             if "doc_root" in one:
                 print "Doc root: %s" % one["doc_root"]
             if "config_file" in one:
@@ -1010,6 +1010,7 @@ if "nginx" in globalconfig:
         #if "daemon" in globalconfig["nginx"]:
         #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
         
+        # memory profile
         if "basename" in globalconfig["nginx"] and "maxclients" in globalconfig["nginx"]:
             proc_name = globalconfig["nginx"]["basename"]
             proc_max = int(globalconfig["nginx"]["maxclients"])
@@ -1025,6 +1026,7 @@ if "nginx" in globalconfig:
 if "apache" in  globalconfig:
     if "sites" in  globalconfig["apache"]:
         print "Apache sites:"
+        print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
         """
         {'domains':
         ['example.com', 'www.example.com new.example.com'],
@@ -1047,6 +1049,7 @@ if "apache" in  globalconfig:
         #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
         #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
         
+        # memory profile
         if "basename" in globalconfig["apache"] and "maxclients" in globalconfig["apache"]:
             proc_name = globalconfig["apache"]["basename"]
             proc_max = globalconfig["apache"]["maxclients"]
@@ -1072,6 +1075,7 @@ if "php-fpm" in globalconfig:
     #    print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
     print
+    # memory profile
     print "php-fpm memory profile:"
     if "basename" in globalconfig["php-fpm"] and "maxclients" in globalconfig["php-fpm"]:
         proc_name = globalconfig["php-fpm"]["basename"]
