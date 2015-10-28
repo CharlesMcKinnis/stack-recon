@@ -1046,9 +1046,9 @@ if "nginx" in globalconfig:
         
         for one in sorted(globalconfig["nginx"]["sites"]):
             if "domains" in one:
-                print "Domains: %s" % " ".join(one["domains"])
+                print "Domains: %s" % "  ".join(one["domains"])
             if "listening" in one:
-                print "listening: %r" % " ".join(one["listening"])
+                print "listening: %r" % ", ".join(one["listening"])
                 #print "Listening on: %s" % " ".join(one["listening"])
             if "doc_root" in one:
                 print "Doc root: %s" % one["doc_root"]
@@ -1087,9 +1087,9 @@ if "apache" in  globalconfig:
         for one in sorted(globalconfig["apache"]["sites"]):
             out_string = "Domains:"
             if "domains" in one:
-                print "Domains: %s" % " ".join(one["domains"])
+                print "Domains: %s" % "  ".join(one["domains"])
             if "listening" in one:
-                print "Listening on: %s" % " ".join(one["listening"])
+                print "Listening on: %s" % ", ".join(one["listening"])
             if "doc_root" in one:
                 print "Doc root: %s" % one["doc_root"]
             if "config_file" in one:
