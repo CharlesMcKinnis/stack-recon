@@ -762,13 +762,13 @@ def kwsearch(keywords,line, **kwargs):
             if not "single_value" in kwargs:
                 if not result.group(1).lower() in stanza:
                     stanza[result.group(1).lower()] = []
-                if not result.group(2).strip('"') in stanza[result.group(1).lower()]:
+                if not result.group(2).strip('\'"') in stanza[result.group(1).lower()]:
                     if not "split_list" in kwargs:
-                        stanza[result.group(1).lower()] += [result.group(2).strip(';"')]
+                        stanza[result.group(1).lower()] += [result.group(2).strip(';"\'')]
                     else:
-                        stanza[result.group(1).lower()] += [result.group(2).strip(';"').split()]
+                        stanza[result.group(1).lower()] += [result.group(2).strip(';"\'').split()]
             else:
-                stanza[result.group(1)] = result.group(2).strip('"')
+                stanza[result.group(1)] = result.group(2).strip('"\'')
     return(stanza) #once we have a match, move on
 
 def memory_estimate(process_name, **kwargs):
