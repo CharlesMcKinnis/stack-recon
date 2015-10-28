@@ -427,8 +427,9 @@ class nginxCtl(object):
             # filechain[-1] for the most recent element
             # this doesn't do well if you open and close a stanza on the same line
             if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
-                print "This script does not consistently support opening { and closing } stanzas on the same line."
-                print "line %d %s" % (linenum,line.strip())
+                if not error in stanzas:
+                    stanzas["error"] = "This script does not consistently support opening { and closing } stanzas on the same line."
+                stanzas["error"] += "line %d %s" % (linenum,line.strip())
             stanza_count+=len(re.findall('{',line))
             stanza_count-=len(re.findall('}',line))
             result = re.match("(\S+)\s*{",linecomp)
@@ -854,6 +855,9 @@ for one in daemons:
 
 globalconfig = {}
 
+# using this as a bookmark in the IDE
+def APACHE_FPM_DATA_GATHER():
+    pass
 ################################################
 # APACHE
 ################################################
@@ -928,6 +932,9 @@ if apache_exe:
             globalconfig["apache"]["exe"] = daemons[apache_basename]["exe"]
             globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
 
+# using this as a bookmark in the IDE
+def NGINX_FPM_DATA_GATHER():
+    pass
 ################################################
 # NGINX
 ################################################
@@ -970,6 +977,9 @@ else:
             globalconfig["nginx"]["exe"] = daemons["nginx"]["exe"]
             globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
 
+# using this as a bookmark in the IDE
+def PHP_FPM_DATA_GATHER():
+    pass
 ################################################
 # PHP-FPM
 ################################################
@@ -998,8 +1008,9 @@ else:
         globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
         globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
 
-
-
+# using this as a bookmark in the IDE
+def OUTPUT():
+    pass
 """
   ___  _   _ _____ ____  _   _ _____ 
  / _ \| | | |_   _|  _ \| | | |_   _|
@@ -1030,6 +1041,9 @@ if "nginx" in globalconfig:
             }
         ]
         """
+        if globalconfig["nginx"]["error"]:
+            print "Erorrs: \n%s" % globalconfig["nginx"]["error"]
+        
         for one in sorted(globalconfig["nginx"]["sites"]):
             if "domains" in one:
                 print "Domains: %s" % " ".join(one["domains"])
