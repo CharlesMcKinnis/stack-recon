@@ -999,6 +999,7 @@ if "nginx" in globalconfig:
             if "domains" in one:
                 print "Domains: %s" % " ".join(one["domains"])
             if "listening" in one:
+                print "listening: %r" % one["listening"]
                 print "Listening on: %s" % " ".join(one["listening"])
             if "doc_root" in one:
                 print "Doc root: %s" % one["doc_root"]
