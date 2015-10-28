@@ -897,6 +897,29 @@ if apache_exe:
         if not "apache" in globalconfig:
             globalconfig["apache"] = {}
         globalconfig["apache"] = apache_config
+        """
+        globalconfig[apache][sites]: [
+            {
+            'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+            'config_file': '/etc/httpd/conf.d/ssl.conf',
+            'doc_root': '/var/www/html',
+            'listening': ['192.168.100.248:443']
+            }, {
+            'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+            'config_file': '/etc/httpd/conf/httpd.conf',
+            'doc_root': '/var/www/html',
+            'listening': ['*:80']
+            }, {
+            'config_file': '/etc/httpd/conf.d/ssl.conf',
+            'listening': ['_default_:443']
+            }, {
+            'config_file': '/etc/httpd/conf/httpd.conf',
+            'listening': ['_default_:80']
+            }, {
+            'doc_root': '/var/www/html'
+            }]
+        """
+        
         daemon_config = apache.get_conf_parameters()
         if daemon_config:
             if not "daemon" in globalconfig["apache"]:
@@ -928,6 +951,17 @@ else:
         if not "nginx" in globalconfig:
             globalconfig["nginx"] = {}
         globalconfig["nginx"] = nginx_config
+        """
+        {
+        'domains': ['www.domain.com'],
+        'config_file': '/etc/nginx/conf.d/production.domain.com.conf',
+        'doc_root': '/var/www/vhosts/production.domain.com/webroot',
+        'listening': ['443 default ssl']
+        }
+
+        """
+        
+        
         daemon_config = nginx.get_conf_parameters()
         if daemon_config:
             if not "daemon" in globalconfig["nginx"]:
@@ -982,6 +1016,7 @@ if "nginx" in globalconfig:
     if "sites" in  globalconfig["nginx"]:
         print "nginx sites:"
         """
+        
         "sites" : [
             blah :{
                 'domains': [
@@ -999,14 +1034,14 @@ if "nginx" in globalconfig:
             if "domains" in one:
                 print "Domains: %s" % " ".join(one["domains"])
             if "listening" in one:
-                print "listening: %r" % one["listening"]
+                print "listening: %r" % " ".join(one["listening"])
                 #print "Listening on: %s" % " ".join(one["listening"])
             if "doc_root" in one:
                 print "Doc root: %s" % one["doc_root"]
             if "config_file" in one:
                 print "Config file: %s" % one["config_file"]
             print # an empty line between sections
-            print "%r\n" % (one)
+            #print "%r\n" % (one)
         #if "daemon" in globalconfig["nginx"]:
         #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
         
@@ -1026,8 +1061,9 @@ if "nginx" in globalconfig:
 if "apache" in  globalconfig:
     if "sites" in  globalconfig["apache"]:
         print "Apache sites:"
-        print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
+        #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
         """
+        28 Oct 2015
         {'domains':
         ['example.com', 'www.example.com new.example.com'],
         'config_file': '/etc/httpd/conf/httpd.conf',
