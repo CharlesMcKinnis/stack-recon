@@ -428,6 +428,7 @@ class nginxCtl(object):
             # this doesn't do well if you open and close a stanza on the same line
             if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
                 print "This script does not consistently support opening { and closing } stanzas on the same line."
+                print "line %d %s" % (linenum,line.strip())
             stanza_count+=len(re.findall('{',line))
             stanza_count-=len(re.findall('}',line))
             result = re.match("(\S+)\s*{",linecomp)
@@ -513,6 +514,7 @@ class nginxCtl(object):
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
+            print "stanza worker_process: %r" % stanzas["worker_processes"]
             stanzas["maxclients"] = int(stanzas["worker_processes"])
     
         return stanzas
