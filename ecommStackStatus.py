@@ -427,7 +427,7 @@ class nginxCtl(object):
             # filechain[-1] for the most recent element
             # this doesn't do well if you open and close a stanza on the same line
             if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
-                if not error in stanzas:
+                if not "error" in stanzas:
                     stanzas["error"] = "This script does not consistently support opening { and closing } stanzas on the same line."
                 stanzas["error"] += "line %d %s" % (linenum,line.strip())
             stanza_count+=len(re.findall('{',line))
