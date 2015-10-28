@@ -507,7 +507,7 @@ class nginxCtl(object):
                     configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
                 if "listen" in stanzas[i]:
                     if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
-                    configuration["sites"][-1]["listening"] += [stanzas[i]["listen"]]
+                    configuration["sites"][-1]["listening"] += stanzas[i]["listen"]
                 if "root" in stanzas[i]:
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
                 if "config_file" in stanzas[i]:
