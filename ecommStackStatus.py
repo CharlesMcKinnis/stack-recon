@@ -1166,9 +1166,9 @@ for one in sorted(globalconfig["apache"]["sites"]):
         if len(mage_php_matches) > 1:
             print "There are multiple Mage.php files in the Document Root. Using the one with the smallest path."
         print "length %d" % len(mage_php_matches)
-        print "path %s" % mage_php_matches[0]
-        print "dir %s" % os.path.dirname(mage_php_matches[0])
-        print "split %s" % os.path.split(os.path.dirname(mage_php_matches[0]))
+        print "path %s" % (mage_php_matches[0])
+        print "dir %s" % (os.path.dirname(mage_php_matches[0]))
+        print "split %s" % (os.path.split(os.path.dirname(mage_php_matches[0])))
 
 # os.path.dirname(path)
 """
