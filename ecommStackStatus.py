@@ -8,6 +8,7 @@ import glob
 import subprocess
 import sys
 import os
+import yaml
 
 class apacheCtl(object):
     def __init__(self,**kwargs):
@@ -829,6 +830,7 @@ def memory_print(result, proc_name, proc_max):
     #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8)
     #    )
     print
+    print "Current maximum clients: %d" % proc_max
     print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
     print "     %3d                %3d                %3d              %3d" % (
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )),
@@ -1073,8 +1075,6 @@ if "nginx" in globalconfig:
 
 #globalconfig["nginx"]["maxclients"]
 
-# I need to fetch the MPM and then put the maxclients, etc in the array
-# The default is to have a prefetch and worker ifs, but there can be a global too
 if "apache" in  globalconfig:
     if "sites" in  globalconfig["apache"]:
         print "Apache sites:"
@@ -1146,4 +1146,16 @@ if "php-fpm" in globalconfig:
     'config_file': '/etc/httpd/conf/httpd.conf',
     'doc_root': '/var/www/html',
     'listening': ['*:80']}
+"""
+
+# Save the config as a yaml file
+if not os.path.isfile('config.yaml'):
+    with open('config.yaml','w') as outfile:
+        outfile.write( yaml.dump(globalconfig, default_flow_style=False) )
+    outfile.close()
+    """
+else:
+    with open('config.yaml','r') as infile:
+        globalconfig = yaml.load ( infile.read() )
+    infile.close()
 """
