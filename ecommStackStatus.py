@@ -8,7 +8,7 @@ import glob
 import subprocess
 import sys
 import os
-import yaml
+#import yaml
 import fnmatch
 
 class apacheCtl(object):
@@ -1199,13 +1199,14 @@ magento = MagentoCtl()
 mage = magento.version("Mage.php")
 print "Magento %s %s" % (mage["version"],mage["edition"])
 """
-
+"""
 # Save the config as a yaml file
 if not os.path.isfile('config.yaml'):
     with open('config.yaml','w') as outfile:
         outfile.write( yaml.dump(globalconfig, default_flow_style=False) )
     outfile.close()
-    """
+"""
+"""
 else:
     with open('config.yaml','r') as infile:
         globalconfig = yaml.load ( infile.read() )
