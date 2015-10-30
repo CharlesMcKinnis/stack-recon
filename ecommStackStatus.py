@@ -1151,32 +1151,39 @@ if "php-fpm" in globalconfig:
 
 def TODO():
     pass
-doc_roots = []
+if not "doc_roots" in globalconfig:
+    globalconfig["doc_roots"] = set()
+globalconfig["doc_roots"].add(globalconfig.get("apache",{}).get("sites",[]))
+globalconfig["doc_roots"].add(globalconfig.get("nginx",{}).get("sites",[]))
+print "doc_roots %r" % globalconfig["doc_roots"]
+"""
+no longer needed
 for one in [globalconfig["apache"]["sites"],globalconfig["nginx"]["sites"]]:
     if "doc_root" in one:
         # it is common for domains to share a docroot. Lets consolidate those in to a uniq list.
         if not one["doc_root"] in doc_roots:
             doc_roots.append(one["doc_root"])
         pass
+"""
 
 for search_path in doc_roots:
-        #print "Doc root: %s" % one["doc_root"]
-        # with nginx and apache, we have docroot for web paths
-        # we need to search those for Mage.php and local.xml
-        #magento = MagentoCtl()
-        
-        #search_path = one # docroot
-        mage_php_matches = []
-        for root, dirnames, filenames in os.walk(search_path):
-            for filename in fnmatch.filter(filenames, 'Mage.php'):
-                mage_php_matches.append(os.path.join(root, filename))
-        if len(mage_php_matches) > 1:
-            print "There are multiple Mage.php files in the Document Root. Using the one with the smallest path."
-        print "length %d" % len(mage_php_matches)
-        print "path %s" % (mage_php_matches[0])
-        print "dir %s" % (os.path.dirname(mage_php_matches[0]))
-        head,tail = os.path.split(os.path.dirname(mage_php_matches[0]))
-        print "split %s" % head
+    #print "Doc root: %s" % one["doc_root"]
+    # with nginx and apache, we have docroot for web paths
+    # we need to search those for Mage.php and local.xml
+    #magento = MagentoCtl()
+    
+    #search_path = one # docroot
+    mage_php_matches = []
+    for root, dirnames, filenames in os.walk(search_path):
+        for filename in fnmatch.filter(filenames, 'Mage.php'):
+            mage_php_matches.append(os.path.join(root, filename))
+    if len(mage_php_matches) > 1:
+        print "There are multiple Mage.php files in the Document Root. Using the one with the smallest path."
+    print "length %d" % len(mage_php_matches)
+    print "path %s" % (mage_php_matches[0])
+    print "dir %s" % (os.path.dirname(mage_php_matches[0]))
+    head,tail = os.path.split(os.path.dirname(mage_php_matches[0]))
+    print "split %s" % head
 
 # os.path.dirname(path)
 """
