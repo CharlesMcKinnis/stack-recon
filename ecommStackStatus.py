@@ -1250,7 +1250,7 @@ print "%r" % globalconfig["magento"]["doc_root"]
 
 print "mage_php_matches:"
 for key, value in globalconfig["magento"]["doc_root"]:
-    print "doc_root: %s %s" % (key,value["magento_version"]
+    print "doc_root: %s %s" % (key,value["magento_version"])
 
 
 """
