@@ -665,6 +665,7 @@ class MagentoCtl(object):
     def mage_file_info(self,mage_files):
         return_dict = {}
         #magento = MagentoCtl()
+        print "668 %r" % mage_files
         for doc_root_path, mage_php_match in mage_files.iteritems():
             mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
