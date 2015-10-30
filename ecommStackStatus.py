@@ -1205,7 +1205,7 @@ if "sites" in globalconfig.get("nginx",{}):
             globalconfig["doc_roots"].add(one["doc_root"])
 """
 globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig.get("apache",{}).get("sites") if one.get('doc_root', None))
-globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig.get("nginx",{}).get("sites") if one.get('doc_root', None))
+#globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig.get("nginx",{}).get("sites") if one.get('doc_root', None))
 
 print "doc_roots %r" % globalconfig["doc_roots"]
 
