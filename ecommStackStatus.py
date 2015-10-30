@@ -900,7 +900,15 @@ for one in daemons:
 """
 
 globalconfig = {}
-
+"""
+ ____    _  _____  _       ____    _  _____ _   _ _____ ____  
+|  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
+| | | |/ _ \ | | / _ \   | |  _  / _ \ | | | |_| |  _| | |_) |
+| |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ < 
+|____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\                                                           
+"""
+class DATA_GATHER():
+    pass
 # using this as a bookmark in the IDE
 def APACHE_FPM_DATA_GATHER():
     pass
@@ -1062,6 +1070,17 @@ def MAGENTO_DATA_GATHER():
 if not "magento" in globalconfig:
     globalconfig["magento"] = {}
 
+if not "doc_roots" in globalconfig:
+    globalconfig["doc_roots"] = set()
+if "sites" in globalconfig.get("apache",{}):
+    for one in globalconfig["apache"]["sites"]:
+        if "doc_root" in one:
+            globalconfig["doc_roots"].add(one["doc_root"])
+if "sites" in globalconfig.get("nginx",{}):
+    for one in globalconfig["nginx"]["sites"]:
+        if "doc_root" in one:
+            globalconfig["doc_roots"].add(one["doc_root"])
+
 magento = MagentoCtl()
 
 mage_files = magento.find_mage_php(globalconfig["doc_roots"])
@@ -1087,7 +1106,7 @@ globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 
 
 # using this as a bookmark in the IDE
-def OUTPUT():
+class OUTPUT():
     pass
 """
   ___  _   _ _____ ____  _   _ _____ 
@@ -1100,6 +1119,11 @@ def OUTPUT():
 # Output body for checking values below
 ################################################
 
+def NGINX_PRINT():
+    pass
+################################################
+# NGINX
+################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
     if "sites" in  globalconfig["nginx"]:
@@ -1148,6 +1172,11 @@ if "nginx" in globalconfig:
 
 #globalconfig["nginx"]["maxclients"]
 
+def APACHE_PRINT():
+    pass
+################################################
+# APACHE
+################################################
 if "apache" in  globalconfig:
     if "sites" in  globalconfig["apache"]:
         print "Apache sites:"
@@ -1188,7 +1217,11 @@ if "apache" in  globalconfig:
 
 #globalconfig["nginx"]["maxclients"]
 
-
+def PHP_FPM_PRINT():
+    pass
+################################################
+# PHP-FPM
+################################################
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
@@ -1213,6 +1246,14 @@ if "php-fpm" in globalconfig:
 
 #globalconfig["nginx"]["maxclients"]
 
+def MAGENTO_PRINT():
+    pass
+################################################
+# Magento
+################################################
+for key, value in globalconfig["magento"]["doc_root"].iteritems():
+    print "1253 doc_root: %s %s" % (key,value["magento_version"])
+
 """
 {'domains':
     ['example.com', 'www.example.com new.example.com'],
@@ -1221,18 +1262,15 @@ if "php-fpm" in globalconfig:
     'listening': ['*:80']}
 """
 
-def TODO():
+"""
+ _____ ___  ____   ___  
+|_   _/ _ \|  _ \ / _ \ 
+  | || | | | | | | | | |
+  | || |_| | |_| | |_| |
+  |_| \___/|____/ \___/ 
+"""
+class TODO():
     pass
-if not "doc_roots" in globalconfig:
-    globalconfig["doc_roots"] = set()
-if "sites" in globalconfig.get("apache",{}):
-    for one in globalconfig["apache"]["sites"]:
-        if "doc_root" in one:
-            globalconfig["doc_roots"].add(one["doc_root"])
-if "sites" in globalconfig.get("nginx",{}):
-    for one in globalconfig["nginx"]["sites"]:
-        if "doc_root" in one:
-            globalconfig["doc_roots"].add(one["doc_root"])
 """
 # these might be good ideas from Daniel, but the second doesn't work and is complicated. So I went back to simple.
 globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig.get("apache",{}).get("sites") if one.get('doc_root', None))
@@ -1251,8 +1289,6 @@ globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig.get("ng
 #print "1249 %r" % globalconfig["magento"]["doc_root"]
 
 #print "mage_php_matches:"
-for key, value in globalconfig["magento"]["doc_root"].iteritems():
-    print "1253 doc_root: %s %s" % (key,value["magento_version"])
 
 
 """
