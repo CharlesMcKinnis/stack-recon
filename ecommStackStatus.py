@@ -1222,6 +1222,24 @@ magento = MagentoCtl()
 
 mage_files = magento.find_mage_php(globalconfig["doc_roots"])
 globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+"""
+{'/var/www/html':
+    {
+        'Mage.php': '/var/www/html/app/Mage.php',
+        'mage_version':
+        {
+            'major': '1',
+            'number': '',
+            'patch': '0',
+            'stability': '',
+            'edition': 'EDITION_COMMUNITY',
+            'version': '1.9.1.0',
+            'minor': '9',
+            'revision': '1'},
+    'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
+    'magento_path': '/var/www/html'}
+}
+"""
 #globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = mage_php_matches[0]
 #globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = head
 #globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
