@@ -664,9 +664,8 @@ class MagentoCtl(object):
         pass
     def mage_file_info(self,mage_files):
         #magento = MagentoCtl()
-        mage = self.parse_version(mage_php_matches[0])
         for doc_root_path, mage_php_match in mage_files.iteritems():
-            mage = magento.parse_version(mage_php_match)
+            mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
             return_dict[doc_root_path]["magento_path"] = head
