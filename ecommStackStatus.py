@@ -1215,12 +1215,12 @@ print "doc_roots %r" % globalconfig["doc_roots"]
 
 def MAGENTO():
     pass
+if not "magento" in globalconfig:
+    globalconfig["magento"] = {}
+
 magento = MagentoCtl()
 
-#print "Magento %s %s" % (mage["version"],mage["edition"])
-
 mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-# mage_files["doc_root"] = "/file/path/Mage.php"
 globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 #globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = mage_php_matches[0]
 #globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = head
