@@ -9,6 +9,7 @@ import subprocess
 import sys
 import os
 import yaml
+import fnmatch
 
 class apacheCtl(object):
     def __init__(self,**kwargs):
@@ -1146,6 +1147,57 @@ if "php-fpm" in globalconfig:
     'config_file': '/etc/httpd/conf/httpd.conf',
     'doc_root': '/var/www/html',
     'listening': ['*:80']}
+"""
+
+def TODO():
+    pass
+for one in sorted(globalconfig["apache"]["sites"]):
+    if "doc_root" in one:
+        #print "Doc root: %s" % one["doc_root"]
+        # with nginx and apache, we have docroot for web paths
+        # we need to search those for Mage.php and local.xml
+        #magento = MagentoCtl()
+        
+        search_path = one["doc_root"] # docroot
+        mage_php_matches = []
+        for root, dirnames, filenames in os.walk(search_path):
+            for filename in fnmatch.filter(filenames, 'Mage.php'):
+                mage_php_matches.append(os.path.join(root, filename))
+        
+        local_xml_matches = []
+        for root, dirnames, filenames in os.walk(search_path):
+            for filename in fnmatch.filter(filenames, 'local.xml'):
+                local_xml_matches.append(os.path.join(root, filename))
+        
+print "mage_php_matches:"
+for line in mage_php_matches:
+    print line
+print "local_xml_matches:"
+for line in local_xml_matches:
+    print line
+
+"""
+#globalconfig["apache"]["sites"]["doc_root"]
+if not "magento" in globalconfig:
+    globalconfig["magento"] = {}
+if not "doc_root" in globalconfig["magento"]:
+    globalconfig["magento"]["doc_root"] = {}
+    doc_root_path = globalconfig["apache"]["sites"]["doc_root"]
+    globalconfig["magento"]["doc_root"][doc_root_path] = { "Mage.php" : "", "local.xml" : "", "magento_path" : "" }
+#globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = ""
+#globalconfig["magento"]["doc_root"][doc_root_path]["local.xml"] = ""
+#globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = ""
+#globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = ""
+#globalconfig["magento"]["doc_root"][doc_root_path]["session_cache"] = ""
+#globalconfig["magento"]["doc_root"][doc_root_path]["object_cache"] = ""
+#globalconfig["magento"]["doc_root"][doc_root_path]["full_page_cache"] = ""
+"""
+# I will probably use the existance of those two files to assume a Magento install
+# Mage.php provides version information
+"""
+magento = MagentoCtl()
+mage = magento.version("Mage.php")
+print "Magento %s %s" % (mage["version"],mage["edition"])
 """
 
 # Save the config as a yaml file
