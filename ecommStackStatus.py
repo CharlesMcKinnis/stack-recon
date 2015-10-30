@@ -1176,7 +1176,7 @@ for one in [globalconfig["apache"]["sites"],globalconfig["nginx"]["sites"]]:
         pass
 """
 
-for search_path in doc_roots:
+for search_path in globalconfig["doc_roots"]:
     #print "Doc root: %s" % one["doc_root"]
     # with nginx and apache, we have docroot for web paths
     # we need to search those for Mage.php and local.xml
