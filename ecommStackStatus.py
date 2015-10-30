@@ -1168,7 +1168,8 @@ for one in sorted(globalconfig["apache"]["sites"]):
         print "length %d" % len(mage_php_matches)
         print "path %s" % (mage_php_matches[0])
         print "dir %s" % (os.path.dirname(mage_php_matches[0]))
-        print "split %s" % (os.path.split(os.path.dirname(mage_php_matches[0])))
+        head,tail = os.path.split(os.path.dirname(mage_php_matches[0]))
+        print "split %s" % head
 
 # os.path.dirname(path)
 """
