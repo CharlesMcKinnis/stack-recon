@@ -266,13 +266,16 @@ class apacheCtl(object):
                 #    "listening" : [] } )
                 
                 if "servername" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    if not "domains" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["servername"]
                 if "serveralias" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    if not "domains" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["serveralias"]
                 if "virtualhost" in stanzas[i]:
-                    if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                    if not "listening" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["listening"] = []
                     configuration["sites"][-1]["listening"] += [stanzas[i]["virtualhost"]]
                 if "documentroot" in stanzas[i]:
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["documentroot"][0]
