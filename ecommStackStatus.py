@@ -1153,8 +1153,14 @@ def TODO():
     pass
 if not "doc_roots" in globalconfig:
     globalconfig["doc_roots"] = set()
-globalconfig["doc_roots"].add(globalconfig.get("apache",{}).get("sites",[]))
-globalconfig["doc_roots"].add(globalconfig.get("nginx",{}).get("sites",[]))
+if globalconfig.get("apache",{}).get("sites"):
+    globalconfig["doc_roots"].add(globalconfig.get("apache",{}).get("sites"))
+if globalconfig.get("nginx",{}).get("sites"):
+    globalconfig["doc_roots"].add(globalconfig["nginx"]["sites"]["doc_root"])
+
+#globalconfig["doc_roots"].add(globalconfig.get("apache",{}).get("sites")):
+#globalconfig["doc_roots"].add(globalconfig.get("nginx",{}).get("sites",{}))
+#globalconfig["doc_roots"].add(globalconfig.get("nginx",{}).get("sites"))
 print "doc_roots %r" % globalconfig["doc_roots"]
 """
 no longer needed
