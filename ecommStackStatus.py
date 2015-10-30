@@ -649,7 +649,7 @@ class MagentoCtl(object):
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
-                    print "652 %r %r %r" % (root,dirnames,filenames)
+                    #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
                 print "There are multiple Mage.php files in the Document Root. This probably won't scan correctly." #breakme! Using the one with the smallest path."
@@ -662,7 +662,7 @@ class MagentoCtl(object):
     def mage_file_info(self,mage_files):
         return_dict = {}
         #magento = MagentoCtl()
-        print "668 %r" % mage_files
+        #print "668 %r" % mage_files
         for doc_root_path, mage_php_match in mage_files.iteritems():
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
@@ -1054,6 +1054,38 @@ else:
         globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
         globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
 
+def MAGENTO_DATA_GATHER():
+    pass
+################################################
+# Magento
+################################################
+if not "magento" in globalconfig:
+    globalconfig["magento"] = {}
+
+magento = MagentoCtl()
+
+mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+"""
+{'/var/www/html':
+    {
+        'Mage.php': '/var/www/html/app/Mage.php',
+        'mage_version':
+        {
+            'major': '1',
+            'number': '',
+            'patch': '0',
+            'stability': '',
+            'edition': 'EDITION_COMMUNITY',
+            'version': '1.9.1.0',
+            'minor': '9',
+            'revision': '1'},
+    'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
+    'magento_path': '/var/www/html'}
+}
+"""
+
+
 # using this as a bookmark in the IDE
 def OUTPUT():
     pass
@@ -1206,44 +1238,17 @@ if "sites" in globalconfig.get("nginx",{}):
 globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig.get("apache",{}).get("sites") if one.get('doc_root', None))
 globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig.get("nginx",{}).get("sites") if one.get('doc_root', None))
 """
-print "1209 doc_roots %r" % globalconfig["doc_roots"]
+#print "1209 doc_roots %r" % globalconfig["doc_roots"]
 
 #print "split %s" % head
 
-def MAGENTO():
-    pass
-if not "magento" in globalconfig:
-    globalconfig["magento"] = {}
-
-magento = MagentoCtl()
-
-mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
-"""
-{'/var/www/html':
-    {
-        'Mage.php': '/var/www/html/app/Mage.php',
-        'mage_version':
-        {
-            'major': '1',
-            'number': '',
-            'patch': '0',
-            'stability': '',
-            'edition': 'EDITION_COMMUNITY',
-            'version': '1.9.1.0',
-            'minor': '9',
-            'revision': '1'},
-    'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
-    'magento_path': '/var/www/html'}
-}
-"""
 #globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = mage_php_matches[0]
 #globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = head
 #globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
 #globalconfig["magento"]["doc_root"][doc_root_path]["mage_version"] = mage
 
 # os.path.dirname(path)
-print "1249 %r" % globalconfig["magento"]["doc_root"]
+#print "1249 %r" % globalconfig["magento"]["doc_root"]
 
 #print "mage_php_matches:"
 for key, value in globalconfig["magento"]["doc_root"].iteritems():
