@@ -1151,14 +1151,21 @@ if "php-fpm" in globalconfig:
 
 def TODO():
     pass
-for one in sorted(globalconfig["apache"]["sites"]):
+doc_roots = []
+for one in [globalconfig["apache"]["sites"],globalconfig["nginx"]["sites"]]:
     if "doc_root" in one:
+        # it is common for domains to share a docroot. Lets consolidate those in to a uniq list.
+        if not one["doc_root"] in doc_roots:
+            doc_roots.append(one["doc_root"])
+        pass
+
+for search_path in doc_roots:
         #print "Doc root: %s" % one["doc_root"]
         # with nginx and apache, we have docroot for web paths
         # we need to search those for Mage.php and local.xml
         #magento = MagentoCtl()
         
-        search_path = one["doc_root"] # docroot
+        #search_path = one # docroot
         mage_php_matches = []
         for root, dirnames, filenames in os.walk(search_path):
             for filename in fnmatch.filter(filenames, 'Mage.php'):
@@ -1192,10 +1199,11 @@ local_xml_matches:
 print "mage_php_matches:"
 for line in mage_php_matches:
     print line
+"""
 print "local_xml_matches:"
 for line in local_xml_matches:
     print line
-
+"""
 """
 #globalconfig["apache"]["sites"]["doc_root"]
 if not "magento" in globalconfig:
