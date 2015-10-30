@@ -1231,7 +1231,7 @@ globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 print "%r" % globalconfig["magento"]["doc_root"]
 
 print "mage_php_matches:"
-for line in mage_php_matches:
+for line in globalconfig["magento"]["doc_root"]:
     print line
 
 
