@@ -1,5 +1,10 @@
 #!/usr/bin/env python2
 """
+Magento is a trademark of Varien. Neither I nor these scripts aret affiliated with or endorsed by the Magento Project or its trademark owners.
+
+"""
+
+"""
 wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 """
@@ -608,7 +613,7 @@ class phpfpmCtl(object):
 
 class MagentoCtl(object):
     
-    def version(self, mage_php_file):
+    def parse_version(self, mage_php_file):
         mage = {}
         file_handle = open(mage_php_file, 'r')
         for line in file_handle:
@@ -632,6 +637,42 @@ class MagentoCtl(object):
     
     def localxml(self, local_xml_file):
         pass
+    def find_mage_php(self,doc_roots):
+        return_dict = {}
+        for doc_root_path in globalconfig["doc_roots"]:
+            # with nginx and apache, we have docroot for web paths
+            # we need to search those for Mage.php and local.xml
+            #magento = MagentoCtl()
+            
+            #search_path = one # docroot
+            mage_php_matches = []
+            for root, dirnames, filenames in os.walk(doc_root_path):
+                for filename in fnmatch.filter(filenames, 'Mage.php'):
+                    mage_php_matches.append(os.path.join(root, filename))
+                    print "%r %r %r" % (root,dirnames,filenames)
+        
+            if len(mage_php_matches) > 1:
+                print "There are multiple Mage.php files in the Document Root. This probably won't scan correctly." #breakme! Using the one with the smallest path."
+            #print "length %d" % len(mage_php_matches)
+            #print "path %s" % (mage_php_matches[0])
+            #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
+            return_dict[doc_root_path] = mage_php_matches[0]
+        return(return_dict)
+    
+    ##
+    def magento_version(self):
+        pass
+    def mage_file_info(self,mage_files):
+        #magento = MagentoCtl()
+        mage = self.parse_version(mage_php_matches[0])
+        for doc_root_path, mage_php_match in mage_files.iteritems():
+            mage = magento.parse_version(mage_php_match)
+            head,tail = os.path.split(os.path.dirname(mage_php_match))
+            return_dict[doc_root_path]["Mage.php"] = mage_php_match
+            return_dict[doc_root_path]["magento_path"] = head
+            return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
+            return_dict[doc_root_path]["mage_version"] = mage
+        return(return_dict)
 
 def daemon_exe(match_exe):
     """
@@ -1151,6 +1192,7 @@ if "php-fpm" in globalconfig:
 
 def TODO():
     pass
+"""
 if not "doc_roots" in globalconfig:
     globalconfig["doc_roots"] = set()
 if "sites" in globalconfig.get("apache",{}):
@@ -1161,66 +1203,37 @@ if "sites" in globalconfig.get("nginx",{}):
     for one in globalconfig["nginx"]["sites"]:
         if "doc_root" in one:
             globalconfig["doc_roots"].add(one["doc_root"])
+"""
+globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig["apache"]["sites"] if one.get('doc_root', None))
+globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig["nginx"]["sites"] if one.get('doc_root', None))
 
-#globalconfig["doc_roots"].add(globalconfig.get("apache",{}).get("sites")):
-#globalconfig["doc_roots"].add(globalconfig.get("nginx",{}).get("sites",{}))
-#globalconfig["doc_roots"].add(globalconfig.get("nginx",{}).get("sites"))
 print "doc_roots %r" % globalconfig["doc_roots"]
-"""
-no longer needed
-for one in [globalconfig["apache"]["sites"],globalconfig["nginx"]["sites"]]:
-    if "doc_root" in one:
-        # it is common for domains to share a docroot. Lets consolidate those in to a uniq list.
-        if not one["doc_root"] in doc_roots:
-            doc_roots.append(one["doc_root"])
-        pass
-"""
 
-for search_path in globalconfig["doc_roots"]:
-    #print "Doc root: %s" % one["doc_root"]
-    # with nginx and apache, we have docroot for web paths
-    # we need to search those for Mage.php and local.xml
-    #magento = MagentoCtl()
-    
-    #search_path = one # docroot
-    mage_php_matches = []
-    for root, dirnames, filenames in os.walk(search_path):
-        for filename in fnmatch.filter(filenames, 'Mage.php'):
-            mage_php_matches.append(os.path.join(root, filename))
-    if len(mage_php_matches) > 1:
-        print "There are multiple Mage.php files in the Document Root. Using the one with the smallest path."
-    print "length %d" % len(mage_php_matches)
-    print "path %s" % (mage_php_matches[0])
-    print "dir %s" % (os.path.dirname(mage_php_matches[0]))
-    head,tail = os.path.split(os.path.dirname(mage_php_matches[0]))
-    print "split %s" % head
+
+print "split %s" % head
+
+def MAGENTO():
+    pass
+magento = MagentoCtl()
+
+#print "Magento %s %s" % (mage["version"],mage["edition"])
+
+mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+# mage_files["doc_root"] = "/file/path/Mage.php"
+globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+#globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = mage_php_matches[0]
+#globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = head
+#globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
+#globalconfig["magento"]["doc_root"][doc_root_path]["mage_version"] = mage
 
 # os.path.dirname(path)
-"""
-# finding local.xml is not useful. Too many results, and only one is relevant
-mage_php_matches:
-/var/www/html/app/Mage.php
-local_xml_matches:
-/var/www/html/errors/local.xml
-/var/www/html/app/design/adminhtml/domain/domain/layout/local.xml
-/var/www/html/app/design/frontend/domain/domain/layout/local.xml
-/var/www/html/app/design/frontend/domain/domainnew/layout/local.xml
-/var/www/html/app/etc/local.xml
-"""
-"""
-        local_xml_matches = []
-        for root, dirnames, filenames in os.walk(search_path):
-            for filename in fnmatch.filter(filenames, 'local.xml'):
-                local_xml_matches.append(os.path.join(root, filename))
-"""        
+print "%r" % globalconfig["magento"]["doc_root"]
+
 print "mage_php_matches:"
 for line in mage_php_matches:
     print line
-"""
-print "local_xml_matches:"
-for line in local_xml_matches:
-    print line
-"""
+
+
 """
 #globalconfig["apache"]["sites"]["doc_root"]
 if not "magento" in globalconfig:
