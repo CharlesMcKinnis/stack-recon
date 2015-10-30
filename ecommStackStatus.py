@@ -663,6 +663,7 @@ class MagentoCtl(object):
     def magento_version(self):
         pass
     def mage_file_info(self,mage_files):
+        return_dict = {}
         #magento = MagentoCtl()
         for doc_root_path, mage_php_match in mage_files.iteritems():
             mage = self.parse_version(mage_php_match)
