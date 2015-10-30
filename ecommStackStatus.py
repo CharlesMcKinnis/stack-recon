@@ -1155,11 +1155,11 @@ if not "doc_roots" in globalconfig:
     globalconfig["doc_roots"] = set()
 if "sites" in globalconfig.get("apache",{}):
     for one in globalconfig["apache"]["sites"]:
-        if doc_root in one:
+        if "doc_root" in one:
             globalconfig["doc_roots"].add(one["doc_root"])
 if "sites" in globalconfig.get("nginx",{}):
     for one in globalconfig["nginx"]["sites"]:
-        if doc_root in one:
+        if "doc_root" in one:
             globalconfig["doc_roots"].add(one["doc_root"])
 
 #globalconfig["doc_roots"].add(globalconfig.get("apache",{}).get("sites")):
