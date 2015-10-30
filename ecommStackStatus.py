@@ -649,7 +649,7 @@ class MagentoCtl(object):
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
-                    print "%r %r %r" % (root,dirnames,filenames)
+                    print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
                 print "There are multiple Mage.php files in the Document Root. This probably won't scan correctly." #breakme! Using the one with the smallest path."
@@ -658,10 +658,7 @@ class MagentoCtl(object):
             #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
             return_dict[doc_root_path] = mage_php_matches[0]
         return(return_dict)
-    
-    ##
-    def magento_version(self):
-        pass
+
     def mage_file_info(self,mage_files):
         return_dict = {}
         #magento = MagentoCtl()
@@ -1246,11 +1243,11 @@ globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 #globalconfig["magento"]["doc_root"][doc_root_path]["mage_version"] = mage
 
 # os.path.dirname(path)
-print "%r" % globalconfig["magento"]["doc_root"]
+print "1249 %r" % globalconfig["magento"]["doc_root"]
 
-print "mage_php_matches:"
-for key, value in globalconfig["magento"]["doc_root"]:
-    print "doc_root: %s %s" % (key,value["magento_version"])
+#print "mage_php_matches:"
+for key, value in globalconfig["magento"]["doc_root"].iteritems():
+    print "1253 doc_root: %s %s" % (key,value["magento_version"])
 
 
 """
