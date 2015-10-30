@@ -1163,12 +1163,30 @@ for one in sorted(globalconfig["apache"]["sites"]):
         for root, dirnames, filenames in os.walk(search_path):
             for filename in fnmatch.filter(filenames, 'Mage.php'):
                 mage_php_matches.append(os.path.join(root, filename))
-        
+        if len(mage_php_matches) > 1:
+            print "There are multiple Mage.php files in the Document Root. Using the one with the smallest path."
+        print "path %s" % mage_php_matches[1]
+        print "dir %s" % os.path.dirname(mage_php_matches[1])
+        print "split %s" % os.path.split(os.path.dirname(mage_php_matches[1]))
+
+# os.path.dirname(path)
+"""
+# finding local.xml is not useful. Too many results, and only one is relevant
+mage_php_matches:
+/var/www/html/app/Mage.php
+local_xml_matches:
+/var/www/html/errors/local.xml
+/var/www/html/app/design/adminhtml/domain/domain/layout/local.xml
+/var/www/html/app/design/frontend/domain/domain/layout/local.xml
+/var/www/html/app/design/frontend/domain/domainnew/layout/local.xml
+/var/www/html/app/etc/local.xml
+"""
+"""
         local_xml_matches = []
         for root, dirnames, filenames in os.walk(search_path):
             for filename in fnmatch.filter(filenames, 'local.xml'):
                 local_xml_matches.append(os.path.join(root, filename))
-        
+"""        
 print "mage_php_matches:"
 for line in mage_php_matches:
     print line
