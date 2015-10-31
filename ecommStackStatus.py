@@ -1335,8 +1335,12 @@ if not os.path.isfile(filename):
         outfile.write( json_str )
     outfile.close()
 """
+if os.path.isfile(filename):
+    try:
+        with open(filename,'r') as f:
+            globalconfig=json.load(f)
+    except:
+        print "The file %s exists, but failed to import." % filename
 else:
-    with open('config.yaml','r') as infile:
-        globalconfig = yaml.load ( infile.read() )
-    infile.close()
+    print "The file %s does not exist." % filename
 """
