@@ -6,12 +6,10 @@ tree = ET.ElementTree(file='local.xml')
 
 def unroll(tree):
     for elem in tree.getiterator():
-        print elem.tag, elem.attrib
+        print "%r %r" % (elem.tag, elem.attrib)
         #print type(elem)
         for child in elem.getchildren():
             print child.tag
-    else:
-        exit(0)
 root = tree.getroot()
 #print root.tag, root.attrib
 # .iter doesn't exist in python 2.6 for RHEL 6
