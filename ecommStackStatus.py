@@ -1259,8 +1259,9 @@ def MAGENTO_PRINT():
 ################################################
 # Magento
 ################################################
-for key, value in globalconfig["magento"]["doc_root"].iteritems():
-    print "1253 doc_root: %s %s" % (key,value["magento_version"])
+if globalconfig.get("magento",{}).get("doc_root"):
+    for key, value in globalconfig["magento"]["doc_root"].iteritems():
+        print "1253 doc_root: %s %s" % (key,value["magento_version"])
 
 """
 {'domains':
