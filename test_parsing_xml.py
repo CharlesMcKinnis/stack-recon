@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 
-import xml.etree.ElementTree
+import xml.etree.ElementTree as ET
     
-tree = xml.etree.ElementTree(file='local.xml')
+tree = ET.ElementTree(file='local.xml')
 
 root = tree.getroot()
 print root.tag, root.attrib
