@@ -15,6 +15,7 @@ import sys
 import os
 #import yaml
 import fnmatch
+import json
 
 class apacheCtl(object):
     def __init__(self,**kwargs):
@@ -638,7 +639,6 @@ class MagentoCtl(object):
     def localxml(self, local_xml_file):
         pass
     def find_mage_php(self,doc_roots):
-        return_dict = {}
         for doc_root_path in globalconfig["doc_roots"]:
             # with nginx and apache, we have docroot for web paths
             # we need to search those for Mage.php and local.xml
@@ -656,8 +656,14 @@ class MagentoCtl(object):
             #print "length %d" % len(mage_php_matches)
             #print "path %s" % (mage_php_matches[0])
             #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
-            return_dict[doc_root_path] = mage_php_matches[0]
-        return(return_dict)
+            if mage_php_matches:
+                if not return_dict:
+                    return_dict = {}
+                return_dict[doc_root_path] = mage_php_matches[0]
+        if return_dict:
+            return(return_dict)
+        else:
+            sys.exit(1)
 
     def mage_file_info(self,mage_files):
         return_dict = {}
@@ -1067,8 +1073,6 @@ def MAGENTO_DATA_GATHER():
 ################################################
 # Magento
 ################################################
-if not "magento" in globalconfig:
-    globalconfig["magento"] = {}
 
 if not "doc_roots" in globalconfig:
     globalconfig["doc_roots"] = set()
@@ -1082,9 +1086,13 @@ if "sites" in globalconfig.get("nginx",{}):
             globalconfig["doc_roots"].add(one["doc_root"])
 
 magento = MagentoCtl()
-
-mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+try:
+    if not "magento" in globalconfig:
+        globalconfig["magento"] = {}
+    mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+    globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+except:
+    print "No Magento found in the web document roots"
 """
 {'/var/www/html':
     {
@@ -1314,13 +1322,13 @@ magento = MagentoCtl()
 mage = magento.version("Mage.php")
 print "Magento %s %s" % (mage["version"],mage["edition"])
 """
-"""
 # Save the config as a yaml file
-if not os.path.isfile('config.yaml'):
-    with open('config.yaml','w') as outfile:
-        outfile.write( yaml.dump(globalconfig, default_flow_style=False) )
+filename = "config_dump.json"
+if not os.path.isfile(filename):
+    json_str=json.dumps(globalconfig)
+    with open(filename,'w') as outfile:
+        outfile.write( json_str )
     outfile.close()
-"""
 """
 else:
     with open('config.yaml','r') as infile:
