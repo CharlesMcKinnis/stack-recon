@@ -1151,8 +1151,8 @@ if "nginx" in globalconfig:
             }
         ]
         """
-        if globalconfig["nginx"]["error"]:
-            print "Erorrs: \n%s" % globalconfig["nginx"]["error"]
+        if globalconfig.get("nginx",{}).get("error"):
+            print "Errors: \n%s" % globalconfig["nginx"]["error"]
         
         for one in sorted(globalconfig["nginx"]["sites"]):
             if "domains" in one:
