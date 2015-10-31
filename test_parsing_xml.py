@@ -6,3 +6,6 @@ tree = ET.ElementTree(file='local.xml')
 
 root = tree.getroot()
 print root.tag, root.attrib
+for elem in tree.iter():
+    print elem.tag, elem.attrib
+    
