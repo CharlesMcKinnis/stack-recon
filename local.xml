@@ -105,6 +105,24 @@
         <!-- Supports gzip, lzf and snappy -->
       </backend_options>
     </cache>
+    <full_page_cache>
+      <backend>Mage_Cache_Backend_Redis</backend><!-- apc / memcached / empty=file -->
+      <slow_backend>database</slow_backend>
+      <backend_options>
+        <server>127.0.0.1</server>
+        <port>6380</port>
+        <persistent>fpc-db1</persistent>
+        <database>1</database>
+        <force_standalone>0</force_standalone>
+        <connect_retries>1</connect_retries>
+        <read_timeout>10</read_timeout>
+        <automatic_cleaning_factor>0</automatic_cleaning_factor>
+        <compress_data>0</compress_data>
+        <compress_tags>1</compress_tags>
+        <compress_threshold>20480</compress_threshold>
+        <compression_lib>gzip</compression_lib>
+      </backend_options>
+    </full_page_cache>
   </global>
   <admin>
     <routers>
