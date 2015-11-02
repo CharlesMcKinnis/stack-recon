@@ -794,6 +794,7 @@ def daemon_exe(match_exe):
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
+        print ppid, pscmd, psexe
         if psexe:
             if os.path.basename(psexe) in match_exe:
                 #if os.path.basename(psexe) == daemon_name:
