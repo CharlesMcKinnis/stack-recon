@@ -1239,7 +1239,10 @@ except:
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "1253 doc_root: %s %s" % (key,value["magento_version"])
-for doc_root in globalconfig["magento"]["doc_root"]:
+print "1242"
+pp.pprint(globalconfig["magento"]["doc_root"])
+#for doc_root in globalconfig["magento"]["doc_root"]:
+for doc_root, value in globalconfig["magento"]["doc_root"].iteritems():
     print "1242 %s" % pp.pprint(doc_root)
     #pp = pprint.PrettyPrinter(indent=4)
     #pp.pprint(doc_root["magento_path"])
