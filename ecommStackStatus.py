@@ -699,9 +699,11 @@ class MagentoCtl(object):
         
         returns: dict with db and cache information
         """
+        tree = ET.ElementTree(file=filename)
         try:
             tree = ET.ElementTree(file=filename)
         except:
+            print "died 705"
             sys.exit(1)
 
         #tree = ET.ElementTree(file='local.xml')
@@ -1249,6 +1251,7 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
         print "1250 not"
         globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
+    
     testvar = magento.open_local_xml(local_xml)
     print "1252: %r" % testvar
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
