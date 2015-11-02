@@ -673,9 +673,7 @@ class MagentoCtl(object):
             #print "path %s" % (mage_php_matches[0])
             #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
             if mage_php_matches:
-                if not return_dict:
-                    return_dict = {}
-                return_dict[doc_root_path] = mage_php_matches[1]
+                return_dict[doc_root_path] = mage_php_matches[0]
         return(return_dict)
         # if return_dict:
         #     print "returning %r" % return_dict
