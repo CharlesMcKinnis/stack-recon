@@ -1245,6 +1245,8 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     #pp.pprint(doc_root["magento_path"])
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     print "local_xml %s" % local_xml
+    if not "local_xml" in globalconfig["magento"]["doc_root"]:
+        globalconfig["magento"]["doc_root"]["local_xml"] = {}
     globalconfig["magento"]["doc_root"]["local_xml"].update(open_local_xml(local_xml))
     pass
 """
