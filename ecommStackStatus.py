@@ -694,17 +694,15 @@ class MagentoCtl(object):
         return(return_dict)
     
     def open_local_xml(self, filename):
-        print filename
         """
         provide the filename (absolute or relative) of local.xml
         
         returns: dict with db and cache information
         """
-        tree = ET.ElementTree(file=filename)
         try:
             tree = ET.ElementTree(file=filename)
         except:
-            print "died 705"
+            sys.stdout.write("Could not open file %s\n" % filename)
             sys.exit(1)
 
         #tree = ET.ElementTree(file='local.xml')
@@ -1206,6 +1204,7 @@ def MAGENTO_DATA_GATHER():
 ################################################
 # Magento
 ################################################
+# get a list of unique document roots
 doc_roots = set()
 if "sites" in globalconfig.get("apache",{}):
     for one in globalconfig["apache"]["sites"]:
@@ -1225,11 +1224,13 @@ magento = MagentoCtl()
 #print "%r" % magento
 if not "magento" in globalconfig:
     globalconfig["magento"] = {}
+# find mage.php files in document roots
 try:
     mage_files = magento.find_mage_php(globalconfig["doc_roots"])
 except:
     print "No Magento found in the web document roots"
     #print "mage files %r" % mage_files
+# get Magento information from those Mage.php
 try:
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
@@ -1238,7 +1239,6 @@ except:
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
 
-#for doc_root in globalconfig["magento"]["doc_root"]:
 for doc_root in globalconfig["magento"]["doc_root"]:
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
@@ -1415,12 +1415,12 @@ def MAGENTO_PRINT():
 # Magento
 ################################################
 
-
+print "\nMagento versions installed:"
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
 #pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
-print "1424: %r" % globalconfig["magento"]["doc_root"]
+#print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
 filename="local.xml"
