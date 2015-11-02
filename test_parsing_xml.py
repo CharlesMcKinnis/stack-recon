@@ -2,53 +2,109 @@
 
 import sys
 import xml.etree.ElementTree as ET
+import pprint
 
-tree = ET.ElementTree(file='local.xml')
+class magentoCtl(object):
+    def open_local_xml(self, filename):
+        print filename
+        """
+        provide the filename (absolute or relative) of local.xml
+        
+        returns: dict with db and cache information
+        """
+        try:
+            tree = ET.ElementTree(filename)
+        except:
+            sys.exit(1)
 
-"""
-def unroll(tree):
-    for elem in tree.getiterator():
-        print "9 %r %r" % (elem.tag, elem.attrib)
-        for child in elem.getchildren():
-            print "11 %r" % child.tag
-            print "12 %r" % child.attrib
-            print "13 %r" % child.text
-root = tree.getroot()
-for children in root:
-    print "17 %s %s" % (children.tag,children.text)
-    for child in children:
-        print "19 %s %s" % (child.tag,child.text)
-"""
-if not local_xml:
-    local_xml = {}
-if not "db" in local_xml:
-    local_xml["db"] = {}
-resources = tree.find('global/resources')
-#resources = root.find('config')
-# print resources # <Element 'resources' at 0x7f8982fed350>
-i = resources.find('db/table_prefix')
-if i:
-    print "Table prefix: %s" % i.text
-    local_xml["db"]["table_prefix"] = i.text
-for i in resources.find('default_setup/connection'):
-    print "%s: %s" % (i.tag,i.text)
-    local_xml["db"][i.tag] = i.text
-    pass
+        #tree = ET.ElementTree(file='local.xml')
+        #tree = ET.ElementTree(file='local-memcache.xml')
+        local_xml = {}
+        
+        section = "db"
+        xml_parent_path = 'global/resources'
+        xml_config_node = 'db/table_prefix'
+        xml_config_section = 'default_setup/connection'
+        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+        
+        section = "session_cache"
+        xml_parent_path = 'global'
+        xml_config_node = 'session_save'
+        xml_config_section = 'redis_session'
+        xml_config_single = 'session_save_path'
+        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
+        
+        section = "object_cache"
+        xml_parent_path = 'global/cache'
+        xml_config_node = 'backend'
+        xml_config_section = 'backend_options'
+        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+        
+        section = "full_page_cache"
+        xml_parent_path = 'global/full_page_cache'
+        xml_config_node = 'backend'
+        xml_config_section = 'backend_options'
+        xml_config_single = 'slow_backend'
+        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
+        
+        return(local_xml)
+    
+    def parse_local_xml(self, tree, section, xml_parent_path, xml_config_node, xml_config_section, **kwargs):
+        """
+        provide:
+            tree, ElementTree object
+            section, string, name of section
+            xml_parent_path, string, section of xml where information is
+            xml_config_node, string, node name that describes the type
+            xml_config_section, section of additional nodes and text contents
+            xml_config_single, string of a single additional node under parent
+    
+        returns a dict with key named "section"
+        """
+        print tree, section, xml_parent_path, xml_config_node, xml_config_section
+        local_xml = {}
+        # full page cache (FPC) - redis
+        #section = "full_page_cache"
+        #print "\nsection: %s" % section
+        #xml_parent_path = 'global/full_page_cache'
+        #xml_config_node = 'backend'
+        #xml_config_section = 'backend_options'
+        if "xml_config_single" in kwargs:
+            xml_config_single = kwargs["xml_config_single"]
+        else:
+            xml_config_single = ""
+            
+        if not section in local_xml:
+            local_xml[section] = {}
 
-if not local_xml:
-    local_xml = {}
-if not "session_cache" in local_xml:
-    local_xml["session_cache"] = {}
-resources = tree.find('global')
-i = resources.find('session_save')
-if i:
-    print "Table prefix: %s" % i.text
-    local_xml["session_cache"]["session_save"] = i.text
-for i in resources.find('redis_session'):
-    print "%s: %s" % (i.tag,i.text)
-    local_xml["session_cache"][i.tag] = i.text
-    pass
+        resources = tree.find(xml_parent_path)
+        print resources
+        if resources is not None:
+            i = resources.find(xml_config_node)
+        else:
+            i = None
+        if i is not None:
+            #print "%s: %s" % (xml_config_node,i.text)
+            local_xml[section][xml_config_node] = i.text
+        # configuration
+        if resources.find(xml_config_section) is not None:
+            for i in resources.find(xml_config_section):
+                #print "%s: %s" % (i.tag,i.text)
+                local_xml[section][i.tag] = i.text
+                
+        if xml_config_single:
+            if resources.find(xml_config_single) is not None:
+                i = resources.find(xml_config_single)
+                #print "%s: %s" % (i.tag,i.text)
+                local_xml[section][i.tag] = i.text
+        return local_xml
+        pass
 
+m = magentoCtl()
+filename="local.xml"
+local_xml = m.open_local_xml(filename)
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(local_xml)
 
 
 """
