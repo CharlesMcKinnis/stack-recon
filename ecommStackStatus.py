@@ -1235,6 +1235,13 @@ except:
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
 
+if globalconfig.get("magento",{}).get("doc_root"):
+    for key, value in globalconfig["magento"]["doc_root"].iteritems():
+        print "1253 doc_root: %s %s" % (key,value["magento_version"])
+for doc_root in globalconfig["magento"]["doc_root"]:
+    local_xml = os.path.join(doc_root["magento_path"],"app","etc","local.xml")
+    globalconfig["magento"]["doc_root"]["local_xml"].update(open_local_xml(local_xml))
+    pass
 """
 {'/var/www/html':
     {
@@ -1249,8 +1256,9 @@ except:
             'version': '1.9.1.0',
             'minor': '9',
             'revision': '1'},
-    'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
-    'magento_path': '/var/www/html'}
+       'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
+       'magento_path': '/var/www/html'
+    }
 }
 """
 
@@ -1405,7 +1413,8 @@ def MAGENTO_PRINT():
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "1253 doc_root: %s %s" % (key,value["magento_version"])
-
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
 """
 m = magentoCtl()
 filename="local.xml"
