@@ -441,7 +441,7 @@ class nginxCtl(object):
             if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
                 if not "error" in stanzas:
                     stanzas["error"] = "This script does not consistently support opening { and closing } stanzas on the same line.\n"
-                stanzas["error"] += "line %d %s\n" % (linenum,line.strip())
+                stanzas["error"] += "line %d: %s\n" % (linenum,line.strip())
             stanza_count+=len(re.findall('{',line))
             stanza_count-=len(re.findall('}',line))
             result = re.match("(\S+)\s*{",linecomp)
@@ -654,38 +654,19 @@ class MagentoCtl(object):
                     #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
-                print "There are multiple Mage.php files in the Document Root. This may not scan correctly." #breakme! Using the one with the smallest path."
+                print "There are multiple Mage.php files in the Document Root. Choosing the shortest path." #breakme! Using the one with the smallest path."
                 smallest_size = 0
                 smallest_line = ""
                 for i in mage_php_matches:
                     num_slashes = len(re.findall('/', i))
-                    print "num_slashes %r" % num_slashes
                     if smallest_size == 0:
                         smallest_size = num_slashes
                         smallest_line = i
                     elif num_slashes < smallest_size:
                         smallest_size = num_slashes
                         smallest_line = i
-                    print "smallest line %r" % smallest_line
                 mage_php_matches[0] = smallest_line
                         
-            #     print "657 mage_php_matchers %r" % mage_php_matches
-            #     lowest_i = 255
-            #     shortest = ""
-            #     for i in mage_php_matches:
-            #         print "i 661: %r" % i
-            #         counter = re.findall('//', i)
-            #         print "i counter %d 661: %r" % (counter, i)
-            #         if counter < lowest_i:
-            #             shortest = i
-            #             counter = lowest_i
-            #         pass
-            #     if shortest:
-            #         mage_php_matches[0] = shortest
-            # print "shortest %s" % shortest
-            #print "length %d" % len(mage_php_matches)
-            #print "path %s" % (mage_php_matches[0])
-            #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
             if mage_php_matches:
                 return_dict[doc_root_path] = mage_php_matches[0]
         return(return_dict)
