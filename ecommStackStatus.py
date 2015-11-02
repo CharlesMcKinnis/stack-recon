@@ -676,6 +676,7 @@ class MagentoCtl(object):
                     return_dict = {}
                 return_dict[doc_root_path] = mage_php_matches[1]
         if return_dict:
+            print "returning %r" % return_dict
             return(return_dict)
         else:
             sys.exit(1)
