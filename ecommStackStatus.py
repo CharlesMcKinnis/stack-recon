@@ -662,9 +662,11 @@ class MagentoCtl(object):
                     print "num_slashes %r" % num_slashes
                     if smallest_size == 0:
                         smallest_size = num_slashes
+                        smallest_line = i
                     elif num_slashes < smallest_size:
                         smallest_size = num_slashes
                         smallest_line = i
+                    print "smallest line %r" % smallest_line
                 mage_php_matches[0] = smallest_line
                         
             #     print "657 mage_php_matchers %r" % mage_php_matches
