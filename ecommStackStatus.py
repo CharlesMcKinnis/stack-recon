@@ -1239,6 +1239,9 @@ if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "1253 doc_root: %s %s" % (key,value["magento_version"])
 for doc_root in globalconfig["magento"]["doc_root"]:
+    print "1242"
+    pp.pprint(doc_root)
+
     local_xml = os.path.join(doc_root["magento_path"],"app","etc","local.xml")
     globalconfig["magento"]["doc_root"]["local_xml"].update(open_local_xml(local_xml))
     pass
