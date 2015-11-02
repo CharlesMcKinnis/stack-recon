@@ -16,6 +16,7 @@ import os
 #import yaml
 import fnmatch
 import json
+import xml.etree.ElementTree as ET
 import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
