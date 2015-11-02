@@ -816,7 +816,7 @@ def daemon_exe(match_exe):
                     daemons[os.path.basename(psexe)]["cmd"] = pscmd
                     daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
                     if pserror:
-                        daemons[os.path.basename(psexe)]["error"] = "Process %s/%s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
+                        daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
                         pserror = ""
     return(daemons)
 
@@ -1193,9 +1193,6 @@ def MAGENTO_DATA_GATHER():
 ################################################
 # Magento
 ################################################
-
-
-
 doc_roots = set()
 if "sites" in globalconfig.get("apache",{}):
     for one in globalconfig["apache"]["sites"]:
@@ -1217,6 +1214,9 @@ try:
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "No Magento found in the web document roots"
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(globalconfig["magento"])
+
 """
 {'/var/www/html':
     {
@@ -1383,6 +1383,7 @@ def MAGENTO_PRINT():
 ################################################
 # Magento
 ################################################
+
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "1253 doc_root: %s %s" % (key,value["magento_version"])
