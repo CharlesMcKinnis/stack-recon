@@ -1223,7 +1223,7 @@ try:
     if not "magento" in globalconfig:
         globalconfig["magento"] = {}
     mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-    print "%r" % mage_files
+    print "mage files %r" % mage_files
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "No Magento found in the web document roots"
