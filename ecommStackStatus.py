@@ -1239,22 +1239,14 @@ except:
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
 
-if globalconfig.get("magento",{}).get("doc_root"):
-    for key, value in globalconfig["magento"]["doc_root"].iteritems():
-        print "1253 doc_root: %s %s" % (key,value["magento_version"])
-print "1242"
-pp.pprint(globalconfig["magento"]["doc_root"])
 #for doc_root in globalconfig["magento"]["doc_root"]:
 for doc_root in globalconfig["magento"]["doc_root"]:
-    print "1246 %r" % doc_root
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
-    print "1248 %r" % local_xml
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
-        print "1250 not"
         globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
     
-    testvar = magento.open_local_xml(local_xml)
-    print "1252: %r" % testvar
+    #testvar = magento.open_local_xml(local_xml)
+    #print "1252: %r" % testvar
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
 """
 {'/var/www/html':
@@ -1429,7 +1421,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
 #pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
-#print "1426: %r" % globalconfig["magento"]["doc_root"]["local_xml"]
+print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
 filename="local.xml"
