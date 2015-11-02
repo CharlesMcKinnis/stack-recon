@@ -1248,7 +1248,6 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     if not "local_xml" in globalconfig["magento"]["doc_root"]:
         globalconfig["magento"]["doc_root"]["local_xml"] = {}
     globalconfig["magento"]["doc_root"]["local_xml"].update(magento.open_local_xml(local_xml))
-    pass
 """
 {'/var/www/html':
     {
