@@ -653,8 +653,18 @@ class MagentoCtl(object):
                     #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
-                print "There are multiple Mage.php files in the Document Root. This probably won't scan correctly." #breakme! Using the one with the smallest path."
+                print "There are multiple Mage.php files in the Document Root. This may not scan correctly." #breakme! Using the one with the smallest path."
                 print "%r" % mage_php_matches
+                lowest_i = 255
+                shortest = ""
+                for i in mage_php_matches:
+                    counter = re.findall('/',i)
+                    if counter < lowest_i:
+                        shortest = i
+                        counter = lowest_i
+                    pass
+                if shortest:
+                    mage_php_matches[0] = shortest
             #print "length %d" % len(mage_php_matches)
             #print "path %s" % (mage_php_matches[0])
             #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
