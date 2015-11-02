@@ -659,6 +659,7 @@ class MagentoCtl(object):
                 smallest_line = ""
                 for i in mage_php_matches:
                     num_slashes = re.findall('/', i)
+                    print "num_slashes %r" % num_slashes
                     if smallest_size == 0:
                         smallest_size = num_slashes
                     elif num_slashes < smallest_size:
