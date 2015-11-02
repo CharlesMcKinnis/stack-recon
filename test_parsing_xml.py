@@ -13,7 +13,7 @@ class magentoCtl(object):
         returns: dict with db and cache information
         """
         try:
-            tree = ET.ElementTree(filename)
+            tree = ET.ElementTree(file=filename)
         except:
             sys.exit(1)
 
