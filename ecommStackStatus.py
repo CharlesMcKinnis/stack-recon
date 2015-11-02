@@ -640,6 +640,7 @@ class MagentoCtl(object):
     def localxml(self, local_xml_file):
         pass
     def find_mage_php(self,doc_roots):
+        return_dict = {}
         for doc_root_path in globalconfig["doc_roots"]:
             # with nginx and apache, we have docroot for web paths
             # we need to search those for Mage.php and local.xml
@@ -675,11 +676,12 @@ class MagentoCtl(object):
                 if not return_dict:
                     return_dict = {}
                 return_dict[doc_root_path] = mage_php_matches[1]
-        if return_dict:
-            print "returning %r" % return_dict
-            return(return_dict)
-        else:
-            sys.exit(1)
+        return(return_dict)
+        # if return_dict:
+        #     print "returning %r" % return_dict
+        #     return(return_dict)
+        # else:
+        #     sys.exit(1)
 
     def mage_file_info(self,mage_files):
         return_dict = {}
