@@ -751,7 +751,7 @@ class MagentoCtl(object):
     
         returns a dict with key named "section"
         """
-        print tree, section, xml_parent_path, xml_config_node, xml_config_section
+        #print tree, section, xml_parent_path, xml_config_node, xml_config_section
         local_xml = {}
         # full page cache (FPC) - redis
         #section = "full_page_cache"
@@ -768,7 +768,7 @@ class MagentoCtl(object):
             local_xml[section] = {}
 
         resources = tree.find(xml_parent_path)
-        print resources
+        #print resources
         if resources is not None:
             i = resources.find(xml_config_node)
         else:
@@ -788,7 +788,6 @@ class MagentoCtl(object):
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
         return local_xml
-        pass
 
 def daemon_exe(match_exe):
     """
