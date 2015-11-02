@@ -1000,8 +1000,8 @@ daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd
 for one in daemons:
     print "%s: %r\n" % (one,daemons[one])
 """
-pp = pprint()
-pp.PrettyPrinter(daemons)
+pp = pprint.PrettyPrinter(indent=4)
+pp.pprint(daemons)
 globalconfig = {}
 """
  ____    _  _____  _       ____    _  _____ _   _ _____ ____  
