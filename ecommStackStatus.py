@@ -1015,6 +1015,7 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 # these are the daemon executable names we are looking for
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
 for i in daemons:
+    print "%r" % i
     if "error" in i:
         print i["pserror"]
 
@@ -1022,8 +1023,8 @@ for i in daemons:
 for one in daemons:
     print "%s: %r\n" % (one,daemons[one])
 """
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(daemons)
+#pp = pprint.PrettyPrinter(indent=4)
+#pp.pprint(daemons)
 globalconfig = {}
 """
  ____    _  _____  _       ____    _  _____ _   _ _____ ____  
