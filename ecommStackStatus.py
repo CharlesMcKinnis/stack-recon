@@ -1207,10 +1207,12 @@ if "sites" in globalconfig.get("nginx",{}):
 globalconfig["doc_roots"] = list(doc_roots)
 
 magento = MagentoCtl()
+print "%r" % magento
 try:
     if not "magento" in globalconfig:
         globalconfig["magento"] = {}
     mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+    print "%r" % mage_files
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "No Magento found in the web document roots"
