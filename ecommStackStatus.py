@@ -665,6 +665,7 @@ class MagentoCtl(object):
                     pass
                 if shortest:
                     mage_php_matches[0] = shortest
+            print "shortest %s" % shortest
             #print "length %d" % len(mage_php_matches)
             #print "path %s" % (mage_php_matches[0])
             #print "dir %s" % (os.path.dirname(mage_php_matches[0]))
