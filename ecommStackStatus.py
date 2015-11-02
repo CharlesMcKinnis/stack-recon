@@ -1015,9 +1015,9 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 # these are the daemon executable names we are looking for
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
 for i in daemons:
-    print "%r" % i
-    if "error" in i:
-        print i["pserror"]
+    print "%r" % daemons[i]
+    if "error" in daemons[i]:
+        print daemons[i]["error"]
 
 """
 for one in daemons:
