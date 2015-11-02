@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 
 tree = ET.ElementTree(file='local.xml')
 
+"""
 def unroll(tree):
     for elem in tree.getiterator():
         print "9 %r %r" % (elem.tag, elem.attrib)
@@ -17,15 +18,38 @@ for children in root:
     print "17 %s %s" % (children.tag,children.text)
     for child in children:
         print "19 %s %s" % (child.tag,child.text)
-    
-
+"""
+if not local_xml:
+    local_xml = {}
+if not "db" in local_xml:
+    local_xml["db"] = {}
 resources = tree.find('global/resources')
 #resources = root.find('config')
-print resources
-print "Table prefix: %s" % resources.find('db/table_prefix').text
+# print resources # <Element 'resources' at 0x7f8982fed350>
+i = resources.find('db/table_prefix')
+if i:
+    print "Table prefix: %s" % i.text
+    local_xml["db"]["table_prefix"] = i.text
 for i in resources.find('default_setup/connection'):
     print "%s: %s" % (i.tag,i.text)
+    local_xml["db"][i.tag] = i.text
     pass
+
+if not local_xml:
+    local_xml = {}
+if not "session_cache" in local_xml:
+    local_xml["session_cache"] = {}
+resources = tree.find('global')
+i = resources.find('session_save')
+if i:
+    print "Table prefix: %s" % i.text
+    local_xml["session_cache"]["session_save"] = i.text
+for i in resources.find('redis_session'):
+    print "%s: %s" % (i.tag,i.text)
+    local_xml["session_cache"][i.tag] = i.text
+    pass
+
+
 
 """
 config/global/resources/
