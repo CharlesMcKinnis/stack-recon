@@ -796,8 +796,16 @@ def daemon_exe(match_exe):
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-        print pid, ppid, pscmd, psexe
+        #print pid, ppid, pscmd, psexe
+        # fixme
+        # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
         if psexe:
+            if re.search('\(deleted\)', psexe):
+                # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+                #print "WARNING: %s is reporting the binary running is deleted"
+                result = re.match('([^\(]+)', psexe)
+                psexe = result.group(1).rstrip()
+                pass
             if os.path.basename(psexe) in match_exe:
                 #if os.path.basename(psexe) == daemon_name:
                 if ppid == "1" or not os.path.basename(psexe) in daemons:
