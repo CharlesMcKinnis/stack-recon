@@ -1240,6 +1240,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
         print "1253 doc_root: %s %s" % (key,value["magento_version"])
 for doc_root in globalconfig["magento"]["doc_root"]:
     print "1242"
+    pp = pprint.PrettyPrinter(indent=4)
     pp.pprint(doc_root)
 
     local_xml = os.path.join(doc_root["magento_path"],"app","etc","local.xml")
