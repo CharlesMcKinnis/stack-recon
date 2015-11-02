@@ -1016,7 +1016,7 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
 for i in daemons:
     if "error" in i:
-        print daemons["pserror"]
+        print i["pserror"]
 
 """
 for one in daemons:
