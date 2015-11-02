@@ -1216,7 +1216,7 @@ if "sites" in globalconfig.get("nginx",{}):
 #if not "doc_roots" in globalconfig:
 #    globalconfig["doc_roots"] = set()
 globalconfig["doc_roots"] = list(doc_roots)
-    print "doc_roots %r" % globalconfig["doc_roots"]
+print "doc_roots %r" % globalconfig["doc_roots"]
 
 
 magento = MagentoCtl()
