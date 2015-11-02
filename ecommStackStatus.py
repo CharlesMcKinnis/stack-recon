@@ -18,6 +18,8 @@ import fnmatch
 import json
 import pprint
 
+pp = pprint.PrettyPrinter(indent=4)
+
 class apacheCtl(object):
     def __init__(self,**kwargs):
         self.kwargs = kwargs
@@ -793,7 +795,6 @@ def daemon_exe(match_exe):
     """
     daemons = {}
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
-    #pp = pprint.PrettyPrinter(indent=4)
     #pp.pprint(pids)
 
     for pid in pids:
@@ -1231,7 +1232,7 @@ try:
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "Failed to get magento information"
-#pp = pprint.PrettyPrinter(indent=4)
+
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
 
@@ -1420,7 +1421,6 @@ def MAGENTO_PRINT():
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
-pp = pprint.PrettyPrinter(indent=4)
 pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
 print "1426: %r" % globalconfig["magento"]["doc_root"]["local_xml"]
 """
