@@ -1015,9 +1015,9 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 # these are the daemon executable names we are looking for
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
 for i in daemons:
-    print "%r" % daemons[i]
+    #print "%r" % daemons[i]
     if "error" in daemons[i]:
-        print daemons[i]["error"]
+        sys.stderr.write(daemons[i]["error"] + "\n")
 
 """
 for one in daemons:
@@ -1276,7 +1276,7 @@ if "nginx" in globalconfig:
         ]
         """
         if globalconfig.get("nginx",{}).get("error"):
-            print "Errors: \n%s" % globalconfig["nginx"]["error"]
+            sys.stderr.write("Errors: \n%s\n" % globalconfig["nginx"]["error"])
         
         for one in sorted(globalconfig["nginx"]["sites"]):
             if "domains" in one:
