@@ -783,7 +783,9 @@ def daemon_exe(match_exe):
     """
     daemons = {}
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
-    
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(pids)
+
     for pid in pids:
         psexe = ""
         try:
