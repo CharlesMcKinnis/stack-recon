@@ -790,6 +790,7 @@ def daemon_exe(match_exe):
         psexe = ""
         ppid = ""
         pscmd = ""
+        pserror = ""
         try:
             ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
             pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
@@ -803,6 +804,7 @@ def daemon_exe(match_exe):
             if re.search('\(deleted\)', psexe):
                 # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
                 #print "WARNING: %s is reporting the binary running is deleted"
+                pserror = psexe
                 result = re.match('([^\(]+)', psexe)
                 psexe = result.group(1).rstrip()
                 pass
@@ -813,6 +815,9 @@ def daemon_exe(match_exe):
                     daemons[os.path.basename(psexe)]["exe"] = psexe
                     daemons[os.path.basename(psexe)]["cmd"] = pscmd
                     daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
+                    if pserror:
+                        daemons[os.path.basename(psexe)]["error"] = "Process %s/%s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
+                        pserror = ""
     return(daemons)
 
 class AutoVivification(dict):
@@ -1009,6 +1014,10 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
 # these are the daemon executable names we are looking for
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
+for i in daemons:
+    if "error" in daemons:
+        print daemons["pserror"]
+
 """
 for one in daemons:
     print "%s: %r\n" % (one,daemons[one])
