@@ -654,7 +654,7 @@ class MagentoCtl(object):
         
             if len(mage_php_matches) > 1:
                 print "There are multiple Mage.php files in the Document Root. This may not scan correctly." #breakme! Using the one with the smallest path."
-                print "%r" % mage_php_matches
+                print "657 mage_php_matchers %r" % mage_php_matches
                 lowest_i = 255
                 shortest = ""
                 for i in mage_php_matches:
