@@ -1243,13 +1243,9 @@ print "1242"
 pp.pprint(globalconfig["magento"]["doc_root"])
 #for doc_root in globalconfig["magento"]["doc_root"]:
 for doc_root, value in globalconfig["magento"]["doc_root"].iteritems():
-    print "1242 %s" % pp.pprint(doc_root)
-    #pp = pprint.PrettyPrinter(indent=4)
-    #pp.pprint(doc_root["magento_path"])
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
-    #print "local_xml %s" % local_xml
-    if not "local_xml" in globalconfig["magento"]["doc_root"]:
-        globalconfig["magento"]["doc_root"]["local_xml"] = {}
+    if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
+        globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
     print "1250: %r" % magento.open_local_xml(local_xml)
     globalconfig["magento"]["doc_root"]["local_xml"].update(magento.open_local_xml(local_xml))
 """
