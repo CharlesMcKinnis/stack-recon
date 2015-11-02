@@ -783,18 +783,20 @@ def daemon_exe(match_exe):
     """
     daemons = {}
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(pids)
+    #pp = pprint.PrettyPrinter(indent=4)
+    #pp.pprint(pids)
 
     for pid in pids:
         psexe = ""
+        ppid = ""
+        pscmd = ""
         try:
             ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
             pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-        print ppid, pscmd, psexe
+        print pid, ppid, pscmd, psexe
         if psexe:
             if os.path.basename(psexe) in match_exe:
                 #if os.path.basename(psexe) == daemon_name:
