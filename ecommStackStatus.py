@@ -1221,14 +1221,17 @@ print "doc_roots %r" % globalconfig["doc_roots"]
 
 magento = MagentoCtl()
 print "%r" % magento
+if not "magento" in globalconfig:
+    globalconfig["magento"] = {}
 try:
-    if not "magento" in globalconfig:
-        globalconfig["magento"] = {}
     mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-    print "mage files %r" % mage_files
-    globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "No Magento found in the web document roots"
+    print "mage files %r" % mage_files
+try:
+    globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+except:
+    print "Failed to get magento information"
 pp = pprint.PrettyPrinter(indent=4)
 print "Magento dictionary:"
 pp.pprint(globalconfig["magento"])
