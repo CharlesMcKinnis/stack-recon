@@ -1215,6 +1215,7 @@ try:
 except:
     print "No Magento found in the web document roots"
 pp = pprint.PrettyPrinter(indent=4)
+print "Magento dictionary:"
 pp.pprint(globalconfig["magento"])
 
 """
