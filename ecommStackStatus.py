@@ -655,6 +655,17 @@ class MagentoCtl(object):
         
             if len(mage_php_matches) > 1:
                 print "There are multiple Mage.php files in the Document Root. This may not scan correctly." #breakme! Using the one with the smallest path."
+                smallest_size = 0
+                smallest_line = ""
+                for i in mage_php_matches:
+                    num_slashes = re.findall('/', i)
+                    if smallest_size == 0:
+                        smallest_size = num_slashes
+                    elif num_slashes < smallest_size:
+                        smallest_size = num_slashes
+                        smallest_line = i
+                mage_php_matches[0] = smallest_line
+                        
             #     print "657 mage_php_matchers %r" % mage_php_matches
             #     lowest_i = 255
             #     shortest = ""
