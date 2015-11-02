@@ -1420,8 +1420,8 @@ def MAGENTO_PRINT():
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
-pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
-print "1426: %r" % globalconfig["magento"]["doc_root"]["local_xml"]
+#pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
+#print "1426: %r" % globalconfig["magento"]["doc_root"]["local_xml"]
 """
 m = magentoCtl()
 filename="local.xml"
