@@ -658,6 +658,7 @@ class MagentoCtl(object):
                 lowest_i = 255
                 shortest = ""
                 for i in mage_php_matches:
+                    print "i 661: %r" % i
                     counter = re.findall('/',i)
                     if counter < lowest_i:
                         shortest = i
