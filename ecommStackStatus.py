@@ -1247,8 +1247,10 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     print "1248 %r" % local_xml
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
+        print "1250 not"
         globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
-    print "1250: %r" % magento.open_local_xml(local_xml)
+    testvar = magento.open_local_xml(local_xml)
+    print "1252: %r" % testvar
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
 """
 {'/var/www/html':
