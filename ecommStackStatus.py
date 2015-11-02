@@ -1419,8 +1419,8 @@ print "\nMagento versions installed:"
 if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
-pp.pprint(globalconfig["magento"]["doc_root"]["local_xml"])
-print "1424: %r" % globalconfig["magento"]["doc_root"]
+pp.pprint(globalconfig["magento"]["doc_root"])
+#print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
 filename="local.xml"
