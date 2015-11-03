@@ -1340,15 +1340,15 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
-    print("""
+    print """
              _            
  _ __   __ _(_)_ __ __  __
-| '_ \ / _` | | '_ \\ \/ /
+| '_ \ / _` | | '_ \\\ \/ /
 | | | | (_| | | | | |>  < 
-|_| |_|\__, |_|_| |_/_/\_\\n
+|_| |_|\__, |_|_| |_/_/\_\\
        |___/      
 
-""")
+"""
     if "sites" in  globalconfig["nginx"]:
         print "nginx sites:"
         """
@@ -1406,6 +1406,14 @@ def APACHE_PRINT():
 # APACHE
 ################################################
 if "apache" in  globalconfig:
+    print """
+    _                     _          
+   / \   _ __   __ _  ___| |__   ___ 
+  / _ \ | '_ \ / _` |/ __| '_ \ / _ \\
+ / ___ \| |_) | (_| | (__| | | |  __/
+/_/   \_\ .__/ \__,_|\___|_| |_|\___|
+        |_|         
+"""
     if "sites" in  globalconfig["apache"]:
         print "Apache sites:"
         #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
@@ -1454,6 +1462,14 @@ def PHP_FPM_PRINT():
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
+    print """
+       _                  __                 
+ _ __ | |__  _ __        / _|_ __  _ __ ___  
+| '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \ 
+| |_) | | | | |_) |_____|  _| |_) | | | | | |
+| .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
+|_|         |_|             |_|
+"""
     #print "php-fpm configs"
     print "php-fpm pools:"
     for one in globalconfig["php-fpm"]:
@@ -1481,11 +1497,19 @@ def MAGENTO_PRINT():
 # Magento
 ################################################
 
-print "\nMagento versions installed:"
 if globalconfig.get("magento",{}).get("doc_root"):
+    print """
+ __  __                        _        
+|  \/  | __ _  __ _  ___ _ __ | |_ ___  
+| |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \ 
+| |  | | (_| | (_| |  __/ | | | || (_) |
+|_|  |_|\__,_|\__, |\___|_| |_|\__\___/ 
+              |___/
+"""
+    print "\nMagento versions installed:"
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
-pp.pprint(globalconfig["magento"]["doc_root"])
+    pp.pprint(globalconfig["magento"]["doc_root"])
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
