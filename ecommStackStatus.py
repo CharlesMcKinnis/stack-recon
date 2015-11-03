@@ -700,11 +700,12 @@ class MagentoCtl(object):
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
-            return_dict[doc_root_path]["Mage.php"] = mage_php_match
-            return_dict[doc_root_path]["magento_path"] = head
-            return_dict[doc_root_path]["local_xml"] = os.path.join(head, "app", "etc", "local.xml")
-            return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
-            return_dict[doc_root_path]["mage_version"] = mage
+            if doc_root_path:
+                return_dict[doc_root_path]["Mage.php"] = mage_php_match
+                return_dict[doc_root_path]["magento_path"] = head
+                return_dict[doc_root_path]["local_xml"] = os.path.join(head, "app", "etc", "local.xml")
+                return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
+                return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
     def open_local_xml(self, filename):
@@ -1277,7 +1278,7 @@ for doc_root in globalconfig["magento"]["doc_root"]:
         globalconfig["magento"]["doc_root"][doc_root] = {}
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
-        globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
+        globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
     
     #testvar = magento.open_local_xml(local_xml)
     #print "1252: %r" % testvar
