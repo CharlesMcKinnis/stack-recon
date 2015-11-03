@@ -1340,14 +1340,15 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
-    print """
+    print("""
              _            
  _ __   __ _(_)_ __ __  __
 | '_ \ / _` | | '_ \\ \/ /
 | | | | (_| | | | | |>  < 
 |_| |_|\__, |_|_| |_/_/\_\
        |___/      
-"""
+
+""")
     if "sites" in  globalconfig["nginx"]:
         print "nginx sites:"
         """
