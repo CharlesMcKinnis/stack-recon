@@ -1621,6 +1621,58 @@ pp.pprint(local_xml)
 """
 class TODO():
     pass
+
+    for key, value in globalconfig["magento"]["doc_root"].iteritems():
+        print "Magento path: %s" % key
+        print "Version: %s" % value["magento_version"]
+        print
+        if "db" in value["local_xml"]:
+            print value["local_xml"]["db"]["db/table_prefix"]
+            print value["local_xml"]["db"]["dbname"]
+            print value["local_xml"]["db"]["host"]
+            print value["local_xml"]["db"]["username"]
+            print value["local_xml"]["db"]["password"]
+        conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 | grep 'configure arguments:'" % (
+            value["local_xml"]["db"]["username"],
+            value["local_xml"]["db"]["password"],
+            value["local_xml"]["db"]["host"],
+            "some sql here"
+            )
+        p = subprocess.Popen(
+            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, err = p.communicate()
+        if p.returncode > 0:
+            #return()
+            print "fail"
+
+
+"""
+{   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
+                                             'local_xml': {   'db': {   'active': '1',
+                                                                        'db/table_prefix': None,
+                                                                        'dbname': 'new_mangento',
+                                                                        'host': '172.24.1.1',
+                                                                        'initStatements': 'SET NAMES utf8',
+                                                                        'model': 'mysql4',
+                                                                        'password': 'password',
+                                                                        'pdoType': None,
+                                                                        'type': 'pdo_mysql',
+                                                                        'username': 'magentouser2'},
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 """
 # these might be good ideas from Daniel, but the second doesn't work and is complicated. So I went back to simple.
 globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig.get("apache",{}).get("sites") if one.get('doc_root', None))
