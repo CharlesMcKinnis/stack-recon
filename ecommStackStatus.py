@@ -1262,6 +1262,9 @@ except:
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
 try:
+    print 1265
+    print type(magento.mage_file_info(mage_files))
+    pp.pprint(magento.mage_file_info(mage_files))
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "Failed to get magento information"
