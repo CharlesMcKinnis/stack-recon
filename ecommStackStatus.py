@@ -276,7 +276,7 @@ class apacheCtl(object):
                 #    "doc_root" : "",
                 #    "config_file" : "",
                 #    "listening" : [] } )
-                
+                # "customlog", "errorlog"
                 if "servername" in stanzas[i]:
                     if not "domains" in configuration["sites"][-1]:
                         configuration["sites"][-1]["domains"] = []
@@ -293,6 +293,11 @@ class apacheCtl(object):
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["documentroot"][0]
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+                if "customlog" in stanzas[i]:
+                    configuration["sites"][-1]["access_log"] = stanzas[i]["customlog"][0]
+                if "errorlog" in stanzas[i]:
+                    configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
+
         stanzas.update(configuration)
         if not "maxclients" in stanzas["config"]:
             mpm = self.get_mpm().lower()
@@ -425,7 +430,8 @@ class nginxCtl(object):
         linenum = 0
         filechain = []
         stanzas = {} #AutoVivification()
-        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
+        # keywords
+        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers", "access_log", "error_log"]
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
@@ -512,11 +518,14 @@ class nginxCtl(object):
         configuration = {}
         configuration["sites"] =  []
         #print "parsed apache: %r" % stanzas
+        
+        # pressing the whole web daemon config in to a specific framework so it is easier to work with
         for i in stanzas.keys():
             #print "i %s" %i
             #print "pre-match %r" % stanzas[i]
             if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
                 #print "matched %r" % stanzas[i]
+                # "access_log", "error_log"
                 configuration["sites"].append( { } )
                 if "server_name" in stanzas[i]:
                     if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
@@ -528,6 +537,10 @@ class nginxCtl(object):
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+                if "access_log" in stanzas[i]:
+                    configuration["sites"][-1]["access_log"] = stanzas[i]["access_log"][0]
+                if "error_log" in stanzas[i]:
+                    configuration["sites"][-1]["error_log"] = stanzas[i]["error_log"][0]
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
             #print "stanza worker_process: %r" % stanzas["worker_processes"]
@@ -1018,6 +1031,22 @@ def memory_print(result, proc_name, proc_max):
     #print
     #print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
+def print_sites(localconfig):
+    for one in sorted(localconfig):
+        if "domains" in one:
+            print "Domains: %s" % "  ".join(one["domains"])
+        if "listening" in one:
+            print "listening: %r" % ", ".join(one["listening"])
+            #print "Listening on: %s" % " ".join(one["listening"])
+        if "doc_root" in one:
+            print "Doc root: %s" % one["doc_root"]
+        if "config_file" in one:
+            print "Config file: %s" % one["config_file"]
+        if "access_log" in one:
+            print "Access log: %s" % one["config_file"]
+        if "error_log" in one:
+            print "Error log: %s" % one["config_file"]
+
 """
 need to check directory permissions
 [root@localhost vhosts]# ll
@@ -1310,17 +1339,22 @@ if "nginx" in globalconfig:
         if globalconfig.get("nginx",{}).get("error"):
             sys.stderr.write("Errors: \n%s\n" % globalconfig["nginx"]["error"])
         
-        for one in sorted(globalconfig["nginx"]["sites"]):
-            if "domains" in one:
-                print "Domains: %s" % "  ".join(one["domains"])
-            if "listening" in one:
-                print "listening: %r" % ", ".join(one["listening"])
-                #print "Listening on: %s" % " ".join(one["listening"])
-            if "doc_root" in one:
-                print "Doc root: %s" % one["doc_root"]
-            if "config_file" in one:
-                print "Config file: %s" % one["config_file"]
-            print # an empty line between sections
+        print_sites(globalconfig["nginx"]["sites"])
+        # for one in sorted(globalconfig["nginx"]["sites"]):
+        #     if "domains" in one:
+        #         print "Domains: %s" % "  ".join(one["domains"])
+        #     if "listening" in one:
+        #         print "listening: %r" % ", ".join(one["listening"])
+        #         #print "Listening on: %s" % " ".join(one["listening"])
+        #     if "doc_root" in one:
+        #         print "Doc root: %s" % one["doc_root"]
+        #     if "config_file" in one:
+        #         print "Config file: %s" % one["config_file"]
+        #     if "access_log" in one:
+        #         print "Access log: %s" % one["config_file"]
+        #     if "error_log" in one:
+        #         print "Error log: %s" % one["config_file"]
+        print # an empty line between sections
             #print "%r\n" % (one)
         #if "daemon" in globalconfig["nginx"]:
         #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
@@ -1353,17 +1387,18 @@ if "apache" in  globalconfig:
         'doc_root': '/var/www/html',
         'listening': ['*:80']}
         """
-        for one in sorted(globalconfig["apache"]["sites"]):
-            out_string = "Domains:"
-            if "domains" in one:
-                print "Domains: %s" % "  ".join(one["domains"])
-            if "listening" in one:
-                print "Listening on: %s" % ", ".join(one["listening"])
-            if "doc_root" in one:
-                print "Doc root: %s" % one["doc_root"]
-            if "config_file" in one:
-                print "Config file: %s" % one["config_file"]
-            print # an empty line between sections
+        print_sites(globalconfig["apache"]["sites"])
+        # for one in sorted(globalconfig["apache"]["sites"]):
+        #     out_string = "Domains:"
+        #     if "domains" in one:
+        #         print "Domains: %s" % "  ".join(one["domains"])
+        #     if "listening" in one:
+        #         print "Listening on: %s" % ", ".join(one["listening"])
+        #     if "doc_root" in one:
+        #         print "Doc root: %s" % one["doc_root"]
+        #     if "config_file" in one:
+        #         print "Config file: %s" % one["config_file"]
+        print # an empty line between sections
         #if "daemon" in globalconfig["apache"]:
         #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
         #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
