@@ -1276,9 +1276,13 @@ except:
 for doc_root in globalconfig["magento"]["doc_root"]:
     if not doc_root in globalconfig["magento"]["doc_root"]:
         globalconfig["magento"]["doc_root"][doc_root] = {}
+    else:
+        print '%s in globalconfig["magento"]["doc_root"] is defined' % doc_root
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
         globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
+    else:
+        print '"local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
     
     #testvar = magento.open_local_xml(local_xml)
     #print "1252: %r" % testvar
