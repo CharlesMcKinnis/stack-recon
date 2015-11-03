@@ -1511,19 +1511,19 @@ if globalconfig.get("magento",{}).get("doc_root"):
         print "%s %s" % (key,value["magento_version"])
         print "Magento path: %s" % key
         print "Version: %s" % key,value["magento_version"]
-        if value["db"] is not None:
+        if "db" in value:
             print "Database:"
             for k2,v2 in value["db"]:
                 print "%s: %s" % (k2,v2)
-        if value["session_cache"] is not None:
+        if "session_cache" in value:
             print "Session Cache: %s" % value["session_cache"]["session_save"]
             for k2,v2 in value["session_cache"]:
                 print "%s: %s" % (k2,v2)
-        if value["object_cache"] is not None:
+        if "object_cache" in value:
             print "Object Cache: %s" % value["object_cache"]["backend"]
             for k2,v2 in value["object_cache"]:
                 print "%s: %s" % (k2,v2)
-        if value["full_page_cache"] is not None:
+        if "full_page_cache" in value:
             print "Full Page Cache: %s" % value["full_page_cache"]["backend"]
             for k2,v2 in value["full_page_cache"]:
                 print "%s: %s" % (k2,v2)
