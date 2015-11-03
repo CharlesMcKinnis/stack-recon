@@ -1048,6 +1048,7 @@ def print_sites(localconfig):
             print "Access log: %s" % one["config_file"]
         if "error_log" in one:
             print "Error log: %s" % one["config_file"]
+        print
 
 """
 need to check directory permissions
