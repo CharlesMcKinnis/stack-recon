@@ -18,7 +18,16 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
-import argparse
+try:
+    import argparse
+except:
+    NOARGPARSE = True
+    print "no argparse installed"
+try:
+    import mysql.connector
+except:
+    NOMYSQL = True
+    print "no mysql.connector installed"
 
 pp = pprint.PrettyPrinter(indent=4)
 
