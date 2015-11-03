@@ -1265,9 +1265,9 @@ except:
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
 try:
-    print "1265"
-    print type(magento.mage_file_info(mage_files))
-    pp.pprint(magento.mage_file_info(mage_files))
+    # print "1265"
+    # print type(magento.mage_file_info(mage_files))
+    # pp.pprint(magento.mage_file_info(mage_files))
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "Failed to get magento information"
@@ -1340,6 +1340,14 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
+    print """
+             _            
+ _ __   __ _(_)_ __ __  __
+| '_ \ / _` | | '_ \\ \/ /
+| | | | (_| | | | | |>  < 
+|_| |_|\__, |_|_| |_/_/\_\
+       |___/      
+"""
     if "sites" in  globalconfig["nginx"]:
         print "nginx sites:"
         """
