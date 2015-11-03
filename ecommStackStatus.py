@@ -1509,7 +1509,25 @@ if globalconfig.get("magento",{}).get("doc_root"):
     print "\nMagento versions installed:"
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "%s %s" % (key,value["magento_version"])
-    pp.pprint(globalconfig["magento"]["doc_root"])
+        print "Magento path: %s" % key
+        print "Version: %s" % key,value["magento_version"]
+        if value["db"] is not None:
+            print "Database:"
+            for k2,v2 in value["db"]:
+                print "%s: %s" % (k2,v2)
+        if value["session_cache"] is not None:
+            print "Session Cache: %s" % value["session_cache"]["session_save"]
+            for k2,v2 in value["session_cache"]:
+                print "%s: %s" % (k2,v2)
+        if value["object_cache"] is not None:
+            print "Object Cache: %s" % value["object_cache"]["backend"]
+            for k2,v2 in value["object_cache"]:
+                print "%s: %s" % (k2,v2)
+        if value["full_page_cache"] is not None:
+            print "Full Page Cache: %s" % value["full_page_cache"]["backend"]
+            for k2,v2 in value["full_page_cache"]:
+                print "%s: %s" % (k2,v2)
+    #pp.pprint(globalconfig["magento"]["doc_root"])
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
