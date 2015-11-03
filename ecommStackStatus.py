@@ -703,7 +703,8 @@ class MagentoCtl(object):
             if doc_root_path:
                 return_dict[doc_root_path]["Mage.php"] = mage_php_match
                 return_dict[doc_root_path]["magento_path"] = head
-                return_dict[doc_root_path]["local_xml"] = os.path.join(head, "app", "etc", "local.xml")
+                return_dict[doc_root_path]["local_xml"] = { }
+                return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
                 return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
                 return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
@@ -1294,7 +1295,7 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     # print globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
     # print type(localdict)
     # pprint(localdict)
-    globalconfig["magento"]["doc_root"][doc_root].update(magento.open_local_xml(local_xml))
+    globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
     pp.pprint(globalconfig["magento"]["doc_root"])
 """
 {'/var/www/html':
