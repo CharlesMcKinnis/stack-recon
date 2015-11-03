@@ -1297,7 +1297,7 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     # print type(localdict)
     # pprint(localdict)
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
-    pp.pprint(globalconfig["magento"]["doc_root"])
+    #pp.pprint(globalconfig["magento"]["doc_root"])
 """
 {'/var/www/html':
     {
