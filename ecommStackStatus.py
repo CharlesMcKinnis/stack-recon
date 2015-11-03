@@ -689,6 +689,7 @@ class MagentoCtl(object):
             head,tail = os.path.split(os.path.dirname(mage_php_match))
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
             return_dict[doc_root_path]["magento_path"] = head
+            return_dict[doc_root_path]["local_xml"] = os.path.join(head, "app", "etc", "local.xml")
             return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
             return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
