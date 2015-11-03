@@ -1262,7 +1262,7 @@ except:
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
 try:
-    print 1265
+    print "1265"
     print type(magento.mage_file_info(mage_files))
     pp.pprint(magento.mage_file_info(mage_files))
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
@@ -1273,6 +1273,8 @@ except:
 #pp.pprint(globalconfig["magento"])
 
 for doc_root in globalconfig["magento"]["doc_root"]:
+    if not doc_root in globalconfig["magento"]["doc_root"]:
+        globalconfig["magento"]["doc_root"][doc_root] = {}
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
         globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
