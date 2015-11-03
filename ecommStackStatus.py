@@ -1508,24 +1508,23 @@ if globalconfig.get("magento",{}).get("doc_root"):
 """
     print "\nMagento versions installed:"
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
-        print "%s %s" % (key,value["magento_version"])
         print "Magento path: %s" % key
-        print "Version: %s" % key,value["magento_version"]
-        if "db" in value:
+        print "Version: %s" % value["magento_version"]
+        if "db" in value["local_xml"]:
             print "Database:"
-            for k2,v2 in value["db"]:
+            for k2,v2 in value["local_xml"]["db"]:
                 print "%s: %s" % (k2,v2)
-        if "session_cache" in value:
-            print "Session Cache: %s" % value["session_cache"]["session_save"]
-            for k2,v2 in value["session_cache"]:
+        if "session_cache" in value["local_xml"]:
+            print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
+            for k2,v2 in value["local_xml"]["session_cache"]:
                 print "%s: %s" % (k2,v2)
-        if "object_cache" in value:
-            print "Object Cache: %s" % value["object_cache"]["backend"]
-            for k2,v2 in value["object_cache"]:
+        if "object_cache" in value["local_xml"]:
+            print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
+            for k2,v2 in value["local_xml"]["object_cache"]:
                 print "%s: %s" % (k2,v2)
-        if "full_page_cache" in value:
-            print "Full Page Cache: %s" % value["full_page_cache"]["backend"]
-            for k2,v2 in value["full_page_cache"]:
+        if "full_page_cache" in value["local_xml"]:
+            print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
+            for k2,v2 in value["local_xml"]["full_page_cache"]:
                 print "%s: %s" % (k2,v2)
     #pp.pprint(globalconfig["magento"]["doc_root"])
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
