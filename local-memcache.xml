@@ -1,0 +1,82 @@
+<config>
+    <global>
+        <install>
+            <date><![CDATA[Sat, 10 May 2014 00:16:51 +0000]]></date>
+        </install>
+        <crypt>
+            <key><![CDATA[3308bd9]]></key>
+        </crypt>
+        <disable_local_modules>false</disable_local_modules>
+        <resources>
+            <db>
+                <table_prefix><![CDATA[]]></table_prefix>
+            </db>
+            <default_setup>
+
+                <connection>
+                    <host><![CDATA[172.24.16.229]]></host>
+                    <username><![CDATA[magentouser2]]></username>
+                    <password><![CDATA[password]]></password>
+                    <dbname><![CDATA[new_mangento]]></dbname>
+                    <initStatements><![CDATA[SET NAMES utf8]]></initStatements>
+                    <model><![CDATA[mysql4]]></model>
+                    <type><![CDATA[pdo_mysql]]></type>
+                    <pdoType><![CDATA[]]></pdoType>
+                    <active>1</active>
+                </connection>
+            </default_setup>
+        </resources>
+        <session_save><![CDATA[memcache]]></session_save>
+        <session_save_path><![CDATA[tcp://127.0.0.1:11211?persistent=0&weight=2&timeout=10&retry_interval=10]]></session_save_path>
+        <cache>
+            <backend>memcached</backend>
+            <slow_backend>database</slow_backend>
+                <memcached>
+                <servers>
+                <server>
+                <host><![CDATA[127.0.0.1]]></host>
+                <port><![CDATA[11212]]></port>
+                <persistent><![CDATA[0]]></persistent>
+                <weight><![CDATA[2]]></weight>
+                <timeout><![CDATA[10]]></timeout>
+                <retry_interval><![CDATA[10]]></retry_interval>
+                <status><![CDATA[]]></status>
+                </server>
+                </servers>
+                <compression><![CDATA[0]]></compression>
+                <cache_dir><![CDATA[]]></cache_dir>
+                <hashed_directory_level><![CDATA[]]></hashed_directory_level>
+                <hashed_directory_umask><![CDATA[]]></hashed_directory_umask>
+                <file_name_prefix><![CDATA[]]></file_name_prefix>
+            </memcached>
+        </cache>
+        <full_page_cache>
+        <backend>Mage_Cache_Backend_Redis</backend>
+          <backend_options>
+            <server>127.0.0.1</server>
+            <port>6379</port>
+        <full_page_cache>
+        <backend>Mage_Cache_Backend_Redis</backend>
+          <backend_options>
+            <server>127.0.0.1</server>
+            <port>6379</port>
+            <persistent></persistent>
+            <database>0</database>
+            <password></password>
+            <force_standalone>0</force_standalone>  <!-- 0 for phpredis, 1 for standalone PHP -->
+            <connect_retries>3</connect_retries>
+            <lifetimelimit>57600</lifetimelimit>    <!-- 16 hours of lifetime for cache record -->
+            <compress_data>0</compress_data>
+          </backend_options>
+        </full_page_cache>
+    </global>
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <frontName><![CDATA[admin]]></frontName>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
+</config>
