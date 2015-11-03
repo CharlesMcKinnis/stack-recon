@@ -1281,8 +1281,12 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     
     #testvar = magento.open_local_xml(local_xml)
     #print "1252: %r" % testvar
+    localdict = magento.open_local_xml(local_xml)
+    print "doc_root: %r" % doc_root
+    print type(globalconfig["magento"]["doc_root"][doc_root])
     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"])
-    pprint(magento.open_local_xml(local_xml))
+    print type(localdict)
+    pprint(localdict)
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
 """
 {'/var/www/html':
