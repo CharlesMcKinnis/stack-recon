@@ -1510,6 +1510,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print "Magento path: %s" % key
         print "Version: %s" % value["magento_version"]
+        print
         if "db" in value["local_xml"]:
             print "Database info"
             for k2,v2 in value["local_xml"]["db"].iteritems():
@@ -1530,6 +1531,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                 print "%s: %s" % (k2,v2)
             print
+        print
     #pp.pprint(globalconfig["magento"]["doc_root"])
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
