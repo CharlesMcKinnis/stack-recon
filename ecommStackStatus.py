@@ -1532,7 +1532,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 print "%s: %s" % (k2,v2)
             print
         print
-    #pp.pprint(globalconfig["magento"]["doc_root"])
+    pp.pprint(globalconfig["magento"]["doc_root"])
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
