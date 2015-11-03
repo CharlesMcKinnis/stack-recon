@@ -18,6 +18,7 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
+import argparse
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -1532,7 +1533,53 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 print "%s: %s" % (k2,v2)
             print
         print
+"""
     pp.pprint(globalconfig["magento"]["doc_root"])
+This output is flawed because local.xml was not configured correctly
+{   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
+                                             'local_xml': {   'db': {   'active': '1',
+                                                                        'db/table_prefix': None,
+                                                                        'dbname': 'new_mangento',
+                                                                        'host': '172.24.1.1',
+                                                                        'initStatements': 'SET NAMES utf8',
+                                                                        'model': 'mysql4',
+                                                                        'password': 'password',
+                                                                        'pdoType': None,
+                                                                        'type': 'pdo_mysql',
+                                                                        'username': 'magentouser2'},
+                                                              'filename': '/var/www/vhosts/domain.com/app/etc/local.xml',
+                                                              'full_page_cache': {   'backend': 'Mage_Cache_Backend_Redis',
+                                                                                     'compress_data': '0',
+                                                                                     'connect_retries': '3',
+                                                                                     'database': '0',
+                                                                                     'force_standalone': '0',
+                                                                                     'lifetimelimit': '57600',
+                                                                                     'password': None,
+                                                                                     'persistent': None,
+                                                                                     'port': '6379',
+                                                                                     'server': '127.0.0.1'},
+                                                              'object_cache': {   'backend': 'memcached'},
+                                                              'session_cache': {   'session_save': 'memcache',
+                                                                                   'session_save_path': 'tcp://127.0.0.1:11211?persistent=0&weight=2&timeout=10&retry_interval=10'}},
+                                             'mage_version': {   'edition': 'EDITION_ENTERPRISE',
+                                                                 'major': '1',
+                                                                 'minor': '14',
+                                                                 'number': '',
+                                                                 'patch': '0',
+                                                                 'revision': '2',
+                                                                 'stability': '',
+                                                                 'version': '1.14.2.0'},
+                                             'magento_path': '/var/www/vhosts/domain.com',
+                                             'magento_version': 'Magento 1.14.2.0 EDITION_ENTERPRISE'}}
+
+"""
+
+
+
+
+
+
+
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
