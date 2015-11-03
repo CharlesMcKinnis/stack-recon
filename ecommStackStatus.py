@@ -18,6 +18,7 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
+import argparse
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -276,7 +277,7 @@ class apacheCtl(object):
                 #    "doc_root" : "",
                 #    "config_file" : "",
                 #    "listening" : [] } )
-                
+                # "customlog", "errorlog"
                 if "servername" in stanzas[i]:
                     if not "domains" in configuration["sites"][-1]:
                         configuration["sites"][-1]["domains"] = []
@@ -293,6 +294,11 @@ class apacheCtl(object):
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["documentroot"][0]
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+                if "customlog" in stanzas[i]:
+                    configuration["sites"][-1]["access_log"] = stanzas[i]["customlog"][0]
+                if "errorlog" in stanzas[i]:
+                    configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
+
         stanzas.update(configuration)
         if not "maxclients" in stanzas["config"]:
             mpm = self.get_mpm().lower()
@@ -425,7 +431,8 @@ class nginxCtl(object):
         linenum = 0
         filechain = []
         stanzas = {} #AutoVivification()
-        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"]
+        # keywords
+        server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers", "access_log", "error_log"]
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
@@ -512,11 +519,14 @@ class nginxCtl(object):
         configuration = {}
         configuration["sites"] =  []
         #print "parsed apache: %r" % stanzas
+        
+        # pressing the whole web daemon config in to a specific framework so it is easier to work with
         for i in stanzas.keys():
             #print "i %s" %i
             #print "pre-match %r" % stanzas[i]
             if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
                 #print "matched %r" % stanzas[i]
+                # "access_log", "error_log"
                 configuration["sites"].append( { } )
                 if "server_name" in stanzas[i]:
                     if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
@@ -528,6 +538,10 @@ class nginxCtl(object):
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
                 if "config_file" in stanzas[i]:
                     configuration["sites"][-1]["config_file"] = stanzas[i]["config_file"][0]
+                if "access_log" in stanzas[i]:
+                    configuration["sites"][-1]["access_log"] = stanzas[i]["access_log"][0]
+                if "error_log" in stanzas[i]:
+                    configuration["sites"][-1]["error_log"] = stanzas[i]["error_log"][0]
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
             #print "stanza worker_process: %r" % stanzas["worker_processes"]
@@ -687,11 +701,13 @@ class MagentoCtl(object):
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
-            return_dict[doc_root_path]["Mage.php"] = mage_php_match
-            return_dict[doc_root_path]["magento_path"] = head
-            return_dict[doc_root_path]["local_xml"] = os.path.join(head, "app", "etc", "local.xml")
-            return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
-            return_dict[doc_root_path]["mage_version"] = mage
+            if doc_root_path:
+                return_dict[doc_root_path]["Mage.php"] = mage_php_match
+                return_dict[doc_root_path]["magento_path"] = head
+                return_dict[doc_root_path]["local_xml"] = { }
+                return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
+                return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
+                return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
     def open_local_xml(self, filename):
@@ -1018,6 +1034,23 @@ def memory_print(result, proc_name, proc_max):
     #print
     #print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
+def print_sites(localconfig):
+    for one in sorted(localconfig):
+        if "domains" in one:
+            print "Domains: %s" % "  ".join(one["domains"])
+        if "listening" in one:
+            print "listening: %r" % ", ".join(one["listening"])
+            #print "Listening on: %s" % " ".join(one["listening"])
+        if "doc_root" in one:
+            print "Doc root: %s" % one["doc_root"]
+        if "config_file" in one:
+            print "Config file: %s" % one["config_file"]
+        if "access_log" in one:
+            print "Access log: %s" % one["config_file"]
+        if "error_log" in one:
+            print "Error log: %s" % one["config_file"]
+        print
+
 """
 need to check directory permissions
 [root@localhost vhosts]# ll
@@ -1233,6 +1266,9 @@ except:
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
 try:
+    # print "1265"
+    # print type(magento.mage_file_info(mage_files))
+    # pp.pprint(magento.mage_file_info(mage_files))
     globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
 except:
     print "Failed to get magento information"
@@ -1241,13 +1277,28 @@ except:
 #pp.pprint(globalconfig["magento"])
 
 for doc_root in globalconfig["magento"]["doc_root"]:
+    if not doc_root in globalconfig["magento"]["doc_root"]:
+        globalconfig["magento"]["doc_root"][doc_root] = {}
+    # else:
+    #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
+    #     print type(globalconfig["magento"]["doc_root"][doc_root])
     local_xml = os.path.join(doc_root,"app","etc","local.xml")
     if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
-        globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = {}
+        globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
+    # else:
+    #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
+    #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
     
     #testvar = magento.open_local_xml(local_xml)
     #print "1252: %r" % testvar
+    # var_dict = magento.open_local_xml(local_xml)
+    # print "doc_root: %r" % doc_root
+    # print type(globalconfig["magento"]["doc_root"][doc_root])
+    # print globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
+    # print type(localdict)
+    # pprint(localdict)
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
+    #pp.pprint(globalconfig["magento"]["doc_root"])
 """
 {'/var/www/html':
     {
@@ -1290,6 +1341,15 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
+    print """
+             _            
+ _ __   __ _(_)_ __ __  __
+| '_ \ / _` | | '_ \\\ \/ /
+| | | | (_| | | | | |>  < 
+|_| |_|\__, |_|_| |_/_/\_\\
+       |___/      
+
+"""
     if "sites" in  globalconfig["nginx"]:
         print "nginx sites:"
         """
@@ -1310,17 +1370,22 @@ if "nginx" in globalconfig:
         if globalconfig.get("nginx",{}).get("error"):
             sys.stderr.write("Errors: \n%s\n" % globalconfig["nginx"]["error"])
         
-        for one in sorted(globalconfig["nginx"]["sites"]):
-            if "domains" in one:
-                print "Domains: %s" % "  ".join(one["domains"])
-            if "listening" in one:
-                print "listening: %r" % ", ".join(one["listening"])
-                #print "Listening on: %s" % " ".join(one["listening"])
-            if "doc_root" in one:
-                print "Doc root: %s" % one["doc_root"]
-            if "config_file" in one:
-                print "Config file: %s" % one["config_file"]
-            print # an empty line between sections
+        print_sites(globalconfig["nginx"]["sites"])
+        # for one in sorted(globalconfig["nginx"]["sites"]):
+        #     if "domains" in one:
+        #         print "Domains: %s" % "  ".join(one["domains"])
+        #     if "listening" in one:
+        #         print "listening: %r" % ", ".join(one["listening"])
+        #         #print "Listening on: %s" % " ".join(one["listening"])
+        #     if "doc_root" in one:
+        #         print "Doc root: %s" % one["doc_root"]
+        #     if "config_file" in one:
+        #         print "Config file: %s" % one["config_file"]
+        #     if "access_log" in one:
+        #         print "Access log: %s" % one["config_file"]
+        #     if "error_log" in one:
+        #         print "Error log: %s" % one["config_file"]
+        print # an empty line between sections
             #print "%r\n" % (one)
         #if "daemon" in globalconfig["nginx"]:
         #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
@@ -1342,6 +1407,14 @@ def APACHE_PRINT():
 # APACHE
 ################################################
 if "apache" in  globalconfig:
+    print """
+    _                     _          
+   / \   _ __   __ _  ___| |__   ___ 
+  / _ \ | '_ \ / _` |/ __| '_ \ / _ \\
+ / ___ \| |_) | (_| | (__| | | |  __/
+/_/   \_\ .__/ \__,_|\___|_| |_|\___|
+        |_|         
+"""
     if "sites" in  globalconfig["apache"]:
         print "Apache sites:"
         #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
@@ -1353,17 +1426,18 @@ if "apache" in  globalconfig:
         'doc_root': '/var/www/html',
         'listening': ['*:80']}
         """
-        for one in sorted(globalconfig["apache"]["sites"]):
-            out_string = "Domains:"
-            if "domains" in one:
-                print "Domains: %s" % "  ".join(one["domains"])
-            if "listening" in one:
-                print "Listening on: %s" % ", ".join(one["listening"])
-            if "doc_root" in one:
-                print "Doc root: %s" % one["doc_root"]
-            if "config_file" in one:
-                print "Config file: %s" % one["config_file"]
-            print # an empty line between sections
+        print_sites(globalconfig["apache"]["sites"])
+        # for one in sorted(globalconfig["apache"]["sites"]):
+        #     out_string = "Domains:"
+        #     if "domains" in one:
+        #         print "Domains: %s" % "  ".join(one["domains"])
+        #     if "listening" in one:
+        #         print "Listening on: %s" % ", ".join(one["listening"])
+        #     if "doc_root" in one:
+        #         print "Doc root: %s" % one["doc_root"]
+        #     if "config_file" in one:
+        #         print "Config file: %s" % one["config_file"]
+        print # an empty line between sections
         #if "daemon" in globalconfig["apache"]:
         #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
         #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
@@ -1389,6 +1463,14 @@ def PHP_FPM_PRINT():
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
+    print """
+       _                  __                 
+ _ __ | |__  _ __        / _|_ __  _ __ ___  
+| '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \ 
+| |_) | | | | |_) |_____|  _| |_) | | | | | |
+| .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
+|_|         |_|             |_|
+"""
     #print "php-fpm configs"
     print "php-fpm pools:"
     for one in globalconfig["php-fpm"]:
@@ -1416,11 +1498,88 @@ def MAGENTO_PRINT():
 # Magento
 ################################################
 
-print "\nMagento versions installed:"
 if globalconfig.get("magento",{}).get("doc_root"):
+    print """
+ __  __                        _        
+|  \/  | __ _  __ _  ___ _ __ | |_ ___  
+| |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \ 
+| |  | | (_| | (_| |  __/ | | | || (_) |
+|_|  |_|\__,_|\__, |\___|_| |_|\__\___/ 
+              |___/
+"""
+    print "\nMagento versions installed:"
     for key, value in globalconfig["magento"]["doc_root"].iteritems():
-        print "%s %s" % (key,value["magento_version"])
-pp.pprint(globalconfig["magento"]["doc_root"])
+        print "Magento path: %s" % key
+        print "Version: %s" % value["magento_version"]
+        print
+        if "db" in value["local_xml"]:
+            print "Database info"
+            for k2,v2 in value["local_xml"]["db"].iteritems():
+                print "%s: %s" % (k2,v2)
+            print
+        if "session_cache" in value["local_xml"]:
+            print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
+            for k2,v2 in value["local_xml"]["session_cache"].iteritems():
+                print "%s: %s" % (k2,v2)
+            print
+        if "object_cache" in value["local_xml"]:
+            print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
+            for k2,v2 in value["local_xml"]["object_cache"].iteritems():
+                print "%s: %s" % (k2,v2)
+            print
+        if "full_page_cache" in value["local_xml"]:
+            print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
+            for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
+                print "%s: %s" % (k2,v2)
+            print
+        print
+"""
+    pp.pprint(globalconfig["magento"]["doc_root"])
+This output is flawed because local.xml was not configured correctly
+{   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
+                                             'local_xml': {   'db': {   'active': '1',
+                                                                        'db/table_prefix': None,
+                                                                        'dbname': 'new_mangento',
+                                                                        'host': '172.24.1.1',
+                                                                        'initStatements': 'SET NAMES utf8',
+                                                                        'model': 'mysql4',
+                                                                        'password': 'password',
+                                                                        'pdoType': None,
+                                                                        'type': 'pdo_mysql',
+                                                                        'username': 'magentouser2'},
+                                                              'filename': '/var/www/vhosts/domain.com/app/etc/local.xml',
+                                                              'full_page_cache': {   'backend': 'Mage_Cache_Backend_Redis',
+                                                                                     'compress_data': '0',
+                                                                                     'connect_retries': '3',
+                                                                                     'database': '0',
+                                                                                     'force_standalone': '0',
+                                                                                     'lifetimelimit': '57600',
+                                                                                     'password': None,
+                                                                                     'persistent': None,
+                                                                                     'port': '6379',
+                                                                                     'server': '127.0.0.1'},
+                                                              'object_cache': {   'backend': 'memcached'},
+                                                              'session_cache': {   'session_save': 'memcache',
+                                                                                   'session_save_path': 'tcp://127.0.0.1:11211?persistent=0&weight=2&timeout=10&retry_interval=10'}},
+                                             'mage_version': {   'edition': 'EDITION_ENTERPRISE',
+                                                                 'major': '1',
+                                                                 'minor': '14',
+                                                                 'number': '',
+                                                                 'patch': '0',
+                                                                 'revision': '2',
+                                                                 'stability': '',
+                                                                 'version': '1.14.2.0'},
+                                             'magento_path': '/var/www/vhosts/domain.com',
+                                             'magento_version': 'Magento 1.14.2.0 EDITION_ENTERPRISE'}}
+
+"""
+
+
+
+
+
+
+
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
 m = magentoCtl()
