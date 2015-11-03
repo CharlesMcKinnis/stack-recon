@@ -1511,21 +1511,25 @@ if globalconfig.get("magento",{}).get("doc_root"):
         print "Magento path: %s" % key
         print "Version: %s" % value["magento_version"]
         if "db" in value["local_xml"]:
-            print "Database:"
+            print "Database info"
             for k2,v2 in value["local_xml"]["db"].iteritems():
                 print "%s: %s" % (k2,v2)
+            print
         if "session_cache" in value["local_xml"]:
             print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
             for k2,v2 in value["local_xml"]["session_cache"].iteritems():
                 print "%s: %s" % (k2,v2)
+            print
         if "object_cache" in value["local_xml"]:
             print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
             for k2,v2 in value["local_xml"]["object_cache"].iteritems():
                 print "%s: %s" % (k2,v2)
+            print
         if "full_page_cache" in value["local_xml"]:
             print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
             for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                 print "%s: %s" % (k2,v2)
+            print
     #pp.pprint(globalconfig["magento"]["doc_root"])
 #print "1424: %r" % globalconfig["magento"]["doc_root"]
 """
