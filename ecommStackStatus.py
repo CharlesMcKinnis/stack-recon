@@ -1645,10 +1645,12 @@ print """
 """
 
 #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+def magento_db_cache_table(doc_roots):
+    pass
+#magento_db_cache_table(globalconfig["magento"]["doc_root"])
 doc_roots = globalconfig["magento"]["doc_root"]
+return_config = { }
 for key, value in doc_roots.iteritems():
-    if not return_config:
-        return_config = {}
     if not key in return_config:
         return_config[key] = { } 
     print "Magento path: %s" % key
