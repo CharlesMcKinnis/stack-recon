@@ -1698,7 +1698,7 @@ print """
  \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
 """
 
-magento.db_cache_table(globalconfig["magento"]["doc_root"])
+#magento.db_cache_table(globalconfig["magento"]["doc_root"])
 
 """
 {   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
