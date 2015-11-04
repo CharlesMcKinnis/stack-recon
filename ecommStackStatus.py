@@ -1665,8 +1665,8 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print " host: %s" % var_host
         print " username: %s" % var_username
         print " password: %s" % var_password
-        sqlquery = "select * FROM {0}.{1}core_cache_option\G".format(var_dbname,var_table_prefix)
-        conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
+        sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
+        conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
             var_username,
             var_password,
             var_host,
@@ -1679,10 +1679,10 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
             #return()
             print "fail"
             print "command: %s" % conf
-        else:
-            print "Mysql cache table:"
-            print output
-            print "command: %s" % conf
+        # else:
+        #     print "Mysql cache table:"
+        #     print output
+        #     print "command: %s" % conf
     else:
         print "Skipping database because there isn't enough login information"
         print " Table prefix: %s" % var_table_prefix
