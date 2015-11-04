@@ -833,11 +833,11 @@ class MagentoCtl(object):
         var_password = value.get("local_xml",{}).get("db",{}).get("password","")
         if (var_dbname and var_host and var_username and var_password ):
             #if "db" in value["local_xml"]:
-            print " host: %s" % var_host
-            print " dbname: %s" % var_dbname
-            if var_table_prefix:
-                print " Table prefix: %s" % var_table_prefix
-            print " username: %s" % var_username
+            # print " host: %s" % var_host
+            # print " dbname: %s" % var_dbname
+            # if var_table_prefix:
+            #     print " Table prefix: %s" % var_table_prefix
+            # print " username: %s" % var_username
             #print " password: %s" % var_password
             sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
             conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
@@ -851,25 +851,26 @@ class MagentoCtl(object):
             output, err = p.communicate()
             if p.returncode > 0:
                 #return()
-                print "MySQL cache table query failed"
-                print "err %s" % err
+                # print "MySQL cache table query failed"
+                # print "err %s" % err
                 #print "command: %s" % conf
+                pass
             else:
-                print "Mysql cache table:"
-                print "%s" % output
+                # print "Mysql cache table:"
+                # print "%s" % output
                 #return_config = { "cache" : { "cache_option_table" : "" } }
                 #globalconfig["magento"]["doc_root"][doc_root]    ["cache"]["cache_option_table"] = output
                 if not return_config.get("cache",{}).get("cache_option_table"):
                     return_config = {"cache" : { "cache_option_table" : "" } } 
                 return_config["cache"]["cache_option_table"] = output
-        else:
-            print "Skipping database because there isn't enough login information"
-            print " Table prefix: %s" % var_table_prefix
-            print " dbname: %s" % var_dbname
-            print " host: %s" % var_host
-            print " username: %s" % var_username
-            if var_password:
-                print " password present but not displayed"
+        # else:
+            # print "Skipping database because there isn't enough login information"
+            # print " Table prefix: %s" % var_table_prefix
+            # print " dbname: %s" % var_dbname
+            # print " host: %s" % var_host
+            # print " username: %s" % var_username
+            # if var_password:
+            #     print " password present but not displayed"
             # print " password: %s" % var_password
         print
         return(return_config)
@@ -1609,6 +1610,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                 print "%s: %s" % (k2,v2)
             print
+        print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
         print
 """
     pp.pprint(globalconfig["magento"]["doc_root"])
@@ -1690,13 +1692,13 @@ pp.pprint(local_xml)
 class TODO():
     pass
 
-print """
-     _       _        _                         __                 _          
-  __| | __ _| |_ __ _| |__   __ _ ___  ___     / /   ___ __ _  ___| |__   ___ 
- / _` |/ _` | __/ _` | '_ \ / _` / __|/ _ \\   / /   / __/ _` |/ __| '_ \ / _ \\
-| (_| | (_| | || (_| | |_) | (_| \__ \  __/  / /   | (_| (_| | (__| | | |  __/
- \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
-"""
+# print """
+#      _       _        _                         __                 _          
+#   __| | __ _| |_ __ _| |__   __ _ ___  ___     / /   ___ __ _  ___| |__   ___ 
+#  / _` |/ _` | __/ _` | '_ \ / _` / __|/ _ \\   / /   / __/ _` |/ __| '_ \ / _ \\
+# | (_| | (_| | || (_| | |_) | (_| \__ \  __/  / /   | (_| (_| | (__| | | |  __/
+#  \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
+# """
 
 #magento.db_cache_table(globalconfig["magento"]["doc_root"])
 
