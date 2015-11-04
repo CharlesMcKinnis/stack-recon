@@ -20,16 +20,72 @@ import xml.etree.ElementTree as ET
 import pprint
 try:
     import argparse
+    ARGPARSE = True
 except:
     NOARGPARSE = True
     print "no argparse installed"
 try:
     import mysql.connector
+    MYSQL = True
 except:
     NOMYSQL = True
     print "no mysql.connector installed"
 
 pp = pprint.PrettyPrinter(indent=4)
+
+# The argparse module is not installed on many systems. This way, it will work regardless
+if ARGPARSE:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "-j", "--jsonfile", help="Name of a config dump json file. Skips detection and uses file values.",
+                        )
+    parser.add_argument("-s", "--silent",
+                        help="No output, not even stderr.",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose",
+                        help="Additional output, mostly to stderr.",
+                        action="store_true")
+    parser.add_argument("-F", "--nofiglet", help="Omits big text (figlet) banners. Banners do not require figlet to be installed.",
+                        action="store_true")
+    # parser.add_argument("--plaintext", help="ANSI control characters are omitted for colors and screen clear/home.",
+    #                     action="store_true")
+    parser.add_argument("-f", "--force", help="If config_dump.json already exists, overwrite it. Default: do not overwrite.",
+                        action="store_true")
+    parser.add_argument("-o", "--output", help="Name of json file to place saved config in. Default: ./config_dump.json",
+                        default="./config_dump.json")
+    args = parser.parse_args()
+    
+    # if (args.silent or args.batch) and not args.runtime:
+    #     args.runtime = 30
+    #     pass
+    # if args.batch:
+    #     args.plaintext = True
+    # if args.batch:
+    #     pass
+else:
+    args = {
+        #"jsonfile" :
+        #"silent" :
+        #"verbose" :
+        #"nofiglet" :
+        #"force" : 
+        "output" : "./config_dump.json"
+    }
+    """
+    defaults:
+        save a config_dump
+        do not show verbose messages
+        show figlet banners
+        do not overwrite config_dump.json
+        json filename, default config_dump.json
+    """
+
+
+
+
+
+
+
+
 
 class apacheCtl(object):
     def __init__(self,**kwargs):
