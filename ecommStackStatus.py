@@ -805,12 +805,16 @@ class MagentoCtl(object):
             for i in resources.find(xml_config_section):
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
+        else:
+            print "809 it was none?!"
                 
         if xml_config_single:
             if resources.find(xml_config_single) is not None:
                 i = resources.find(xml_config_single)
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
+            else:
+                print "817 it was none?!"
         return local_xml
 
 def daemon_exe(match_exe):
