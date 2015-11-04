@@ -798,20 +798,82 @@ class MagentoCtl(object):
         else:
             i = None
         if i is not None:
-            #print "%s: %s" % (xml_config_node,i.text)
-            local_xml[section][xml_config_node] = i.text
+            if i.text is not None:
+                #print "%s: %s" % (xml_config_node,i.text)
+                local_xml[section][xml_config_node] = i.text
         # configuration
         if resources.find(xml_config_section) is not None:
             for i in resources.find(xml_config_section):
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
+        # else:
+        #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
                 
         if xml_config_single:
             if resources.find(xml_config_single) is not None:
                 i = resources.find(xml_config_single)
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
+            # else:
+            #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
         return local_xml
+
+    def db_cache_table(self, doc_root, value):
+        #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+        #doc_roots = globalconfig["magento"]["doc_root"]
+        return_config = { }
+        print "Magento path: %s" % doc_root
+        print "Version: %s" % value["magento_version"]
+        print
+        # pp.pprint(value)
+        var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
+        var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
+        var_host = value.get("local_xml",{}).get("db",{}).get("host","")
+        var_username = value.get("local_xml",{}).get("db",{}).get("username","")
+        var_password = value.get("local_xml",{}).get("db",{}).get("password","")
+        if (var_dbname and var_host and var_username and var_password ):
+            #if "db" in value["local_xml"]:
+            # print " host: %s" % var_host
+            # print " dbname: %s" % var_dbname
+            # if var_table_prefix:
+            #     print " Table prefix: %s" % var_table_prefix
+            # print " username: %s" % var_username
+            #print " password: %s" % var_password
+            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
+            conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
+                var_username,
+                var_password,
+                var_host,
+                sqlquery
+                )
+            p = subprocess.Popen(
+                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            output, err = p.communicate()
+            if p.returncode > 0:
+                #return()
+                # print "MySQL cache table query failed"
+                # print "err %s" % err
+                #print "command: %s" % conf
+                pass
+            else:
+                # print "Mysql cache table:"
+                # print "%s" % output
+                #return_config = { "cache" : { "cache_option_table" : "" } }
+                #globalconfig["magento"]["doc_root"][doc_root]    ["cache"]["cache_option_table"] = output
+                if not return_config.get("cache",{}).get("cache_option_table"):
+                    return_config = {"cache" : { "cache_option_table" : "" } } 
+                return_config["cache"]["cache_option_table"] = output
+        # else:
+            # print "Skipping database because there isn't enough login information"
+            # print " Table prefix: %s" % var_table_prefix
+            # print " dbname: %s" % var_dbname
+            # print " host: %s" % var_host
+            # print " username: %s" % var_username
+            # if var_password:
+            #     print " password present but not displayed"
+            # print " password: %s" % var_password
+        print
+        return(return_config)
 
 def daemon_exe(match_exe):
     """
@@ -1308,6 +1370,13 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     # pprint(localdict)
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
     #pp.pprint(globalconfig["magento"]["doc_root"])
+
+    globalconfig["magento"]["doc_root"][doc_root].update(magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+
+    #if return_config:
+    #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+    #    globalconfig["magento"]["doc_root"].update(return_config)
+
 """
 {'/var/www/html':
     {
@@ -1541,6 +1610,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                 print "%s: %s" % (k2,v2)
             print
+        print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
         print
 """
     pp.pprint(globalconfig["magento"]["doc_root"])
@@ -1621,49 +1691,8 @@ pp.pprint(local_xml)
 """
 class TODO():
     pass
-"""
-# these might be good ideas from Daniel, but the second doesn't work and is complicated. So I went back to simple.
-globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig.get("apache",{}).get("sites") if one.get('doc_root', None))
-globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig.get("nginx",{}).get("sites") if one.get('doc_root', None))
-"""
-#print "1209 doc_roots %r" % globalconfig["doc_roots"]
-
-#print "split %s" % head
-
-#globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = mage_php_matches[0]
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = head
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
-#globalconfig["magento"]["doc_root"][doc_root_path]["mage_version"] = mage
-
-# os.path.dirname(path)
-#print "1249 %r" % globalconfig["magento"]["doc_root"]
-
-#print "mage_php_matches:"
 
 
-"""
-#globalconfig["apache"]["sites"]["doc_root"]
-if not "magento" in globalconfig:
-    globalconfig["magento"] = {}
-if not "doc_root" in globalconfig["magento"]:
-    globalconfig["magento"]["doc_root"] = {}
-    doc_root_path = globalconfig["apache"]["sites"]["doc_root"]
-    globalconfig["magento"]["doc_root"][doc_root_path] = { "Mage.php" : "", "local.xml" : "", "magento_path" : "" }
-#globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["local.xml"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["session_cache"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["object_cache"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["full_page_cache"] = ""
-"""
-# I will probably use the existance of those two files to assume a Magento install
-# Mage.php provides version information
-"""
-magento = MagentoCtl()
-mage = magento.version("Mage.php")
-print "Magento %s %s" % (mage["version"],mage["edition"])
-"""
 # Save the config as a yaml file
 filename = "config_dump.json"
 if not os.path.isfile(filename):
@@ -1681,3 +1710,15 @@ if os.path.isfile(filename):
 else:
     print "The file %s does not exist." % filename
 """
+
+# print """
+#   ____ _       _           _  ____             __ _       
+#  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
+# | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+# | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+#  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+#                                                     |___/
+# """
+# pp.pprint(globalconfig)
+
+
