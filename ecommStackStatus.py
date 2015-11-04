@@ -1646,9 +1646,11 @@ print """
 
 #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
 doc_roots = globalconfig["magento"]["doc_root"]
-return_config = { "cache" : { "cache_option_table" : "" } }
 for key, value in doc_roots.iteritems():
-    return_config[key] = {"cache" : { "cache_option_table" : "" } } 
+    if not return_config:
+        return_config = {}
+    if not key in return_config:
+        return_config[key] = { } 
     print "Magento path: %s" % key
     print "Version: %s" % value["magento_version"]
     print
@@ -1686,14 +1688,19 @@ for key, value in doc_roots.iteritems():
             print "%s" % output
             return_config = { "cache" : { "cache_option_table" : "" } }
             #globalconfig["magento"]["doc_root"][key]    ["cache"]["cache_option_table"] = output
+            if not return_config[key].get("cache",{}).get("cache_option_table"):
+                return_config[key] = {"cache" : { "cache_option_table" : "" } } 
             return_config[key]["cache"]["cache_option_table"] = output
+
     else:
         print "Skipping database because there isn't enough login information"
         print " Table prefix: %s" % var_table_prefix
         print " dbname: %s" % var_dbname
         print " host: %s" % var_host
         print " username: %s" % var_username
-        print " password: %s" % var_password
+        if var_password:
+            print " password present but not displayed"
+        # print " password: %s" % var_password
     print
 
 if return_config:
