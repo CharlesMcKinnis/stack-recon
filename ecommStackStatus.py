@@ -1643,7 +1643,7 @@ class TODO():
             value["local_xml"]["db"]["username"],
             value["local_xml"]["db"]["password"],
             value["local_xml"]["db"]["host"],
-            sqlquery)
+            sqlquery
             )
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
