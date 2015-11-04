@@ -1643,6 +1643,8 @@ print """
 | (_| | (_| | || (_| | |_) | (_| \__ \  __/  / /   | (_| (_| | (__| | | |  __/
  \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
 """
+
+#globalconfig["magento"]["doc_root"][key]["cache"]["cache_option_table"]
 for key, value in globalconfig["magento"]["doc_root"].iteritems():
     print "Magento path: %s" % key
     print "Version: %s" % value["magento_version"]
@@ -1655,11 +1657,12 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
     var_password = value.get("local_xml",{}).get("db",{}).get("password","")
     if (var_dbname and var_host and var_username and var_password ):
         #if "db" in value["local_xml"]:
-        print " Table prefix: %s" % var_table_prefix
-        print " dbname: %s" % var_dbname
         print " host: %s" % var_host
+        print " dbname: %s" % var_dbname
+        if var_table_prefix:
+            print " Table prefix: %s" % var_table_prefix
         print " username: %s" % var_username
-        print " password: %s" % var_password
+        #print " password: %s" % var_password
         sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
         conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
             var_username,
@@ -1672,13 +1675,13 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
         output, err = p.communicate()
         if p.returncode > 0:
             #return()
-            print "fail"
-            print "command: %s" % conf
+            print "MySQL cache table query failed"
+            print "err %s" % err
+            #print "command: %s" % conf
         else:
             print "Mysql cache table:"
-            print "output %s" % output
-            print "err %s" % err
-            print "command: %s" % conf
+            print "%s" % output
+            globalconfig["magento"]["doc_root"][key]["cache"]["cache_option_table"] = output
     else:
         print "Skipping database because there isn't enough login information"
         print " Table prefix: %s" % var_table_prefix
