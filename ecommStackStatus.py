@@ -1636,7 +1636,7 @@ class TODO():
             value["local_xml"]["db"]["username"],
             value["local_xml"]["db"]["password"],
             value["local_xml"]["db"]["host"],
-            "some sql here"
+            "select * FROM {0}.{1}core_cache_option;".format(value["local_xml"]["db"]["dbname"],value["local_xml"]["db"]["db/table_prefix"])
             )
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -1644,6 +1644,9 @@ class TODO():
         if p.returncode > 0:
             #return()
             print "fail"
+        else:
+            print "Mysql cache table:"
+            print output
 
 
 """
