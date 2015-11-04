@@ -1629,11 +1629,11 @@ class TODO():
         print "Version: %s" % value["magento_version"]
         print
         pp.pprint(value)
-        var_table_prefix = value.get(["local_xml"],{}).get(["db"],{}).get(["db/table_prefix"],"")
-        var_dbname = value.get(["local_xml"],{}).get(["db"],{}).get(["dbname"],"")
-        var_host = value.get(["local_xml"],{}).get(["db"],{}).get(["host"],"")
-        var_username = value.get(["local_xml"],{}).get(["db"],{}).get(["username"],"")
-        var_password = value.get(["local_xml"],{}).get(["db"],{}).get(["password"],"")
+        var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
+        var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
+        var_host = value.get("local_xml",{}).get("db",{}).get("host","")
+        var_username = value.get("local_xml",{}).get("db",{}).get("username","")
+        var_password = value.get("local_xml",{}).get("db",{}).get("password","")
         if (
             var_dbname and
             var_host and 
