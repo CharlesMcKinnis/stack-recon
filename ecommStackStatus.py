@@ -798,8 +798,9 @@ class MagentoCtl(object):
         else:
             i = None
         if i is not None:
-            #print "%s: %s" % (xml_config_node,i.text)
-            local_xml[section][xml_config_node] = i.text
+            if i.text is not None:
+                #print "%s: %s" % (xml_config_node,i.text)
+                local_xml[section][xml_config_node] = i.text
         # configuration
         if resources.find(xml_config_section) is not None:
             for i in resources.find(xml_config_section):
