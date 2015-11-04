@@ -1626,15 +1626,15 @@ pp.pprint(local_xml)
 """
 class TODO():
     pass
-print """
-  ____ _       _           _  ____             __ _       
- / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
-| |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
-| |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
- \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
-                                                    |___/
-"""
-pp.pprint(globalconfig)
+# print """
+#   ____ _       _           _  ____             __ _       
+#  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
+# | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+# | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+#  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+#                                                     |___/
+# """
+# pp.pprint(globalconfig)
 
 print """
      _       _        _                         __                 _          
@@ -1647,7 +1647,7 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
     print "Magento path: %s" % key
     print "Version: %s" % value["magento_version"]
     print
-    pp.pprint(value)
+    # pp.pprint(value)
     var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
     var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
     var_host = value.get("local_xml",{}).get("db",{}).get("host","")
@@ -1665,7 +1665,7 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print " host: %s" % var_host
         print " username: %s" % var_username
         print " password: %s" % var_password
-        sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
+        sqlquery = "select * FROM {0}.{1}core_cache_option\G".format(var_dbname,var_table_prefix)
         conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
             var_username,
             var_password,
