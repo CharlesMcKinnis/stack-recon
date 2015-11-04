@@ -1632,7 +1632,7 @@ class TODO():
             print value["local_xml"]["db"]["host"]
             print value["local_xml"]["db"]["username"]
             print value["local_xml"]["db"]["password"]
-        conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 | grep 'configure arguments:'" % (
+        conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
             value["local_xml"]["db"]["username"],
             value["local_xml"]["db"]["password"],
             value["local_xml"]["db"]["host"],
