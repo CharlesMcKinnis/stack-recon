@@ -816,7 +816,7 @@ class MagentoCtl(object):
                 local_xml[section][i.tag] = i.text
             else:
                 sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
-
+        return local_xml
 def daemon_exe(match_exe):
     """
     var_filter = "text to search with"
