@@ -1634,10 +1634,7 @@ class TODO():
             print value["local_xml"]["db"]["host"]
             print value["local_xml"]["db"]["username"]
             print value["local_xml"]["db"]["password"]
-        if value["local_xml"]["db"]["db/table_prefix"]:
-            table_prefix = value["local_xml"]["db"]["db/table_prefix"]
-        else:
-            table_prefix = ""
+        table_prefix = value.get(["local_xml"],{}).get(["db"],{}).get(["db/table_prefix"],"")
         sqlquery = "select * FROM {0}.{1}core_cache_option;".format(value["local_xml"]["db"]["dbname"],table_prefix)
         conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
             value["local_xml"]["db"]["username"],
