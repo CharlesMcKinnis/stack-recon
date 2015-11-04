@@ -62,14 +62,13 @@ if ARGPARSE:
     # if args.batch:
     #     pass
 else:
-    args = {
-        #"jsonfile" :
-        #"silent" :
-        #"verbose" :
-        #"nofiglet" :
-        #"force" : 
-        "output" : "./config_dump.json"
-    }
+    args = argsAlt()
+    args.output = "./config_dump.json"
+    #args.jsonfile = 
+    #args.silent = 
+    #args.verbose = 
+    #args.nofiglet = 
+    #args.force = 
     """
     defaults:
         save a config_dump
@@ -79,13 +78,8 @@ else:
         json filename, default config_dump.json
     """
 
-
-
-
-
-
-
-
+class argsAlt(object):
+    pass
 
 class apacheCtl(object):
     def __init__(self,**kwargs):
