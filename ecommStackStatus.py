@@ -698,7 +698,6 @@ class MagentoCtl(object):
             result = re.match("static\s+private\s+\$_currentEdition\s*=\s*self::([^\s;]+);", line.strip(), re.IGNORECASE )
             if result:
                 mage["edition"] = result.group(1)
-            #result = re.match("public static function getVersionInfo\(\)", line.strip(), re.IGNORECASE)
             if "public static function getVersionInfo()" in line:
                 line = file_handle.next() # {
                 line = file_handle.next() # return array(
@@ -707,17 +706,21 @@ class MagentoCtl(object):
                     result = re.match("'([^']+)'\s*=>\s*'([^']*)'", line.strip())
                     if result:
                         mage[result.group(1)] = result.group(2)
-                break
+                #break
         file_handle.close()
         # join them with periods, unless they are empty, then omit them
         mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
+
+        # This is to address 1.10.1.1 EE that has no $_currentEdition defined
+        if not "edition" in mage:
+            mage["edition"] = ""
         return(mage)
     
     def localxml(self, local_xml_file):
         pass
     def find_mage_php(self,doc_roots):
         return_dict = {}
-        for doc_root_path in globalconfig["doc_roots"]:
+        for doc_root_path in doc_roots:
             # with nginx and apache, we have docroot for web paths
             # we need to search those for Mage.php and local.xml
             #magento = MagentoCtl()
@@ -760,13 +763,14 @@ class MagentoCtl(object):
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
-            if doc_root_path:
-                return_dict[doc_root_path]["Mage.php"] = mage_php_match
-                return_dict[doc_root_path]["magento_path"] = head
-                return_dict[doc_root_path]["local_xml"] = { }
-                return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
-                return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
-                return_dict[doc_root_path]["mage_version"] = mage
+            return_dict[doc_root_path]["Mage.php"] = mage_php_match
+            return_dict[doc_root_path]["magento_path"] = head
+            return_dict[doc_root_path]["local_xml"] = { }
+            return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
+            return_dict[doc_root_path]["magento_version"] = "%s" % mage["version"]
+            if mage["edition"]:
+                return_dict[doc_root_path]["magento_version"] += " %s" % mage["edition"]
+            return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
     def open_local_xml(self, filename):
@@ -947,7 +951,7 @@ def daemon_exe(match_exe):
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
         #print pid, ppid, pscmd, psexe
-        # fixme
+
         # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
         if psexe:
             if re.search('\(deleted\)', psexe):
@@ -1386,16 +1390,23 @@ except:
     print "No Magento found in the web document roots"
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
+
+mage_file_info = magento.mage_file_info(mage_files)
+globalconfig["magento"]["doc_root"] = mage_file_info
+
+
 try:
     # print "1265"
     # print type(magento.mage_file_info(mage_files))
-    # pp.pprint(magento.mage_file_info(mage_files))
-    globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+    mage_file_info = magento.mage_file_info(mage_files)
+    globalconfig["magento"]["doc_root"] = mage_file_info
 except:
     print "Failed to get magento information"
 
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
+
+#pp.pprint(globalconfig)
 
 for doc_root in globalconfig["magento"]["doc_root"]:
     if not doc_root in globalconfig["magento"]["doc_root"]:
