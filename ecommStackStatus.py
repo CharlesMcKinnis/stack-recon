@@ -817,6 +817,62 @@ class MagentoCtl(object):
             else:
                 sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
         return local_xml
+
+    def db_cache_table(doc_root,value):
+        #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+        #doc_roots = globalconfig["magento"]["doc_root"]
+        return_config = { }
+        print "Magento path: %s" % doc_root
+        print "Version: %s" % value["magento_version"]
+        print
+        # pp.pprint(value)
+        var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
+        var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
+        var_host = value.get("local_xml",{}).get("db",{}).get("host","")
+        var_username = value.get("local_xml",{}).get("db",{}).get("username","")
+        var_password = value.get("local_xml",{}).get("db",{}).get("password","")
+        if (var_dbname and var_host and var_username and var_password ):
+            #if "db" in value["local_xml"]:
+            print " host: %s" % var_host
+            print " dbname: %s" % var_dbname
+            if var_table_prefix:
+                print " Table prefix: %s" % var_table_prefix
+            print " username: %s" % var_username
+            #print " password: %s" % var_password
+            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
+            conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
+                var_username,
+                var_password,
+                var_host,
+                sqlquery
+                )
+            p = subprocess.Popen(
+                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            output, err = p.communicate()
+            if p.returncode > 0:
+                #return()
+                print "MySQL cache table query failed"
+                print "err %s" % err
+                #print "command: %s" % conf
+            else:
+                print "Mysql cache table:"
+                print "%s" % output
+                #return_config = { "cache" : { "cache_option_table" : "" } }
+                #globalconfig["magento"]["doc_root"][doc_root]    ["cache"]["cache_option_table"] = output
+                if not return_config.get("cache",{}).get("cache_option_table"):
+                    return_config = {"cache" : { "cache_option_table" : "" } } 
+                return_config["cache"]["cache_option_table"] = output
+        else:
+            print "Skipping database because there isn't enough login information"
+            print " Table prefix: %s" % var_table_prefix
+            print " dbname: %s" % var_dbname
+            print " host: %s" % var_host
+            print " username: %s" % var_username
+            if var_password:
+                print " password present but not displayed"
+            # print " password: %s" % var_password
+        print
+
 def daemon_exe(match_exe):
     """
     var_filter = "text to search with"
@@ -1312,6 +1368,13 @@ for doc_root in globalconfig["magento"]["doc_root"]:
     # pprint(localdict)
     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
     #pp.pprint(globalconfig["magento"]["doc_root"])
+
+    globalconfig["magento"]["doc_root"][doc_root].update(magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+
+    #if return_config:
+    #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+    #    globalconfig["magento"]["doc_root"].update(return_config)
+
 """
 {'/var/www/html':
     {
@@ -1634,70 +1697,8 @@ print """
  \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
 """
 
-#globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-def db_cache_table(doc_roots):
-    pass
-#magento_db_cache_table(globalconfig["magento"]["doc_root"])
-doc_roots = globalconfig["magento"]["doc_root"]
-return_config = { }
-for key, value in doc_roots.iteritems():
-    if not key in return_config:
-        return_config[key] = { } 
-    print "Magento path: %s" % key
-    print "Version: %s" % value["magento_version"]
-    print
-    # pp.pprint(value)
-    var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
-    var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
-    var_host = value.get("local_xml",{}).get("db",{}).get("host","")
-    var_username = value.get("local_xml",{}).get("db",{}).get("username","")
-    var_password = value.get("local_xml",{}).get("db",{}).get("password","")
-    if (var_dbname and var_host and var_username and var_password ):
-        #if "db" in value["local_xml"]:
-        print " host: %s" % var_host
-        print " dbname: %s" % var_dbname
-        if var_table_prefix:
-            print " Table prefix: %s" % var_table_prefix
-        print " username: %s" % var_username
-        #print " password: %s" % var_password
-        sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
-        conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
-            var_username,
-            var_password,
-            var_host,
-            sqlquery
-            )
-        p = subprocess.Popen(
-            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, err = p.communicate()
-        if p.returncode > 0:
-            #return()
-            print "MySQL cache table query failed"
-            print "err %s" % err
-            #print "command: %s" % conf
-        else:
-            print "Mysql cache table:"
-            print "%s" % output
-            return_config = { "cache" : { "cache_option_table" : "" } }
-            #globalconfig["magento"]["doc_root"][key]    ["cache"]["cache_option_table"] = output
-            if not return_config.get(key,{}).get("cache",{}).get("cache_option_table"):
-                return_config[key] = {"cache" : { "cache_option_table" : "" } } 
-            return_config[key]["cache"]["cache_option_table"] = output
+magento.db_cache_table(globalconfig["magento"]["doc_root"])
 
-    else:
-        print "Skipping database because there isn't enough login information"
-        print " Table prefix: %s" % var_table_prefix
-        print " dbname: %s" % var_dbname
-        print " host: %s" % var_host
-        print " username: %s" % var_username
-        if var_password:
-            print " password present but not displayed"
-        # print " password: %s" % var_password
-    print
-
-if return_config:
-    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-    globalconfig["magento"]["doc_root"].update(return_config)
 """
 {   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
                                              'local_xml': {   'db': {   'active': '1',
