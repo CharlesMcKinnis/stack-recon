@@ -1628,24 +1628,28 @@ class TODO():
         print "Magento path: %s" % key
         print "Version: %s" % value["magento_version"]
         print
-        table_prefix = value.get(["local_xml"],{}).get(["db"],{}).get(["db/table_prefix"],"")
+        var_table_prefix = value.get(["local_xml"],{}).get(["db"],{}).get(["db/table_prefix"],"")
+        var_dbname = value.get(["local_xml"],{}).get(["db"],{}).get(["dbname"],"")
+        var_host = value.get(["local_xml"],{}).get(["db"],{}).get(["host"],"")
+        var_username = value.get(["local_xml"],{}).get(["db"],{}).get(["username"],"")
+        var_password = value.get(["local_xml"],{}).get(["db"],{}).get(["password"],"")
         if (
-            value.get(["local_xml"],{}).get(["db"],{}).get(["dbname"]) and
-            value.get(["local_xml"],{}).get(["db"],{}).get(["host"]) and 
-            value.get(["local_xml"],{}).get(["db"],{}).get(["username"]) and 
-            value.get(["local_xml"],{}).get(["db"],{}).get(["password"]) 
+            var_dbname and
+            var_host and 
+            var_username and 
+            var_password 
             ):
             #if "db" in value["local_xml"]:
-            print " Table prefix: %s" % table_prefix
-            print " dbname: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["dbname",""])
-            print " host: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["host",""])
-            print " username: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["username",""])
-            print " password: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["password",""])
-            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(value["local_xml"]["db"]["dbname"],table_prefix)
+            print " Table prefix: %s" % var_table_prefix
+            print " dbname: %s" % var_dbname
+            print " host: %s" % var_host
+            print " username: %s" % var_username
+            print " password: %s" % var_password
+            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
             conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
-                value["local_xml"]["db"]["username"],
-                value["local_xml"]["db"]["password"],
-                value["local_xml"]["db"]["host"],
+                var_username,
+                var_password,
+                var_host,
                 sqlquery
                 )
             p = subprocess.Popen(
@@ -1662,10 +1666,10 @@ class TODO():
         else:
             print "Skipping database because there isn't enough login information"
             print " Table prefix: %s" % table_prefix
-            print " dbname: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["dbname",""])
-            print " host: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["host",""])
-            print " username: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["username",""])
-            print " password: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["password",""])
+            print " dbname: %s" % var_dbname
+            print " host: %s" % var_host
+            print " username: %s" % var_username
+            print " password: %s" % var_password
         print
 
 """
