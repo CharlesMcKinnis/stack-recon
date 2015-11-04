@@ -1644,9 +1644,11 @@ class TODO():
         if p.returncode > 0:
             #return()
             print "fail"
+            print "command: %s" % conf
         else:
             print "Mysql cache table:"
             print output
+            print "command: %s" % conf
 
 
 """
