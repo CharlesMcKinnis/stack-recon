@@ -1692,98 +1692,6 @@ pp.pprint(local_xml)
 class TODO():
     pass
 
-# print """
-#      _       _        _                         __                 _          
-#   __| | __ _| |_ __ _| |__   __ _ ___  ___     / /   ___ __ _  ___| |__   ___ 
-#  / _` |/ _` | __/ _` | '_ \ / _` / __|/ _ \\   / /   / __/ _` |/ __| '_ \ / _ \\
-# | (_| | (_| | || (_| | |_) | (_| \__ \  __/  / /   | (_| (_| | (__| | | |  __/
-#  \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
-# """
-
-#magento.db_cache_table(globalconfig["magento"]["doc_root"])
-
-"""
-{   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
-                                             'local_xml': {   'db': {   'active': '1',
-                                                                        'db/table_prefix': None,
-                                                                        'dbname': 'new_mangento',
-                                                                        'host': '172.24.1.1',
-                                                                        'initStatements': 'SET NAMES utf8',
-                                                                        'model': 'mysql4',
-                                                                        'password': 'password',
-                                                                        'pdoType': None,
-                                                                        'type': 'pdo_mysql',
-                                                                        'username': 'magentouser2'},
-"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-# these might be good ideas from Daniel, but the second doesn't work and is complicated. So I went back to simple.
-globalconfig["doc_roots"] = set(one['doc_root'] for one in globalconfig.get("apache",{}).get("sites") if one.get('doc_root', None))
-globalconfig["doc_roots"].update(one['doc_root'] for one in globalconfig.get("nginx",{}).get("sites") if one.get('doc_root', None))
-"""
-#print "1209 doc_roots %r" % globalconfig["doc_roots"]
-
-#print "split %s" % head
-
-#globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = mage_php_matches[0]
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = head
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
-#globalconfig["magento"]["doc_root"][doc_root_path]["mage_version"] = mage
-
-# os.path.dirname(path)
-#print "1249 %r" % globalconfig["magento"]["doc_root"]
-
-#print "mage_php_matches:"
-
-
-"""
-#globalconfig["apache"]["sites"]["doc_root"]
-if not "magento" in globalconfig:
-    globalconfig["magento"] = {}
-if not "doc_root" in globalconfig["magento"]:
-    globalconfig["magento"]["doc_root"] = {}
-    doc_root_path = globalconfig["apache"]["sites"]["doc_root"]
-    globalconfig["magento"]["doc_root"][doc_root_path] = { "Mage.php" : "", "local.xml" : "", "magento_path" : "" }
-#globalconfig["magento"]["doc_root"][doc_root_path]["Mage.php"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["local.xml"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_path"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["magento_version"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["session_cache"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["object_cache"] = ""
-#globalconfig["magento"]["doc_root"][doc_root_path]["full_page_cache"] = ""
-"""
-# I will probably use the existance of those two files to assume a Magento install
-# Mage.php provides version information
-"""
-magento = MagentoCtl()
-mage = magento.version("Mage.php")
-print "Magento %s %s" % (mage["version"],mage["edition"])
-"""
-
-
-print """
-  ____ _       _           _  ____             __ _       
- / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
-| |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
-| |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
- \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
-                                                    |___/
-"""
-pp.pprint(globalconfig)
-
 
 # Save the config as a yaml file
 filename = "config_dump.json"
@@ -1802,3 +1710,15 @@ if os.path.isfile(filename):
 else:
     print "The file %s does not exist." % filename
 """
+
+# print """
+#   ____ _       _           _  ____             __ _       
+#  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
+# | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+# | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+#  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+#                                                     |___/
+# """
+# pp.pprint(globalconfig)
+
+
