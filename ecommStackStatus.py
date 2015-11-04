@@ -872,6 +872,7 @@ class MagentoCtl(object):
                 print " password present but not displayed"
             # print " password: %s" % var_password
         print
+        return(return_config)
 
 def daemon_exe(match_exe):
     """
