@@ -1644,8 +1644,11 @@ print """
  \__,_|\__,_|\__\__,_|_.__/ \__,_|___/\___| /_/     \___\__,_|\___|_| |_|\___|
 """
 
-#globalconfig["magento"]["doc_root"][key]["cache"]["cache_option_table"]
-for key, value in globalconfig["magento"]["doc_root"].iteritems():
+#globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+doc_roots = globalconfig["magento"]["doc_root"]
+return_config = { "cache" : { "cache_option_table" : "" } }
+for key, value in doc_roots.iteritems():
+    return_config[key] = {"cache" : { "cache_option_table" : "" } } 
     print "Magento path: %s" % key
     print "Version: %s" % value["magento_version"]
     print
@@ -1681,7 +1684,9 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
         else:
             print "Mysql cache table:"
             print "%s" % output
-            globalconfig["magento"]["doc_root"][key]["cache"]["cache_option_table"] = output
+            return_config = { "cache" : { "cache_option_table" : "" } }
+            #globalconfig["magento"]["doc_root"][key]    ["cache"]["cache_option_table"] = output
+            return_config[key]["cache"]["cache_option_table"] = output
     else:
         print "Skipping database because there isn't enough login information"
         print " Table prefix: %s" % var_table_prefix
@@ -1691,6 +1696,9 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
         print " password: %s" % var_password
     print
 
+if return_config:
+    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+    globalconfig["magento"]["doc_root"].update(return_config)
 """
 {   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
                                              'local_xml': {   'db': {   'active': '1',
