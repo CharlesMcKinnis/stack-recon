@@ -1653,12 +1653,7 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
     var_host = value.get("local_xml",{}).get("db",{}).get("host","")
     var_username = value.get("local_xml",{}).get("db",{}).get("username","")
     var_password = value.get("local_xml",{}).get("db",{}).get("password","")
-    if (
-        var_dbname and
-        var_host and 
-        var_username and 
-        var_password 
-        ):
+    if (var_dbname and var_host and var_username and var_password ):
         #if "db" in value["local_xml"]:
         print " Table prefix: %s" % var_table_prefix
         print " dbname: %s" % var_dbname
@@ -1679,10 +1674,11 @@ for key, value in globalconfig["magento"]["doc_root"].iteritems():
             #return()
             print "fail"
             print "command: %s" % conf
-        # else:
-        #     print "Mysql cache table:"
-        #     print output
-        #     print "command: %s" % conf
+        else:
+            print "Mysql cache table:"
+            print "output %s" % output
+            print "err %s" % err
+            print "command: %s" % conf
     else:
         print "Skipping database because there isn't enough login information"
         print " Table prefix: %s" % var_table_prefix
