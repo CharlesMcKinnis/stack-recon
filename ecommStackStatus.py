@@ -806,19 +806,19 @@ class MagentoCtl(object):
             for i in resources.find(xml_config_section):
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
-        else:
-            sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
+        # else:
+        #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
                 
         if xml_config_single:
             if resources.find(xml_config_single) is not None:
                 i = resources.find(xml_config_single)
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
-            else:
-                sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
+            # else:
+            #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
         return local_xml
 
-    def db_cache_table(doc_root,value):
+    def db_cache_table(self, doc_root, value):
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
