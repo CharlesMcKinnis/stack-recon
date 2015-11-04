@@ -1626,15 +1626,6 @@ pp.pprint(local_xml)
 """
 class TODO():
     pass
-# print """
-#   ____ _       _           _  ____             __ _       
-#  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
-# | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
-# | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
-#  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
-#                                                     |___/
-# """
-# pp.pprint(globalconfig)
 
 print """
      _       _        _                         __                 _          
@@ -1645,7 +1636,7 @@ print """
 """
 
 #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-def magento_db_cache_table(doc_roots):
+def db_cache_table(doc_roots):
     pass
 #magento_db_cache_table(globalconfig["magento"]["doc_root"])
 doc_roots = globalconfig["magento"]["doc_root"]
@@ -1690,7 +1681,7 @@ for key, value in doc_roots.iteritems():
             print "%s" % output
             return_config = { "cache" : { "cache_option_table" : "" } }
             #globalconfig["magento"]["doc_root"][key]    ["cache"]["cache_option_table"] = output
-            if not return_config[key].get("cache",{}).get("cache_option_table"):
+            if not return_config.get(key,{}).get("cache",{}).get("cache_option_table"):
                 return_config[key] = {"cache" : { "cache_option_table" : "" } } 
             return_config[key]["cache"]["cache_option_table"] = output
 
@@ -1778,6 +1769,19 @@ magento = MagentoCtl()
 mage = magento.version("Mage.php")
 print "Magento %s %s" % (mage["version"],mage["edition"])
 """
+
+
+print """
+  ____ _       _           _  ____             __ _       
+ / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
+| |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+| |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+ \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+                                                    |___/
+"""
+pp.pprint(globalconfig)
+
+
 # Save the config as a yaml file
 filename = "config_dump.json"
 if not os.path.isfile(filename):
