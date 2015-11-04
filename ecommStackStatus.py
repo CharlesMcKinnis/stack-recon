@@ -807,7 +807,7 @@ class MagentoCtl(object):
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
         else:
-            print "809 it was none?!"
+            sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
                 
         if xml_config_single:
             if resources.find(xml_config_single) is not None:
@@ -815,8 +815,7 @@ class MagentoCtl(object):
                 #print "%s: %s" % (i.tag,i.text)
                 local_xml[section][i.tag] = i.text
             else:
-                print "817 it was none?!"
-        return local_xml
+                sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
 
 def daemon_exe(match_exe):
     """
