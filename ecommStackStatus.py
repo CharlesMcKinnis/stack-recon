@@ -1628,32 +1628,45 @@ class TODO():
         print "Magento path: %s" % key
         print "Version: %s" % value["magento_version"]
         print
-        if "db" in value["local_xml"]:
-            print value["local_xml"]["db"]["db/table_prefix"]
-            print value["local_xml"]["db"]["dbname"]
-            print value["local_xml"]["db"]["host"]
-            print value["local_xml"]["db"]["username"]
-            print value["local_xml"]["db"]["password"]
         table_prefix = value.get(["local_xml"],{}).get(["db"],{}).get(["db/table_prefix"],"")
-        sqlquery = "select * FROM {0}.{1}core_cache_option;".format(value["local_xml"]["db"]["dbname"],table_prefix)
-        conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
-            value["local_xml"]["db"]["username"],
-            value["local_xml"]["db"]["password"],
-            value["local_xml"]["db"]["host"],
-            sqlquery
-            )
-        p = subprocess.Popen(
-            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, err = p.communicate()
-        if p.returncode > 0:
-            #return()
-            print "fail"
-            print "command: %s" % conf
+        if (
+            value.get(["local_xml"],{}).get(["db"],{}).get(["dbname"]) and
+            value.get(["local_xml"],{}).get(["db"],{}).get(["host"]) and 
+            value.get(["local_xml"],{}).get(["db"],{}).get(["username"]) and 
+            value.get(["local_xml"],{}).get(["db"],{}).get(["password"]) 
+            ):
+            #if "db" in value["local_xml"]:
+            print " Table prefix: %s" % table_prefix
+            print " dbname: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["dbname",""])
+            print " host: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["host",""])
+            print " username: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["username",""])
+            print " password: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["password",""])
+            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(value["local_xml"]["db"]["dbname"],table_prefix)
+            conf = "mysql --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
+                value["local_xml"]["db"]["username"],
+                value["local_xml"]["db"]["password"],
+                value["local_xml"]["db"]["host"],
+                sqlquery
+                )
+            p = subprocess.Popen(
+                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            output, err = p.communicate()
+            if p.returncode > 0:
+                #return()
+                print "fail"
+                print "command: %s" % conf
+            else:
+                print "Mysql cache table:"
+                print output
+                print "command: %s" % conf
         else:
-            print "Mysql cache table:"
-            print output
-            print "command: %s" % conf
-
+            print "Skipping database because there isn't enough login information"
+            print " Table prefix: %s" % table_prefix
+            print " dbname: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["dbname",""])
+            print " host: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["host",""])
+            print " username: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["username",""])
+            print " password: %s" % value.get(["local_xml"],{}).get(["db"],{}).get(["password",""])
+        print
 
 """
 {   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
