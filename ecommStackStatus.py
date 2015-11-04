@@ -804,15 +804,13 @@ class MagentoCtl(object):
         if resources.find(xml_config_section) is not None:
             for i in resources.find(xml_config_section):
                 #print "%s: %s" % (i.tag,i.text)
-                if i:
-                    local_xml[section][i.tag] = i.text
+                local_xml[section][i.tag] = i.text
                 
         if xml_config_single:
             if resources.find(xml_config_single) is not None:
                 i = resources.find(xml_config_single)
                 #print "%s: %s" % (i.tag,i.text)
-                if i:
-                    local_xml[section][i.tag] = i.text
+                local_xml[section][i.tag] = i.text
         return local_xml
 
 def daemon_exe(match_exe):
