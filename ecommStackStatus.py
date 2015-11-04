@@ -1628,6 +1628,7 @@ class TODO():
         print "Magento path: %s" % key
         print "Version: %s" % value["magento_version"]
         print
+        pp.pprint(value)
         var_table_prefix = value.get(["local_xml"],{}).get(["db"],{}).get(["db/table_prefix"],"")
         var_dbname = value.get(["local_xml"],{}).get(["db"],{}).get(["dbname"],"")
         var_host = value.get(["local_xml"],{}).get(["db"],{}).get(["host"],"")
