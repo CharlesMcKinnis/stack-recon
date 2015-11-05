@@ -1649,32 +1649,33 @@ if globalconfig.get("magento",{}).get("doc_root"):
               |___/
 """
     print "\nMagento versions installed:"
-    for key, value in globalconfig["magento"]["doc_root"].iteritems():
-        print "Magento path: %s" % key
-        print "Version: %s" % value["magento_version"]
-        print
-        if "db" in value["local_xml"]:
-            print "Database info"
-            for k2,v2 in value["local_xml"]["db"].iteritems():
-                print "%s: %s" % (k2,v2)
+    if globalconfig.get("magento",{}).get("doc_root"):
+        for key, value in globalconfig["magento"]["doc_root"].iteritems():
+            print "Magento path: %s" % key
+            print "Version: %s" % value["magento_version"]
             print
-        if "session_cache" in value["local_xml"]:
-            print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
-            for k2,v2 in value["local_xml"]["session_cache"].iteritems():
-                print "%s: %s" % (k2,v2)
+            if value.get("local_xml",{}).get("db"):
+                print "Database info"
+                for k2,v2 in value["local_xml"]["db"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
+                print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
+                for k2,v2 in value["local_xml"]["session_cache"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
+                print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
+                for k2,v2 in value["local_xml"]["object_cache"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
+                print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
+                for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
             print
-        if "object_cache" in value["local_xml"]:
-            print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
-            for k2,v2 in value["local_xml"]["object_cache"].iteritems():
-                print "%s: %s" % (k2,v2)
-            print
-        if "full_page_cache" in value["local_xml"]:
-            print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
-            for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
-                print "%s: %s" % (k2,v2)
-            print
-        print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
-        print
 """
     pp.pprint(globalconfig["magento"]["doc_root"])
 This output is flawed because local.xml was not configured correctly
