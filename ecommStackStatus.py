@@ -901,6 +901,7 @@ class MagentoCtl(object):
                 var_host,
                 sqlquery
                 )
+            print "Querying MySQL..."
             p = subprocess.Popen(
                 conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
