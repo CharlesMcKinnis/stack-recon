@@ -1652,6 +1652,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
     print "\nMagento versions installed:"
     if globalconfig.get("magento",{}).get("doc_root"):
         for key, value in globalconfig["magento"]["doc_root"].iteritems():
+            print "-" * 60
             print "Magento path: %s" % key
             print "Version: %s" % value["magento_version"]
             print
