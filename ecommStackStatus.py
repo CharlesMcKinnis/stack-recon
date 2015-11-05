@@ -20,16 +20,66 @@ import xml.etree.ElementTree as ET
 import pprint
 try:
     import argparse
+    ARGPARSE = True
 except:
     NOARGPARSE = True
-    print "no argparse installed"
+    sys.stderr.write("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
+    MYSQL = True
 except:
     NOMYSQL = True
-    print "no mysql.connector installed"
+    sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
 
 pp = pprint.PrettyPrinter(indent=4)
+
+# The argparse module is not installed on many systems. This way, it will work regardless
+if ARGPARSE:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "-j", "--jsonfile", help="Name of a config dump json file. Skips detection and uses file values.",
+                        )
+    parser.add_argument("-s", "--silent",
+                        help="No output, not even stderr.",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose",
+                        help="Additional output, mostly to stderr.",
+                        action="store_true")
+    parser.add_argument("-F", "--nofiglet", help="Omits big text (figlet) banners. Banners do not require figlet to be installed.",
+                        action="store_true")
+    # parser.add_argument("--plaintext", help="ANSI control characters are omitted for colors and screen clear/home.",
+    #                     action="store_true")
+    parser.add_argument("-f", "--force", help="If config_dump.json already exists, overwrite it. Default: do not overwrite.",
+                        action="store_true")
+    parser.add_argument("-o", "--output", help="Name of json file to place saved config in. Default: ./config_dump.json",
+                        default="./config_dump.json")
+    args = parser.parse_args()
+    
+    # if (args.silent or args.batch) and not args.runtime:
+    #     args.runtime = 30
+    #     pass
+    # if args.batch:
+    #     args.plaintext = True
+    # if args.batch:
+    #     pass
+else:
+    args = argsAlt()
+    args.output = "./config_dump.json"
+    #args.jsonfile = 
+    #args.silent = 
+    #args.verbose = 
+    #args.nofiglet = 
+    #args.force = 
+    """
+    defaults:
+        save a config_dump
+        do not show verbose messages
+        show figlet banners
+        do not overwrite config_dump.json
+        json filename, default config_dump.json
+    """
+
+class argsAlt(object):
+    pass
 
 class apacheCtl(object):
     def __init__(self,**kwargs):
@@ -329,7 +379,7 @@ class apacheCtl(object):
                         #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
                         stanzas["maxclients"] = int(stanzas["worker"]["maxclients"])
             else:
-                print "Could not identify mpm in use."
+                sys.stderr.write("Could not identify mpm in use.\n")
                 sys.exit(1)
             pass
 
@@ -648,7 +698,6 @@ class MagentoCtl(object):
             result = re.match("static\s+private\s+\$_currentEdition\s*=\s*self::([^\s;]+);", line.strip(), re.IGNORECASE )
             if result:
                 mage["edition"] = result.group(1)
-            #result = re.match("public static function getVersionInfo\(\)", line.strip(), re.IGNORECASE)
             if "public static function getVersionInfo()" in line:
                 line = file_handle.next() # {
                 line = file_handle.next() # return array(
@@ -657,17 +706,21 @@ class MagentoCtl(object):
                     result = re.match("'([^']+)'\s*=>\s*'([^']*)'", line.strip())
                     if result:
                         mage[result.group(1)] = result.group(2)
-                break
+                #break
         file_handle.close()
         # join them with periods, unless they are empty, then omit them
         mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
+
+        # This is to address 1.10.1.1 EE that has no $_currentEdition defined
+        if not "edition" in mage:
+            mage["edition"] = ""
         return(mage)
     
     def localxml(self, local_xml_file):
         pass
     def find_mage_php(self,doc_roots):
         return_dict = {}
-        for doc_root_path in globalconfig["doc_roots"]:
+        for doc_root_path in doc_roots:
             # with nginx and apache, we have docroot for web paths
             # we need to search those for Mage.php and local.xml
             #magento = MagentoCtl()
@@ -680,7 +733,7 @@ class MagentoCtl(object):
                     #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
-                print "There are multiple Mage.php files in the Document Root. Choosing the shortest path." #breakme! Using the one with the smallest path."
+                sys.stderr.write("There are multiple Mage.php files in the Document Root. Choosing the shortest path.\n")
                 smallest_size = 0
                 smallest_line = ""
                 for i in mage_php_matches:
@@ -710,13 +763,14 @@ class MagentoCtl(object):
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
-            if doc_root_path:
-                return_dict[doc_root_path]["Mage.php"] = mage_php_match
-                return_dict[doc_root_path]["magento_path"] = head
-                return_dict[doc_root_path]["local_xml"] = { }
-                return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
-                return_dict[doc_root_path]["magento_version"] = "Magento %s %s" % (mage["version"],mage["edition"])
-                return_dict[doc_root_path]["mage_version"] = mage
+            return_dict[doc_root_path]["Mage.php"] = mage_php_match
+            return_dict[doc_root_path]["magento_path"] = head
+            return_dict[doc_root_path]["local_xml"] = { }
+            return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
+            return_dict[doc_root_path]["magento_version"] = "%s" % mage["version"]
+            if mage["edition"]:
+                return_dict[doc_root_path]["magento_version"] += " %s" % mage["edition"]
+            return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
     def open_local_xml(self, filename):
@@ -795,36 +849,37 @@ class MagentoCtl(object):
         #print resources
         if resources is not None:
             i = resources.find(xml_config_node)
-        else:
-            i = None
-        if i is not None:
-            if i.text is not None:
-                #print "%s: %s" % (xml_config_node,i.text)
-                local_xml[section][xml_config_node] = i.text
-        # configuration
-        if resources.find(xml_config_section) is not None:
-            for i in resources.find(xml_config_section):
-                #print "%s: %s" % (i.tag,i.text)
-                local_xml[section][i.tag] = i.text
-        # else:
-        #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
-                
-        if xml_config_single:
-            if resources.find(xml_config_single) is not None:
-                i = resources.find(xml_config_single)
-                #print "%s: %s" % (i.tag,i.text)
-                local_xml[section][i.tag] = i.text
+            if i is not None:
+                if i.text is not None:
+                    #print "%s: %s" % (xml_config_node,i.text)
+                    local_xml[section][xml_config_node] = i.text
+
+            if resources.find(xml_config_section) is not None:
+                for i in resources.find(xml_config_section):
+                    #print "%s: %s" % (i.tag,i.text)
+                    local_xml[section][i.tag] = i.text
             # else:
-            #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
+            #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
+                    
+            if xml_config_single:
+                if resources.find(xml_config_single) is not None:
+                    i = resources.find(xml_config_single)
+                    #print "%s: %s" % (i.tag,i.text)
+                    local_xml[section][i.tag] = i.text
+                # else:
+                #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
+
+
+        # configuration
         return local_xml
 
     def db_cache_table(self, doc_root, value):
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
-        print "Magento path: %s" % doc_root
-        print "Version: %s" % value["magento_version"]
-        print
+        #print "Magento path: %s" % doc_root
+        #print "Version: %s" % value["magento_version"]
+        #print
         # pp.pprint(value)
         var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
         var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
@@ -846,14 +901,16 @@ class MagentoCtl(object):
                 var_host,
                 sqlquery
                 )
+            sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
             p = subprocess.Popen(
                 conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
-            if p.returncode > 0:
+            if p.returncode > 0 or not output:
                 #return()
-                # print "MySQL cache table query failed"
-                # print "err %s" % err
-                #print "command: %s" % conf
+                sys.stderr.write("MySQL cache table query failed\n")
+                if err:
+                    sys.stderr.write("err %s\n" % err)
+                sys.stderr.write("command: %s\n" % conf)
                 pass
             else:
                 # print "Mysql cache table:"
@@ -872,7 +929,7 @@ class MagentoCtl(object):
             # if var_password:
             #     print " password present but not displayed"
             # print " password: %s" % var_password
-        print
+        #print
         return(return_config)
 
 def daemon_exe(match_exe):
@@ -897,7 +954,7 @@ def daemon_exe(match_exe):
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
         #print pid, ppid, pscmd, psexe
-        # fixme
+
         # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
         if psexe:
             if re.search('\(deleted\)', psexe):
@@ -955,7 +1012,7 @@ def importfile(filename, keyword_regex, **kwargs):
         kwargs["recurse_count"] = 0
     if kwargs["recurse_count"] > 10:
         #arbitrary number
-        print "Too many recursions while importing %s, the config is probably a loop." % filename
+        sys.stderr.write("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         sys.exit(1)
     def full_file_path(right_file, base_path):
         # If the right side of the full name doesn't have a leading slash, it is a relative path.
@@ -1117,9 +1174,9 @@ def print_sites(localconfig):
         if "config_file" in one:
             print "Config file: %s" % one["config_file"]
         if "access_log" in one:
-            print "Access log: %s" % one["config_file"]
+            print "Access log: %s" % one["access_log"]
         if "error_log" in one:
-            print "Error log: %s" % one["config_file"]
+            print "Error log: %s" % one["error_log"]
         print
 
 """
@@ -1176,7 +1233,7 @@ elif "httpd.worker" in daemons:
     apache_exe = daemons["httpd.worker"]["exe"]
     apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
 else:
-    print "Apache is not running"
+    sys.stderr.write("Apache is not running\n")
 
 if apache_exe:
     try:
@@ -1184,13 +1241,13 @@ if apache_exe:
         apache_root_path = apache.get_root()
         apache_mpm = apache.get_mpm()
     except:
-        print "There was an error getting the apache daemon configuration"
+        sys.stderr.write("There was an error getting the apache daemon configuration\n")
         apache_conf_file = ""
         apache_root_path = ""
     #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
     #    apache_conf_file = "conf/httpd.conf"
     if apache_conf_file and apache_root_path:
-        print "Using config %s" % apache_root_path+apache_conf_file
+        sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
         wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
         apache_config = apache.parse_config(wholeconfig)
 
@@ -1235,17 +1292,17 @@ def NGINX_FPM_DATA_GATHER():
 # NGINX
 ################################################
 if not "nginx" in daemons:
-    print "nginx is not running"
+    sys.stderr.write("nginx is not running\n")
 else:
     nginx = nginxCtl(exe = daemons["nginx"]["exe"])
     try:
         nginx_conf_file = nginx.get_conf()
     except:
-        print "There was an error getting the nginx daemon configuration"
+        sys.stderr.write("There was an error getting the nginx daemon configuration\n")
         #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
         nginx_conf_file = ""
     if nginx_conf_file:
-        print "Using config %s" % nginx_conf_file
+        sys.stderr.write("Using config %s\n" % nginx_conf_file)
         
         # configuration fetch and parse
         wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
@@ -1281,16 +1338,16 @@ def PHP_FPM_DATA_GATHER():
 ################################################
 #phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
 if not "php-fpm" in daemons:
-    print "php-fpm is not running"
+    sys.stderr.write("php-fpm is not running\n")
 else:
     #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
 
-    print
+    sys.stderr.write("\n")
     phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
     try:
         phpfpm_conf_file = phpfpm.get_conf()
     except:
-        print "There was an error getting the php-fpm daemon configuration"
+        sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
         phpfpm_conf_file = ""
     if phpfpm_conf_file:
         #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
@@ -1333,19 +1390,26 @@ if not "magento" in globalconfig:
 try:
     mage_files = magento.find_mage_php(globalconfig["doc_roots"])
 except:
-    print "No Magento found in the web document roots"
+    sys.stderr.write("No Magento found in the web document roots\n")
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
+
+mage_file_info = magento.mage_file_info(mage_files)
+globalconfig["magento"]["doc_root"] = mage_file_info
+
+
 try:
     # print "1265"
     # print type(magento.mage_file_info(mage_files))
-    # pp.pprint(magento.mage_file_info(mage_files))
-    globalconfig["magento"]["doc_root"] = magento.mage_file_info(mage_files)
+    mage_file_info = magento.mage_file_info(mage_files)
+    globalconfig["magento"]["doc_root"] = mage_file_info
 except:
-    print "Failed to get magento information"
+    sys.stderr.write("Failed to get magento information\n")
 
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
+
+#pp.pprint(globalconfig)
 
 for doc_root in globalconfig["magento"]["doc_root"]:
     if not doc_root in globalconfig["magento"]["doc_root"]:
@@ -1586,32 +1650,35 @@ if globalconfig.get("magento",{}).get("doc_root"):
               |___/
 """
     print "\nMagento versions installed:"
-    for key, value in globalconfig["magento"]["doc_root"].iteritems():
-        print "Magento path: %s" % key
-        print "Version: %s" % value["magento_version"]
-        print
-        if "db" in value["local_xml"]:
-            print "Database info"
-            for k2,v2 in value["local_xml"]["db"].iteritems():
-                print "%s: %s" % (k2,v2)
+    if globalconfig.get("magento",{}).get("doc_root"):
+        for key, value in globalconfig["magento"]["doc_root"].iteritems():
+            print "-" * 60
+            print "Magento path: %s" % key
+            print "Version: %s" % value["magento_version"]
             print
-        if "session_cache" in value["local_xml"]:
-            print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
-            for k2,v2 in value["local_xml"]["session_cache"].iteritems():
-                print "%s: %s" % (k2,v2)
+            if value.get("local_xml",{}).get("db"):
+                print "Database info"
+                for k2,v2 in value["local_xml"]["db"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
+                print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
+                for k2,v2 in value["local_xml"]["session_cache"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
+                print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
+                for k2,v2 in value["local_xml"]["object_cache"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
+                print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
+                for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
+                    print "%s: %s" % (k2,v2)
+                print
+            if value.get("cache",{}).get("cache_option_table"):
+                print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
             print
-        if "object_cache" in value["local_xml"]:
-            print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
-            for k2,v2 in value["local_xml"]["object_cache"].iteritems():
-                print "%s: %s" % (k2,v2)
-            print
-        if "full_page_cache" in value["local_xml"]:
-            print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
-            for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
-                print "%s: %s" % (k2,v2)
-            print
-        print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
-        print
 """
     pp.pprint(globalconfig["magento"]["doc_root"])
 This output is flawed because local.xml was not configured correctly
