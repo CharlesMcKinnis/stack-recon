@@ -1173,9 +1173,9 @@ def print_sites(localconfig):
         if "config_file" in one:
             print "Config file: %s" % one["config_file"]
         if "access_log" in one:
-            print "Access log: %s" % one["config_file"]
+            print "Access log: %s" % one["access_log"]
         if "error_log" in one:
-            print "Error log: %s" % one["config_file"]
+            print "Error log: %s" % one["error_log"]
         print
 
 """
