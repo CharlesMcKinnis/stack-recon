@@ -849,27 +849,28 @@ class MagentoCtl(object):
         #print resources
         if resources is not None:
             i = resources.find(xml_config_node)
-        else:
-            i = None
-        if i is not None:
-            if i.text is not None:
-                #print "%s: %s" % (xml_config_node,i.text)
-                local_xml[section][xml_config_node] = i.text
-        # configuration
-        if resources.find(xml_config_section) is not None:
-            for i in resources.find(xml_config_section):
-                #print "%s: %s" % (i.tag,i.text)
-                local_xml[section][i.tag] = i.text
-        # else:
-        #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
-                
-        if xml_config_single:
-            if resources.find(xml_config_single) is not None:
-                i = resources.find(xml_config_single)
-                #print "%s: %s" % (i.tag,i.text)
-                local_xml[section][i.tag] = i.text
+            if i is not None:
+                if i.text is not None:
+                    #print "%s: %s" % (xml_config_node,i.text)
+                    local_xml[section][xml_config_node] = i.text
+
+            if resources.find(xml_config_section) is not None:
+                for i in resources.find(xml_config_section):
+                    #print "%s: %s" % (i.tag,i.text)
+                    local_xml[section][i.tag] = i.text
             # else:
-            #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
+            #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
+                    
+            if xml_config_single:
+                if resources.find(xml_config_single) is not None:
+                    i = resources.find(xml_config_single)
+                    #print "%s: %s" % (i.tag,i.text)
+                    local_xml[section][i.tag] = i.text
+                # else:
+                #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
+
+
+        # configuration
         return local_xml
 
     def db_cache_table(self, doc_root, value):
