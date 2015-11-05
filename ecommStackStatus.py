@@ -23,13 +23,13 @@ try:
     ARGPARSE = True
 except:
     NOARGPARSE = True
-    sys.stderr.write("This program is more robust if python argparse installed")
+    sys.stderr.write("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
 except:
     NOMYSQL = True
-    sys.stderr.write("This program will be more robust if mysql.connector installed")
+    sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -901,16 +901,16 @@ class MagentoCtl(object):
                 var_host,
                 sqlquery
                 )
-            sys.stderr.write("Querying MySQL...") #fixme --verbose?
+            sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
             p = subprocess.Popen(
                 conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
             if p.returncode > 0 or not output:
                 #return()
-                sys.stderr.write("MySQL cache table query failed")
+                sys.stderr.write("MySQL cache table query failed\n")
                 if err:
-                    sys.stderr.write("err %s" % err)
-                sys.stderr.write("command: %s" % conf)
+                    sys.stderr.write("err %s\n" % err)
+                sys.stderr.write("command: %s\n" % conf)
                 pass
             else:
                 # print "Mysql cache table:"
