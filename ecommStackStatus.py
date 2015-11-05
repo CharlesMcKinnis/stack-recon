@@ -22,13 +22,13 @@ try:
     import argparse
     ARGPARSE = True
 except:
-    NOARGPARSE = True
+    ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
 except:
-    NOMYSQL = True
+    MYSQL = False
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
 
 pp = pprint.PrettyPrinter(indent=4)
