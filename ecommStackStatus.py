@@ -379,7 +379,7 @@ class apacheCtl(object):
                         #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
                         stanzas["maxclients"] = int(stanzas["worker"]["maxclients"])
             else:
-                print "Could not identify mpm in use."
+                sys.stderr.write("Could not identify mpm in use.\n")
                 sys.exit(1)
             pass
 
@@ -733,7 +733,7 @@ class MagentoCtl(object):
                     #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
-                print "There are multiple Mage.php files in the Document Root. Choosing the shortest path." #breakme! Using the one with the smallest path."
+                sys.stderr.write("There are multiple Mage.php files in the Document Root. Choosing the shortest path.\n")
                 smallest_size = 0
                 smallest_line = ""
                 for i in mage_php_matches:
@@ -877,9 +877,9 @@ class MagentoCtl(object):
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
-        print "Magento path: %s" % doc_root
-        print "Version: %s" % value["magento_version"]
-        print
+        #print "Magento path: %s" % doc_root
+        #print "Version: %s" % value["magento_version"]
+        #print
         # pp.pprint(value)
         var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
         var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
@@ -929,7 +929,7 @@ class MagentoCtl(object):
             # if var_password:
             #     print " password present but not displayed"
             # print " password: %s" % var_password
-        print
+        #print
         return(return_config)
 
 def daemon_exe(match_exe):
@@ -1012,7 +1012,7 @@ def importfile(filename, keyword_regex, **kwargs):
         kwargs["recurse_count"] = 0
     if kwargs["recurse_count"] > 10:
         #arbitrary number
-        print "Too many recursions while importing %s, the config is probably a loop." % filename
+        sys.stderr.write("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         sys.exit(1)
     def full_file_path(right_file, base_path):
         # If the right side of the full name doesn't have a leading slash, it is a relative path.
@@ -1233,7 +1233,7 @@ elif "httpd.worker" in daemons:
     apache_exe = daemons["httpd.worker"]["exe"]
     apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
 else:
-    print "Apache is not running"
+    sys.stderr.write("Apache is not running\n")
 
 if apache_exe:
     try:
@@ -1241,13 +1241,13 @@ if apache_exe:
         apache_root_path = apache.get_root()
         apache_mpm = apache.get_mpm()
     except:
-        print "There was an error getting the apache daemon configuration"
+        sys.stderr.write("There was an error getting the apache daemon configuration\n")
         apache_conf_file = ""
         apache_root_path = ""
     #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
     #    apache_conf_file = "conf/httpd.conf"
     if apache_conf_file and apache_root_path:
-        print "Using config %s" % apache_root_path+apache_conf_file
+        sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
         wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
         apache_config = apache.parse_config(wholeconfig)
 
@@ -1292,17 +1292,17 @@ def NGINX_FPM_DATA_GATHER():
 # NGINX
 ################################################
 if not "nginx" in daemons:
-    print "nginx is not running"
+    sys.stderr.write("nginx is not running\n")
 else:
     nginx = nginxCtl(exe = daemons["nginx"]["exe"])
     try:
         nginx_conf_file = nginx.get_conf()
     except:
-        print "There was an error getting the nginx daemon configuration"
+        sys.stderr.write("There was an error getting the nginx daemon configuration\n")
         #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
         nginx_conf_file = ""
     if nginx_conf_file:
-        print "Using config %s" % nginx_conf_file
+        sys.stderr.write("Using config %s\n" % nginx_conf_file)
         
         # configuration fetch and parse
         wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
@@ -1338,16 +1338,16 @@ def PHP_FPM_DATA_GATHER():
 ################################################
 #phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
 if not "php-fpm" in daemons:
-    print "php-fpm is not running"
+    sys.stderr.write("php-fpm is not running\n")
 else:
     #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
 
-    print
+    sys.stderr.write("\n")
     phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
     try:
         phpfpm_conf_file = phpfpm.get_conf()
     except:
-        print "There was an error getting the php-fpm daemon configuration"
+        sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
         phpfpm_conf_file = ""
     if phpfpm_conf_file:
         #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
@@ -1390,7 +1390,7 @@ if not "magento" in globalconfig:
 try:
     mage_files = magento.find_mage_php(globalconfig["doc_roots"])
 except:
-    print "No Magento found in the web document roots"
+    sys.stderr.write("No Magento found in the web document roots\n")
     #print "mage files %r" % mage_files
 # get Magento information from those Mage.php
 
@@ -1404,7 +1404,7 @@ try:
     mage_file_info = magento.mage_file_info(mage_files)
     globalconfig["magento"]["doc_root"] = mage_file_info
 except:
-    print "Failed to get magento information"
+    sys.stderr.write("Failed to get magento information\n")
 
 #print "Magento dictionary:"
 #pp.pprint(globalconfig["magento"])
