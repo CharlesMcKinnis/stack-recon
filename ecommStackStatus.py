@@ -23,13 +23,13 @@ try:
     ARGPARSE = True
 except:
     NOARGPARSE = True
-    print "no argparse installed"
+    sys.stderr.write("This program is more robust if python argparse installed")
 try:
     import mysql.connector
     MYSQL = True
 except:
     NOMYSQL = True
-    print "no mysql.connector installed"
+    sys.stderr.write("This program will be more robust if mysql.connector installed")
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -901,15 +901,16 @@ class MagentoCtl(object):
                 var_host,
                 sqlquery
                 )
-            print "Querying MySQL..."
+            sys.stderr.write("Querying MySQL...") #fixme --verbose?
             p = subprocess.Popen(
                 conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
-            if p.returncode > 0:
+            if p.returncode > 0 or not output:
                 #return()
-                print "MySQL cache table query failed"
-                print "err %s" % err
-                print "command: %s" % conf
+                sys.stderr.write("MySQL cache table query failed")
+                if err:
+                    sys.stderr.write("err %s" % err)
+                sys.stderr.write("command: %s" % conf)
                 pass
             else:
                 # print "Mysql cache table:"
@@ -1674,7 +1675,8 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
                 print
-            print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
+            if value.get("cache",{}).get("cache_option_table"):
+                print "cache_option_table:\n%s" % value["cache"]["cache_option_table"]
             print
 """
     pp.pprint(globalconfig["magento"]["doc_root"])
