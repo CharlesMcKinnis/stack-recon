@@ -907,9 +907,9 @@ class MagentoCtl(object):
             output, err = p.communicate()
             if p.returncode > 0:
                 #return()
-                # print "MySQL cache table query failed"
-                # print "err %s" % err
-                #print "command: %s" % conf
+                print "MySQL cache table query failed"
+                print "err %s" % err
+                print "command: %s" % conf
                 pass
             else:
                 # print "Mysql cache table:"
