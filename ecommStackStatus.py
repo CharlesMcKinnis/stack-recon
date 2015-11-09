@@ -1179,6 +1179,20 @@ else:
         json filename, default config_dump.json
     """
 
+if args.json:
+    if os.path.isfile(args.json):
+        try:
+            with open(args.json,'r') as f:
+                globalconfig=json.load(f)
+        except:
+            sys.stderr.write("The file %s exists, but failed to import." % args.json)
+            sys.exit(1)
+    else:
+        sys.stderr.write("The file %s does not exist." % args.json)
+        sys.exit(1)
+
+if not args.output:
+    args.output = "./config_dump.json"
 """
 need to check directory permissions
 [root@localhost vhosts]# ll
@@ -1198,248 +1212,249 @@ for one in daemons:
 """
 #pp = pprint.PrettyPrinter(indent=4)
 #pp.pprint(daemons)
-globalconfig = {}
-"""
- ____    _  _____  _       ____    _  _____ _   _ _____ ____  
-|  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
-| | | |/ _ \ | | / _ \   | |  _  / _ \ | | | |_| |  _| | |_) |
-| |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ < 
-|____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\                                                           
-"""
-class DATA_GATHER():
-    pass
-# using this as a bookmark in the IDE
-def APACHE_FPM_DATA_GATHER():
-    pass
-################################################
-# APACHE
-################################################
-apache_exe = "" # to fix not defined
-# what if they have multiple apache daemons on different MPMs?
-if "apache2" in daemons:
-    apache_basename = daemons["apache2"]["basename"]
-    apache_exe = daemons["apache2"]["exe"]
-    apache = apacheCtl(exe = daemons["apache2"]["exe"])
-elif "httpd" in daemons:
-    apache_basename = daemons["httpd"]["basename"]
-    apache_exe = daemons["httpd"]["exe"]
-    apache = apacheCtl(exe = daemons["httpd"]["exe"])
-elif "httpd.event" in daemons:
-    apache_basename = daemons["httpd.event"]["basename"]
-    apache_exe = daemons["httpd.event"]["exe"]
-    apache = apacheCtl(exe = daemons["httpd.event"]["exe"])
-elif "httpd.worker" in daemons:
-    apache_basename = daemons["httpd.worker"]["basename"]
-    apache_exe = daemons["httpd.worker"]["exe"]
-    apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
-else:
-    sys.stderr.write("Apache is not running\n")
-
-if apache_exe:
-    try:
-        apache_conf_file = apache.get_conf()
-        apache_root_path = apache.get_root()
-        apache_mpm = apache.get_mpm()
-    except:
-        sys.stderr.write("There was an error getting the apache daemon configuration\n")
-        apache_conf_file = ""
-        apache_root_path = ""
-    #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
-    #    apache_conf_file = "conf/httpd.conf"
-    if apache_conf_file and apache_root_path:
-        sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
-        wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
-        apache_config = apache.parse_config(wholeconfig)
-
-        if not "apache" in globalconfig:
-            globalconfig["apache"] = {}
-        globalconfig["apache"] = apache_config
-        """
-        globalconfig[apache][sites]: [
+if not args.json:
+    globalconfig = {}
+    """
+     ____    _  _____  _       ____    _  _____ _   _ _____ ____  
+    |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
+    | | | |/ _ \ | | / _ \   | |  _  / _ \ | | | |_| |  _| | |_) |
+    | |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ < 
+    |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\                                                           
+    """
+    class DATA_GATHER():
+        pass
+    # using this as a bookmark in the IDE
+    def APACHE_FPM_DATA_GATHER():
+        pass
+    ################################################
+    # APACHE
+    ################################################
+    apache_exe = "" # to fix not defined
+    # what if they have multiple apache daemons on different MPMs?
+    if "apache2" in daemons:
+        apache_basename = daemons["apache2"]["basename"]
+        apache_exe = daemons["apache2"]["exe"]
+        apache = apacheCtl(exe = daemons["apache2"]["exe"])
+    elif "httpd" in daemons:
+        apache_basename = daemons["httpd"]["basename"]
+        apache_exe = daemons["httpd"]["exe"]
+        apache = apacheCtl(exe = daemons["httpd"]["exe"])
+    elif "httpd.event" in daemons:
+        apache_basename = daemons["httpd.event"]["basename"]
+        apache_exe = daemons["httpd.event"]["exe"]
+        apache = apacheCtl(exe = daemons["httpd.event"]["exe"])
+    elif "httpd.worker" in daemons:
+        apache_basename = daemons["httpd.worker"]["basename"]
+        apache_exe = daemons["httpd.worker"]["exe"]
+        apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
+    else:
+        sys.stderr.write("Apache is not running\n")
+    
+    if apache_exe:
+        try:
+            apache_conf_file = apache.get_conf()
+            apache_root_path = apache.get_root()
+            apache_mpm = apache.get_mpm()
+        except:
+            sys.stderr.write("There was an error getting the apache daemon configuration\n")
+            apache_conf_file = ""
+            apache_root_path = ""
+        #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
+        #    apache_conf_file = "conf/httpd.conf"
+        if apache_conf_file and apache_root_path:
+            sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
+            wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
+            apache_config = apache.parse_config(wholeconfig)
+    
+            if not "apache" in globalconfig:
+                globalconfig["apache"] = {}
+            globalconfig["apache"] = apache_config
+            """
+            globalconfig[apache][sites]: [
+                {
+                'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+                'config_file': '/etc/httpd/conf.d/ssl.conf',
+                'doc_root': '/var/www/html',
+                'listening': ['192.168.100.248:443']
+                }, {
+                'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+                'config_file': '/etc/httpd/conf/httpd.conf',
+                'doc_root': '/var/www/html',
+                'listening': ['*:80']
+                }, {
+                'config_file': '/etc/httpd/conf.d/ssl.conf',
+                'listening': ['_default_:443']
+                }, {
+                'config_file': '/etc/httpd/conf/httpd.conf',
+                'listening': ['_default_:80']
+                }, {
+                'doc_root': '/var/www/html'
+                }]
+            """
+            
+            daemon_config = apache.get_conf_parameters()
+            if daemon_config:
+                if not "daemon" in globalconfig["apache"]:
+                    globalconfig["apache"]["daemon"] = daemon_config
+                globalconfig["apache"]["basename"] = apache_basename
+                globalconfig["apache"]["exe"] = daemons[apache_basename]["exe"]
+                globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
+    
+    # using this as a bookmark in the IDE
+    def NGINX_FPM_DATA_GATHER():
+        pass
+    ################################################
+    # NGINX
+    ################################################
+    if not "nginx" in daemons:
+        sys.stderr.write("nginx is not running\n")
+    else:
+        nginx = nginxCtl(exe = daemons["nginx"]["exe"])
+        try:
+            nginx_conf_file = nginx.get_conf()
+        except:
+            sys.stderr.write("There was an error getting the nginx daemon configuration\n")
+            #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
+            nginx_conf_file = ""
+        if nginx_conf_file:
+            sys.stderr.write("Using config %s\n" % nginx_conf_file)
+            
+            # configuration fetch and parse
+            wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+            nginx_config = nginx.parse_config(wholeconfig)
+            
+            if not "nginx" in globalconfig:
+                globalconfig["nginx"] = {}
+            globalconfig["nginx"] = nginx_config
+            """
             {
-            'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
-            'config_file': '/etc/httpd/conf.d/ssl.conf',
-            'doc_root': '/var/www/html',
-            'listening': ['192.168.100.248:443']
-            }, {
-            'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
-            'config_file': '/etc/httpd/conf/httpd.conf',
-            'doc_root': '/var/www/html',
-            'listening': ['*:80']
-            }, {
-            'config_file': '/etc/httpd/conf.d/ssl.conf',
-            'listening': ['_default_:443']
-            }, {
-            'config_file': '/etc/httpd/conf/httpd.conf',
-            'listening': ['_default_:80']
-            }, {
-            'doc_root': '/var/www/html'
-            }]
-        """
-        
-        daemon_config = apache.get_conf_parameters()
-        if daemon_config:
-            if not "daemon" in globalconfig["apache"]:
-                globalconfig["apache"]["daemon"] = daemon_config
-            globalconfig["apache"]["basename"] = apache_basename
-            globalconfig["apache"]["exe"] = daemons[apache_basename]["exe"]
-            globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
-
-# using this as a bookmark in the IDE
-def NGINX_FPM_DATA_GATHER():
-    pass
-################################################
-# NGINX
-################################################
-if not "nginx" in daemons:
-    sys.stderr.write("nginx is not running\n")
-else:
-    nginx = nginxCtl(exe = daemons["nginx"]["exe"])
+            'domains': ['www.domain.com'],
+            'config_file': '/etc/nginx/conf.d/production.domain.com.conf',
+            'doc_root': '/var/www/vhosts/production.domain.com/webroot',
+            'listening': ['443 default ssl']
+            }
+    
+            """
+            
+            
+            daemon_config = nginx.get_conf_parameters()
+            if daemon_config:
+                if not "daemon" in globalconfig["nginx"]:
+                    globalconfig["nginx"]["daemon"] = daemon_config
+                globalconfig["nginx"]["basename"] = "nginx"
+                globalconfig["nginx"]["exe"] = daemons["nginx"]["exe"]
+                globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
+    
+    # using this as a bookmark in the IDE
+    def PHP_FPM_DATA_GATHER():
+        pass
+    ################################################
+    # PHP-FPM
+    ################################################
+    #phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+    if not "php-fpm" in daemons:
+        sys.stderr.write("php-fpm is not running\n")
+    else:
+        #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
+    
+        sys.stderr.write("\n")
+        phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+        try:
+            phpfpm_conf_file = phpfpm.get_conf()
+        except:
+            sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
+            phpfpm_conf_file = ""
+        if phpfpm_conf_file:
+            #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
+            wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
+            phpfpm_config = phpfpm.parse_config(wholeconfig)
+            
+            if not "php-fpm" in globalconfig:
+                globalconfig["php-fpm"] = {}
+            globalconfig["php-fpm"] = phpfpm_config
+            globalconfig["php-fpm"]["basename"] = "php-fpm"
+            globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
+            globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
+    
+    def MAGENTO_DATA_GATHER():
+        pass
+    ################################################
+    # Magento
+    ################################################
+    # get a list of unique document roots
+    doc_roots = set()
+    if "sites" in globalconfig.get("apache",{}):
+        for one in globalconfig["apache"]["sites"]:
+            if "doc_root" in one:
+                doc_roots.add(one["doc_root"])
+    if "sites" in globalconfig.get("nginx",{}):
+        for one in globalconfig["nginx"]["sites"]:
+            if "doc_root" in one:
+                doc_roots.add(one["doc_root"])
+    #if not "doc_roots" in globalconfig:
+    #    globalconfig["doc_roots"] = set()
+    globalconfig["doc_roots"] = list(doc_roots)
+    #print "doc_roots %r" % globalconfig["doc_roots"]
+    
+    
+    magento = MagentoCtl()
+    #print "%r" % magento
+    if not "magento" in globalconfig:
+        globalconfig["magento"] = {}
+    # find mage.php files in document roots
     try:
-        nginx_conf_file = nginx.get_conf()
+        mage_files = magento.find_mage_php(globalconfig["doc_roots"])
     except:
-        sys.stderr.write("There was an error getting the nginx daemon configuration\n")
-        #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
-        nginx_conf_file = ""
-    if nginx_conf_file:
-        sys.stderr.write("Using config %s\n" % nginx_conf_file)
-        
-        # configuration fetch and parse
-        wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
-        nginx_config = nginx.parse_config(wholeconfig)
-        
-        if not "nginx" in globalconfig:
-            globalconfig["nginx"] = {}
-        globalconfig["nginx"] = nginx_config
-        """
-        {
-        'domains': ['www.domain.com'],
-        'config_file': '/etc/nginx/conf.d/production.domain.com.conf',
-        'doc_root': '/var/www/vhosts/production.domain.com/webroot',
-        'listening': ['443 default ssl']
-        }
-
-        """
-        
-        
-        daemon_config = nginx.get_conf_parameters()
-        if daemon_config:
-            if not "daemon" in globalconfig["nginx"]:
-                globalconfig["nginx"]["daemon"] = daemon_config
-            globalconfig["nginx"]["basename"] = "nginx"
-            globalconfig["nginx"]["exe"] = daemons["nginx"]["exe"]
-            globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
-
-# using this as a bookmark in the IDE
-def PHP_FPM_DATA_GATHER():
-    pass
-################################################
-# PHP-FPM
-################################################
-#phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-if not "php-fpm" in daemons:
-    sys.stderr.write("php-fpm is not running\n")
-else:
-    #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
-
-    sys.stderr.write("\n")
-    phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-    try:
-        phpfpm_conf_file = phpfpm.get_conf()
-    except:
-        sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
-        phpfpm_conf_file = ""
-    if phpfpm_conf_file:
-        #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
-        wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
-        phpfpm_config = phpfpm.parse_config(wholeconfig)
-        
-        if not "php-fpm" in globalconfig:
-            globalconfig["php-fpm"] = {}
-        globalconfig["php-fpm"] = phpfpm_config
-        globalconfig["php-fpm"]["basename"] = "php-fpm"
-        globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
-        globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
-
-def MAGENTO_DATA_GATHER():
-    pass
-################################################
-# Magento
-################################################
-# get a list of unique document roots
-doc_roots = set()
-if "sites" in globalconfig.get("apache",{}):
-    for one in globalconfig["apache"]["sites"]:
-        if "doc_root" in one:
-            doc_roots.add(one["doc_root"])
-if "sites" in globalconfig.get("nginx",{}):
-    for one in globalconfig["nginx"]["sites"]:
-        if "doc_root" in one:
-            doc_roots.add(one["doc_root"])
-#if not "doc_roots" in globalconfig:
-#    globalconfig["doc_roots"] = set()
-globalconfig["doc_roots"] = list(doc_roots)
-#print "doc_roots %r" % globalconfig["doc_roots"]
-
-
-magento = MagentoCtl()
-#print "%r" % magento
-if not "magento" in globalconfig:
-    globalconfig["magento"] = {}
-# find mage.php files in document roots
-try:
-    mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-except:
-    sys.stderr.write("No Magento found in the web document roots\n")
-    #print "mage files %r" % mage_files
-# get Magento information from those Mage.php
-
-mage_file_info = magento.mage_file_info(mage_files)
-globalconfig["magento"]["doc_root"] = mage_file_info
-
-
-try:
-    # print "1265"
-    # print type(magento.mage_file_info(mage_files))
+        sys.stderr.write("No Magento found in the web document roots\n")
+        #print "mage files %r" % mage_files
+    # get Magento information from those Mage.php
+    
     mage_file_info = magento.mage_file_info(mage_files)
     globalconfig["magento"]["doc_root"] = mage_file_info
-except:
-    sys.stderr.write("Failed to get magento information\n")
-
-#print "Magento dictionary:"
-#pp.pprint(globalconfig["magento"])
-
-#pp.pprint(globalconfig)
-
-for doc_root in globalconfig["magento"]["doc_root"]:
-    if not doc_root in globalconfig["magento"]["doc_root"]:
-        globalconfig["magento"]["doc_root"][doc_root] = {}
-    # else:
-    #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
-    #     print type(globalconfig["magento"]["doc_root"][doc_root])
-    local_xml = os.path.join(doc_root,"app","etc","local.xml")
-    if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
-        globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
-    # else:
-    #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
-    #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
     
-    #testvar = magento.open_local_xml(local_xml)
-    #print "1252: %r" % testvar
-    # var_dict = magento.open_local_xml(local_xml)
-    # print "doc_root: %r" % doc_root
-    # print type(globalconfig["magento"]["doc_root"][doc_root])
-    # print globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
-    # print type(localdict)
-    # pprint(localdict)
-    globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
-    #pp.pprint(globalconfig["magento"]["doc_root"])
-
-    globalconfig["magento"]["doc_root"][doc_root].update(magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
-
-    #if return_config:
-    #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-    #    globalconfig["magento"]["doc_root"].update(return_config)
+    
+    try:
+        # print "1265"
+        # print type(magento.mage_file_info(mage_files))
+        mage_file_info = magento.mage_file_info(mage_files)
+        globalconfig["magento"]["doc_root"] = mage_file_info
+    except:
+        sys.stderr.write("Failed to get magento information\n")
+    
+    #print "Magento dictionary:"
+    #pp.pprint(globalconfig["magento"])
+    
+    #pp.pprint(globalconfig)
+    
+    for doc_root in globalconfig["magento"]["doc_root"]:
+        if not doc_root in globalconfig["magento"]["doc_root"]:
+            globalconfig["magento"]["doc_root"][doc_root] = {}
+        # else:
+        #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
+        #     print type(globalconfig["magento"]["doc_root"][doc_root])
+        local_xml = os.path.join(doc_root,"app","etc","local.xml")
+        if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
+            globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
+        # else:
+        #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
+        #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
+        
+        #testvar = magento.open_local_xml(local_xml)
+        #print "1252: %r" % testvar
+        # var_dict = magento.open_local_xml(local_xml)
+        # print "doc_root: %r" % doc_root
+        # print type(globalconfig["magento"]["doc_root"][doc_root])
+        # print globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
+        # print type(localdict)
+        # pprint(localdict)
+        globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
+        #pp.pprint(globalconfig["magento"]["doc_root"])
+    
+        globalconfig["magento"]["doc_root"][doc_root].update(magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+    
+        #if return_config:
+        #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+        #    globalconfig["magento"]["doc_root"].update(return_config)
 
 """
 {'/var/www/html':
@@ -1761,10 +1776,10 @@ class TODO():
 
 
 # Save the config as a yaml file
-filename = "config_dump.json"
-if not os.path.isfile(filename):
+#filename = "config_dump.json"
+if (not os.path.isfile(args.output) or args.force) and not args.json:
     json_str=json.dumps(globalconfig)
-    with open(filename,'w') as outfile:
+    with open(args.output,'w') as outfile:
         outfile.write( json_str )
     outfile.close()
 """
