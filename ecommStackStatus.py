@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-Magento is a trademark of Varien. Neither I nor these scripts aret affiliated with or endorsed by the Magento Project or its trademark owners.
+Magento is a trademark of Varien. Neither I nor these scripts are affiliated with or endorsed by the Magento Project or its trademark owners.
 
 """
 
