@@ -1153,6 +1153,11 @@ if ARGPARSE:
                         action="store_true")
     parser.add_argument("-o", "--output", help="Name of json file to place saved config in. Default: ./config_dump.json",
                         default="./config_dump.json")
+    """
+    parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
+                        action="store_true")
+    """
+
     args = parser.parse_args()
     
     # if (args.silent or args.batch) and not args.runtime:
@@ -1170,6 +1175,7 @@ else:
     args.nofiglet = None
     args.force = None
     args.output = "./config_dump.json"
+    # args.nopassword = None
     """
     defaults:
         save a config_dump
