@@ -1185,10 +1185,10 @@ if args.jsonfile:
             with open(args.jsonfile,'r') as f:
                 globalconfig=json.load(f)
         except:
-            sys.stderr.write("The file %s exists, but failed to import." % args.jsonfile)
+            sys.stderr.write("The file %s exists, but failed to import.\n" % args.jsonfile)
             sys.exit(1)
     else:
-        sys.stderr.write("The file %s does not exist." % args.jsonfile)
+        sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
 
 if not args.output:
