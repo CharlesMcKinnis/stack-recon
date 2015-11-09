@@ -1180,15 +1180,15 @@ else:
     """
 
 if args.jsonfile:
-    if os.path.isfile(args.json):
+    if os.path.isfile(args.jsonfile):
         try:
-            with open(args.json,'r') as f:
+            with open(args.jsonfile,'r') as f:
                 globalconfig=json.load(f)
         except:
-            sys.stderr.write("The file %s exists, but failed to import." % args.json)
+            sys.stderr.write("The file %s exists, but failed to import." % args.jsonfile)
             sys.exit(1)
     else:
-        sys.stderr.write("The file %s does not exist." % args.json)
+        sys.stderr.write("The file %s does not exist." % args.jsonfile)
         sys.exit(1)
 
 if not args.output:
@@ -1212,7 +1212,7 @@ for one in daemons:
 """
 #pp = pprint.PrettyPrinter(indent=4)
 #pp.pprint(daemons)
-if not args.json:
+if not args.jsonfile:
     globalconfig = {}
     """
      ____    _  _____  _       ____    _  _____ _   _ _____ ____  
