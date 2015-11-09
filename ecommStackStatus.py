@@ -1164,12 +1164,12 @@ if ARGPARSE:
     #     pass
 else:
     args = argsAlt()
+    args.jsonfile = None
+    args.silent = None
+    args.verbose = None
+    args.nofiglet = None
+    args.force = None
     args.output = "./config_dump.json"
-    #args.jsonfile = 
-    #args.silent = 
-    #args.verbose = 
-    #args.nofiglet = 
-    #args.force = 
     """
     defaults:
         save a config_dump
@@ -1179,7 +1179,7 @@ else:
         json filename, default config_dump.json
     """
 
-if args.json:
+if args.jsonfile:
     if os.path.isfile(args.json):
         try:
             with open(args.json,'r') as f:
@@ -1777,7 +1777,7 @@ class TODO():
 
 # Save the config as a yaml file
 #filename = "config_dump.json"
-if (not os.path.isfile(args.output) or args.force) and not args.json:
+if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
     json_str=json.dumps(globalconfig)
     with open(args.output,'w') as outfile:
         outfile.write( json_str )
