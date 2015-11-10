@@ -20,4 +20,4 @@ def client(string):
 
 #assert client('2+2') == '4'
 i = client("INFO\n")
-print "%r" % i
+print i
