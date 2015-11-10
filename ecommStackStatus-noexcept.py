@@ -18,18 +18,19 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
-try:
-    import argparse
-    ARGPARSE = True
-except:
-    ARGPARSE = False
-    sys.stderr.write("This program is more robust if python argparse installed.\n")
-try:
-    import mysql.connector
-    MYSQL = True
-except:
-    MYSQL = False
-    sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
+
+import argparse
+ARGPARSE = True
+
+
+
+
+import mysql.connector
+MYSQL = True
+
+
+
+
 
 class argsAlt(object):
     pass
@@ -392,43 +393,43 @@ class nginxCtl(object):
         """
         :returns: nginx configuration path location
         """
-        try:
-            return self.get_conf_parameters()['--conf-path']
-        except KeyError:
-            #print "nginx is not installed!!!"
-            sys.exit(1)
+
+        return self.get_conf_parameters()['--conf-path']
+
+
+
 
     def get_bin(self):
         """
         :returns: nginx binary location
         """
-        try:
-            return self.get_conf_parameters()['--sbin-path']
-        except:
-            #print "nginx is not installed!!!"
-            sys.exit(1)
+
+        return self.get_conf_parameters()['--sbin-path']
+
+
+
 
     def get_pid(self):
         """
         :returns: nginx pid location which is required by nginx services
         """
 
-        try:
-            return self.get_conf_parameters()['--pid-path']
-        except:
-            #print "nginx is not installed!!!"
-            return()
+
+        return self.get_conf_parameters()['--pid-path']
+
+
+
 
     def get_lock(self):
         """
         :returns: nginx lock file location which is required for nginx services
         """
 
-        try:
-            return self.get_conf_parameters()['--lock-path']
-        except:
-            #print "nginx is not installed!!!"
-            return()
+
+        return self.get_conf_parameters()['--lock-path']
+
+
+
 
     def parse_config(self,wholeconfig):
         """
@@ -732,11 +733,11 @@ class MagentoCtl(object):
         
         returns: dict with db and cache information
         """
-        try:
-            tree = ET.ElementTree(file=filename)
-        except:
-            sys.stderr.write("Could not open file %s\n" % filename)
-            sys.exit(1)
+
+        tree = ET.ElementTree(file=filename)
+
+
+
 
         #tree = ET.ElementTree(file='local.xml')
         #tree = ET.ElementTree(file='local-memcache.xml')
@@ -985,14 +986,14 @@ def importfile(filename, keyword_regex, **kwargs):
     for onefile in files:
         #print "onefile: %r" % onefile
         # for each file in the glob (may be just one file), open it
-        try:
-            onefile_handle = open(onefile, 'r')
-            # onefile should always be a file
-            if os.path.isfile(onefile):
-                #print "STA onefile: %s" % onefile
-                combined += "## START "+onefile+"\n"
-        except:
-            return()
+
+        onefile_handle = open(onefile, 'r')
+        # onefile should always be a file
+        if os.path.isfile(onefile):
+            #print "STA onefile: %s" % onefile
+            combined += "## START "+onefile+"\n"
+
+
 
         # go through the file, line by line
         # if it has an include, go follow it
@@ -1187,12 +1188,12 @@ else:
 
 if args.jsonfile:
     if os.path.isfile(args.jsonfile):
-        try:
-            with open(args.jsonfile,'r') as f:
-                globalconfig=json.load(f)
-        except:
-            sys.stderr.write("The file %s exists, but failed to import.\n" % args.jsonfile)
-            sys.exit(1)
+
+        with open(args.jsonfile,'r') as f:
+            globalconfig=json.load(f)
+
+
+
     else:
         sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
@@ -1257,16 +1258,16 @@ if not args.jsonfile:
         sys.stderr.write("Apache is not running\n")
     
     if apache_exe:
-        try:
-            apache_conf_file = apache.get_conf()
-            apache_root_path = apache.get_root()
-            apache_mpm = apache.get_mpm()
-        except:
-            sys.stderr.write("There was an error getting the apache daemon configuration\n")
-            apache_conf_file = ""
-            apache_root_path = ""
-        #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
-        #    apache_conf_file = "conf/httpd.conf"
+
+        apache_conf_file = apache.get_conf()
+        apache_root_path = apache.get_root()
+        apache_mpm = apache.get_mpm()
+
+
+
+
+
+
         if apache_conf_file and apache_root_path:
             sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
             wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
@@ -1316,12 +1317,12 @@ if not args.jsonfile:
         sys.stderr.write("nginx is not running\n")
     else:
         nginx = nginxCtl(exe = daemons["nginx"]["exe"])
-        try:
-            nginx_conf_file = nginx.get_conf()
-        except:
-            sys.stderr.write("There was an error getting the nginx daemon configuration\n")
-            #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
-            nginx_conf_file = ""
+
+        nginx_conf_file = nginx.get_conf()
+
+
+
+
         if nginx_conf_file:
             sys.stderr.write("Using config %s\n" % nginx_conf_file)
             
@@ -1365,11 +1366,11 @@ if not args.jsonfile:
     
         sys.stderr.write("\n")
         phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-        try:
-            phpfpm_conf_file = phpfpm.get_conf()
-        except:
-            sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
-            phpfpm_conf_file = ""
+
+        phpfpm_conf_file = phpfpm.get_conf()
+
+
+
         if phpfpm_conf_file:
             #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
             wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
@@ -1408,24 +1409,24 @@ if not args.jsonfile:
     if not "magento" in globalconfig:
         globalconfig["magento"] = {}
     # find mage.php files in document roots
-    try:
-        mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-    except:
-        sys.stderr.write("No Magento found in the web document roots\n")
-        #print "mage files %r" % mage_files
+
+    mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+
+
+
     # get Magento information from those Mage.php
     
     mage_file_info = magento.mage_file_info(mage_files)
     globalconfig["magento"]["doc_root"] = mage_file_info
     
     
-    try:
-        # print "1265"
-        # print type(magento.mage_file_info(mage_files))
-        mage_file_info = magento.mage_file_info(mage_files)
-        globalconfig["magento"]["doc_root"] = mage_file_info
-    except:
-        sys.stderr.write("Failed to get magento information\n")
+
+    # print "1265"
+    # print type(magento.mage_file_info(mage_files))
+    mage_file_info = magento.mage_file_info(mage_files)
+    globalconfig["magento"]["doc_root"] = mage_file_info
+
+
     
     #print "Magento dictionary:"
     #pp.pprint(globalconfig["magento"])
