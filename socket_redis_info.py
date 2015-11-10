@@ -33,7 +33,8 @@ for i in reply.splitlines():
         if not section in return_dict:
             return_dict[section] = {}
         continue
-    [key, value] = i.split(':', 2)
+    print "%r" % i.split(':', 2)
+    #[key, value] = i.split(':', 2)
     key = key.strip()
     value = value.strip()
     return_dict[section][key] = value
