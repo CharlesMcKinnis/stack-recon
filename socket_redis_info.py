@@ -34,10 +34,15 @@ for i in reply.splitlines():
             return_dict[section] = {}
         continue
     print "%r" % i.split(':', 2)
-    #[key, value] = i.split(':', 2)
-    key = key.strip()
-    value = value.strip()
-    return_dict[section][key] = value
+    try:
+        [key, value] = i.split(':', 2)
+    except ValueError:
+        key = ""
+        value = ""
+    if key and value:
+        key = key.strip()
+        value = value.strip()
+        return_dict[section][key] = value
 
 pp.pprint(return_dict)
 #print i
