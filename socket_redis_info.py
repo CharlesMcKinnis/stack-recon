@@ -6,13 +6,17 @@ Modified from http://kmkeen.com/socketserver/
 import socket
 import pprint
 
-def client(string):
-    HOST, PORT = '172.24.16.68', 6386
+def socket_client(ip, port, string, **kwargs):
+    if "TIMEOUT" in kwargs:
+        timeout = int(kwargs["TIMEOUT"])
+    else:
+        timeout = 5
+    #ip, port = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setdefaulttimeout(5)
+    sock.setdefaulttimeout(timeout)
     #sock.setblocking(0)  # optional non-blocking
-    sock.connect((HOST, PORT))
+    sock.connect((ip, port))
     sock.send(string)
     reply = sock.recv(16384)  # limit reply to 16K
     sock.close()
@@ -21,32 +25,33 @@ def client(string):
 pp = pprint.PrettyPrinter(indent=4)
 
 #assert client('2+2') == '4'
-reply = client("INFO\n")
-x=0
-return_dict = {}
-section = ""
-for i in reply.splitlines():
-    x += 1
-    print "%3d %s" % (x,i)
-    if len(i) == 0:
-        continue
-    if i[0] == "#":   # IndexError: string index out of range
-        # new section
-        section = i.strip(' #')
-        if not section in return_dict:
-            return_dict[section] = {}
-        continue
-    print "%r" % i.split(':', 2)
-    try:
-        [key, value] = i.split(':', 2)
-    except ValueError:
-        key = ""
-        value = ""
-    if key and value:
-        key = key.strip()
-        value = value.strip()
-        return_dict[section][key] = value
-
+def redis_info(ip,port):
+    port = int(port)
+    reply = socket_client(ip,port,"INFO\n", TIMEOUT = 5)
+    return_dict = {}
+    section = ""
+    for i in reply.splitlines():
+        if len(i.strip()) == 0:
+            continue
+        if i.lstrip()[0] == "#":   # IndexError: string index out of range
+            # new section
+            section = i.lstrip(' #').rstrip()
+            if not section in return_dict:
+                return_dict[section] = {}
+            continue
+        print "%r" % i.split(':', 2)
+        try:
+            [key, value] = i.split(':', 2)
+        except ValueError:
+            key = None
+            value = None
+        if key and value:
+            key = key.strip()
+            value = value.strip()
+            return_dict[section][key] = value
+    return(return_dict)
+# '172.24.16.68', 6386
+redis_info('172.24.16.68',6386)
 pp.pprint(return_dict)
 #print i
 
