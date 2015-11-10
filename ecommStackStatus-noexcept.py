@@ -1638,7 +1638,7 @@ if "php-fpm" in globalconfig:
     print "php-fpm pools:"
     for one in globalconfig["php-fpm"]:
         if type(globalconfig["php-fpm"][one]) is dict:
-            print "%s" % (one,)
+            print "%s" % one
     #for one in sorted(globalconfig["php-fpm"]):
     #    print "%s %r\n" % (one,globalconfig["php-fpm"][one])
 
