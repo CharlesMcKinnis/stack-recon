@@ -18,7 +18,7 @@ def client(string):
 #assert client('2+2') == '4'
 reply = client("INFO\n")
 x=0
-for i in reply:
+for i in reply.splitlines():
    x += 1
    print "%3d %s" % (x,i)
 #print i
