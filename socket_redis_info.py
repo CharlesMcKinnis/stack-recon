@@ -1,4 +1,7 @@
 #!/usr/bin/env python2
+"""
+Modified from http://kmkeen.com/socketserver/
+"""
 
 import socket
 def client(string):
