@@ -10,6 +10,7 @@ def client(string):
     HOST, PORT = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setdefaulttimeout(5)
     #sock.setblocking(0)  # optional non-blocking
     sock.connect((HOST, PORT))
     sock.send(string)
