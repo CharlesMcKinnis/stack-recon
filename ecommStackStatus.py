@@ -884,6 +884,53 @@ class MagentoCtl(object):
             # print " password: %s" % var_password
         #print
         return(return_config)
+class RedisCtl(object):
+    def socket_client(self, ip, port, string, **kwargs):
+        if "TIMEOUT" in kwargs:
+            timeout = int(kwargs["TIMEOUT"])
+        else:
+            timeout = 5
+        #ip, port = '172.24.16.68', 6386
+        # SOCK_STREAM == a TCP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        #sock.setdefaulttimeout(timeout)
+        #sock.setblocking(0)  # optional non-blocking
+        try:
+            sock.connect((ip, port))
+            sock.send(string)
+            reply = sock.recv(16384)  # limit reply to 16K
+            sock.close()
+        except socket.error:
+            sys.exit(1)
+            return(0)
+        return reply
+    
+    def get_conf(self, ip, port):
+        port = int(port)
+        reply = self.socket_client(ip,port,"INFO\n")
+        return_dict = {}
+        section = ""
+        for i in reply.splitlines():
+            if len(i.strip()) == 0:
+                continue
+            if i.lstrip()[0] == "#":   # IndexError: string index out of range
+                # new section
+                section = i.lstrip(' #').rstrip()
+                if not section in return_dict:
+                    return_dict[section] = {}
+                continue
+            print "%r" % i.split(':', 2)
+            try:
+                [key, value] = i.split(':', 2)
+            except ValueError:
+                key = None
+                value = None
+            if key and value:
+                key = key.strip()
+                value = value.strip()
+                return_dict[section][key] = value
+        return(return_dict)
 
 def daemon_exe(match_exe):
     """
