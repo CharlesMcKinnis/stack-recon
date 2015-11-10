@@ -5,6 +5,7 @@ Modified from http://kmkeen.com/socketserver/
 
 import socket
 import pprint
+import sys
 
 def socket_client(ip, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
@@ -14,12 +15,17 @@ def socket_client(ip, port, string, **kwargs):
     #ip, port = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setdefaulttimeout(timeout)
+    sock.settimeout(timeout)
+    #sock.setdefaulttimeout(timeout)
     #sock.setblocking(0)  # optional non-blocking
-    sock.connect((ip, port))
-    sock.send(string)
-    reply = sock.recv(16384)  # limit reply to 16K
-    sock.close()
+    try:
+        sock.connect((ip, port))
+        sock.send(string)
+        reply = sock.recv(16384)  # limit reply to 16K
+        sock.close()
+    except socket.error:
+        sys.exit(1)
+        return(0)
     return reply
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -27,7 +33,7 @@ pp = pprint.PrettyPrinter(indent=4)
 #assert client('2+2') == '4'
 def redis_info(ip,port):
     port = int(port)
-    reply = socket_client(ip,port,"INFO\n", TIMEOUT = 5)
+    reply = socket_client(ip,port,"INFO\n")
     return_dict = {}
     section = ""
     for i in reply.splitlines():
