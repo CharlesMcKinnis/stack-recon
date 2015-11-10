@@ -11,9 +11,13 @@ def client(string):
     #sock.setblocking(0)  # optional non-blocking
     sock.connect((HOST, PORT))
     sock.send(string)
+    print "tx"
     reply = sock.recv(16384)  # limit reply to 16K
+    print "rx"
     sock.close()
+    print "close"
     return reply
 
 #assert client('2+2') == '4'
-print client("INFO")
+i = client("INFO")
+print "%r" % i
