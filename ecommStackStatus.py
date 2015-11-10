@@ -21,13 +21,13 @@ import pprint
 try:
     import argparse
     ARGPARSE = True
-except:
+except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
-except:
+except ImportError:
     MYSQL = False
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
 

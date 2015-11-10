@@ -18,19 +18,18 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
-
-import argparse
-ARGPARSE = True
-
-
-
-
-import mysql.connector
-MYSQL = True
-
-
-
-
+try:
+    import argparse
+    ARGPARSE = True
+except ImportError:
+    ARGPARSE = False
+    sys.stderr.write("This program is more robust if python argparse installed.\n")
+try:
+    import mysql.connector
+    MYSQL = True
+except ImportError:
+    MYSQL = False
+    sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
 
 class argsAlt(object):
     pass
