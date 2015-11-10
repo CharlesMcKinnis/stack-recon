@@ -4,6 +4,8 @@ Modified from http://kmkeen.com/socketserver/
 """
 
 import socket
+import pprint
+
 def client(string):
     HOST, PORT = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
@@ -15,12 +17,28 @@ def client(string):
     sock.close()
     return reply
 
+pp = pprint.PrettyPrinter(indent=4)
+
 #assert client('2+2') == '4'
 reply = client("INFO\n")
 x=0
+return_dict = {}
+section = ""
 for i in reply.splitlines():
-   x += 1
-   print "%3d %s" % (x,i)
+    x += 1
+    print "%3d %s" % (x,i)
+    if i[0] == "#":
+        # new section
+        section = i.strip(' #')
+        if not section in return_dict:
+            return_dict[section] = {}
+        continue
+    key,value = i.split(':')
+    key = key.strip()
+    value = value.strip()
+    return_dict[section][key] = value
+
+pp.pprint(return_dict)
 #print i
 
 """
