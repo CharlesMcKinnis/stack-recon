@@ -28,9 +28,6 @@ def socket_client(ip, port, string, **kwargs):
         return(0)
     return reply
 
-pp = pprint.PrettyPrinter(indent=4)
-
-#assert client('2+2') == '4'
 def redis_info(ip,port):
     port = int(port)
     reply = socket_client(ip,port,"INFO\n")
@@ -56,6 +53,12 @@ def redis_info(ip,port):
             value = value.strip()
             return_dict[section][key] = value
     return(return_dict)
+
+
+pp = pprint.PrettyPrinter(indent=4)
+
+#assert client('2+2') == '4'
+
 # '172.24.16.68', 6386
 redis_info('172.24.16.68',6386)
 pp.pprint(return_dict)
