@@ -27,7 +27,9 @@ section = ""
 for i in reply.splitlines():
     x += 1
     print "%3d %s" % (x,i)
-    if i[0] == "#":
+    if len(i) == 0:
+        continue
+    if i[0] == "#":   # IndexError: string index out of range
         # new section
         section = i.strip(' #')
         if not section in return_dict:
