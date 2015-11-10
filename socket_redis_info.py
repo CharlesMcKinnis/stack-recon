@@ -19,5 +19,5 @@ def client(string):
     return reply
 
 #assert client('2+2') == '4'
-i = client("INFO")
+i = client("INFO\n")
 print "%r" % i
