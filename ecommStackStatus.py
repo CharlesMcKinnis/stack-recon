@@ -1663,9 +1663,6 @@ if not args.jsonfile:
 
     def REDIS_DATA_GATHER():
         pass
-    if globalconfig.get("magento",{}).get("doc_root"):
-        for doc_root in globalconfig["magento"]["doc_root"]:
-            pp.pprint(doc_root)
     
     def MEMCACHE_DATA_GATHER():
         pass
@@ -1987,6 +1984,12 @@ pp.pprint(local_xml)
 """
 class TODO():
     pass
+
+print "TODO"
+if globalconfig.get("magento",{}).get("doc_root"):
+    for doc_root in globalconfig["magento"]["doc_root"]:
+        pp.pprint(doc_root)
+    
 
 
 # Save the config as a json file
