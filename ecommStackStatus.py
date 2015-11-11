@@ -298,7 +298,7 @@ class apacheCtl(object):
                         stanzas[server_line][word] += [result.group(2)]
                 """
             # closing VirtualHost
-            result = re.match('</VirtualHost\s+([^>]+)', linecomp, re.IGNORECASE )
+            result = re.match('</virtualhost', linecomp, re.IGNORECASE )
             if result:
                 vhost_start = -1
                 continue
