@@ -1987,6 +1987,7 @@ class TODO():
 
 print "TODO"
 if globalconfig.get("magento",{}).get("doc_root"):
+    pp.pprint(globalconfig["magento"]["doc_root"])
     for doc_root in globalconfig["magento"]["doc_root"]:
         pp.pprint(doc_root)
     
