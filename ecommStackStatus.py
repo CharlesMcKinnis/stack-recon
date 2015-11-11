@@ -1192,8 +1192,8 @@ def memory_estimate(process_name, **kwargs):
 
 def memory_print(result, proc_name, proc_max):
     print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (result["line_count"], proc_name, result["line_sum"], result["free_mem"])
-    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"] / result["line_count"] * proc_max), proc_max)
-    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
+    print "Average memory per process: %d KB will use %d KB if max processes %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"] / result["line_count"] * proc_max), proc_max)
+    print "Largest process: %d KB will use %d KB if max processes is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
     #print "Based on the largest process, use this as a health check: %d" % (int(
     #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
     #    ))
@@ -1202,14 +1202,14 @@ def memory_print(result, proc_name, proc_max):
     # yellow else
     #print "Positive numbers may mean you can have more clients. Negative numbers mean you are overcommited."
     #print "See below for numbers advice.\n"
-    print "What should I set max clients to?"
+    print "What should I set max processes to?"
     print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
     #print "If you use the average size, and commit 100%% of memory: %d or 80%%: %d" % (
     #    int( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ),
     #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8)
     #    )
     print
-    print "Current maximum clients: %d" % proc_max
+    print "Current maximum processes: %d" % proc_max
     print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
     print "     %3d                %3d                %3d              %3d" % (
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )),
