@@ -817,12 +817,28 @@ class MagentoCtl(object):
         xml_config_section = 'redis_session'
         xml_config_single = 'session_save_path'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
+        # test for session cache redis
+        resources = tree.find("global/redis_session")
+        if resources is not None:
+            local_xml[section]["engine"] = "redis"
+        elif local_xml[section][xml_config_node] == "memcache":
+            local_xml[section]["engine"] = "memcache"
+        else:
+            local_xml[section]["engine"] = "unknown"
         
         section = "object_cache"
         xml_parent_path = 'global/cache'
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+        if local_xml[section][xml_config_node].lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "mage_redis" # Magento's redis module
+        elif local_xml[section][xml_config_node].lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "cm_redis" # Colin M's redis module
+        elif local_xml[section][xml_config_node] == "memcached":
+            local_xml[section]["engine"] = "memcache"
+        else:
+            local_xml[section]["engine"] = "unknown"
         
         section = "full_page_cache"
         xml_parent_path = 'global/full_page_cache'
@@ -830,6 +846,12 @@ class MagentoCtl(object):
         xml_config_section = 'backend_options'
         xml_config_single = 'slow_backend'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
+        if local_xml[section][xml_config_node].lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "mage_redis" # Magento's redis module
+        elif local_xml[section][xml_config_node].lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "cm_redis" # Colin M's redis module
+        else:
+            local_xml[section]["engine"] = "unknown"
         
         return(local_xml)
     
@@ -1898,16 +1920,19 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
+                print "Session Cache engine: %s" % value["local_xml"]["session_cache"]["engine"]
                 print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
                 for k2,v2 in value["local_xml"]["session_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
+                print "Object Cache engine: %s" % value["local_xml"]["object_cache"]["engine"]
                 print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
                 for k2,v2 in value["local_xml"]["object_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
+                print "Full Page Cache engine: %s" % value["local_xml"]["full_page_cache"]["engine"]
                 print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
                 for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
