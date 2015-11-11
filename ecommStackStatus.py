@@ -1990,7 +1990,60 @@ if globalconfig.get("magento",{}).get("doc_root"):
     pp.pprint(globalconfig["magento"]["doc_root"])
     for doc_root in globalconfig["magento"]["doc_root"]:
         pp.pprint(doc_root)
-    
+"""    
+    pp.pprint(globalconfig["magento"]["doc_root"])
+{   '/var/www/vhosts/example.org/httpdocs/marketplace_2/':
+    {
+        'Mage.php': '/var/www/vhosts/example.org/httpdocs/marketplace_2/app/Mage.php',
+        'cache':
+        {
+            'cache_option_table': '+-------------+-------+\n| code        | value |\n+-------------+-------+\n| block_html  |     0 |\n| collections |     1 |\n| config      |     1 |\n| config_api  |     1 |\n| config_api2 |     1 |\n| eav         |     1 |\n| full_page   |     1 |\n| layout      |     1 |\n| translate   |     1 |\n+-------------+-------+\n'
+        },
+        'local_xml':
+        {
+            'db':
+            {
+                'active': '1',
+                'dbname': 'marketplace_2',
+                'host': '172.24.16.1',
+                'initStatements': 'SET NAMES utf8',
+                'model': 'mysql4',
+                'password': 'password',
+                'pdoType': None,
+                'type': 'pdo_mysql',
+                'username': 'magentouser'
+            },
+            'filename': '/var/www/vhosts/example.org/httpdocs/marketplace_2/app/etc/local.xml',
+            'full_page_cache':
+            {
+            },
+            'object_cache':
+            {
+                'backend': 'memcached'
+            },
+            'session_cache':
+            {
+                'session_save': 'memcache',
+                'session_save_path': 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
+            }
+        },
+        'mage_version':
+        {
+            'edition': 'EDITION_ENTERPRISE',
+            'major': '1',
+            'minor': '13',
+            'number': '',
+            'patch': '0',
+            'revision': '0',
+            'stability': '',
+            'version': '1.13.0.0'
+        },
+        'magento_path': '/var/www/vhosts/example.org/httpdocs/marketplace_2',
+        'magento_version': '1.13.0.0 EDITION_ENTERPRISE'
+    }
+}
+
+"""
 
 
 # Save the config as a json file
