@@ -951,6 +951,8 @@ class RedisCtl(object):
     def get_status(self, ip, port):
         port = int(port)
         reply = socket_client(ip,port,"INFO\n")
+        return(reply)
+    def parse_status(self, reply):
         return_dict = {}
         section = ""
         for i in reply.splitlines():
@@ -978,6 +980,8 @@ class MemcacheCtl(object):
     def get_status(self, ip, port):
         port = int(port)
         reply = socket_client(ip,port,"stats\n")
+        return(reply)
+    def parse_status(self, reply):
         return_dict = {}
         section = ""
         for i in reply.splitlines():
@@ -1991,16 +1995,18 @@ if globalconfig.get("magento",{}).get("doc_root"):
     # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["session_cache"]["session_save_path"]
     # 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
     for doc_root in globalconfig["magento"]["doc_root"]:
+        memcache = MemcacheCtl()
         # session cache is memcache
         if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("session_save") == "memcache":
             result = re.match('tcp://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)',
                 globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
                 )
             if result:
-                IP = result.group(1)
-                PORT = result.group(2)
-                print "memcache: %s:%s" % (IP,PORT)
-                print(socket_client(IP, PORT, "stats\n", timeout=10))
+                ip = result.group(1)
+                port = result.group(2)
+                print "memcache: %s:%s" % (ip,port)
+                reply = memcache.get_status(self, ip, port)
+                pp.pprint(memcache.parse_status(self, reply))
 """
 
     pp.pprint(globalconfig["magento"]["doc_root"])
