@@ -154,6 +154,7 @@ class apacheCtl(object):
         vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
+        event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild"]
         for line in wholeconfig.splitlines():
             linenum += 1
             linecomp = line.strip().lower()
@@ -233,6 +234,38 @@ class apacheCtl(object):
                         stanzas["worker"] = {}
                     stanzas["worker"].update(kwsearch(worker_keywords,linecomp,single_value=True))
                     continue
+
+            # event matching
+            result = re.match('<ifmodule\s+mpm_event', linecomp, re.IGNORECASE )
+            if result:
+                stanza_flags.append({"type" : "event", "linenum" : linenum, "stanza_count" : stanza_count})
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
+            if result:
+                # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
+                if len(stanza_flags) > 0:
+                    if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
+                        stanza_flags.pop()
+            # If we are in a prefork stanza
+            if len(stanza_flags) > 0:
+                if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                    #print line
+                    if not "event" in stanzas:
+                        stanzas["event"] = {}
+                    stanzas["event"].update(kwsearch(event_keywords,linecomp,single_value=True))
+                    continue
+
+            """
+<IfModule mpm_event_module>
+    StartServers             3
+    MinSpareThreads         75
+    MaxSpareThreads        250
+    ServerLimit             32
+    ThreadsPerChild         25
+   MaxRequestWorkers      800
+    MaxConnectionsPerChild   0
+</IfModule>
+"""
+
     
             # virtual host matching
             result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE )
