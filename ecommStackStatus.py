@@ -947,30 +947,9 @@ class MagentoCtl(object):
         #print
         return(return_config)
 class RedisCtl(object):
-    def socket_client(self, ip, port, string, **kwargs):
-        if "TIMEOUT" in kwargs:
-            timeout = int(kwargs["TIMEOUT"])
-        else:
-            timeout = 5
-        #ip, port = '172.24.16.68', 6386
-        # SOCK_STREAM == a TCP socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
-        #sock.setdefaulttimeout(timeout)
-        #sock.setblocking(0)  # optional non-blocking
-        try:
-            sock.connect((ip, port))
-            sock.send(string)
-            reply = sock.recv(16384)  # limit reply to 16K
-            sock.close()
-        except socket.error:
-            sys.exit(1)
-            return(0)
-        return reply
-    
-    def get_conf(self, ip, port):
+    def get_status(self, ip, port):
         port = int(port)
-        reply = self.socket_client(ip,port,"INFO\n")
+        reply = socket_client(ip,port,"INFO\n")
         return_dict = {}
         section = ""
         for i in reply.splitlines():
@@ -993,6 +972,96 @@ class RedisCtl(object):
                 value = value.strip()
                 return_dict[section][key] = value
         return(return_dict)
+
+class MemcacheCtl(object):
+    def get_status(self, ip, port):
+        port = int(port)
+        reply = socket_client(ip,port,"stats\n")
+        return_dict = {}
+        section = ""
+        for i in reply.splitlines():
+            if len(i.strip()) == 0:
+                continue
+            print "%r" % i.split(' ', 3)
+            try:
+                [STAT, key, value] = i.split(' ', 3)
+            except ValueError:
+                STAT = None
+                key = None
+                value = None
+            if key and value:
+                key = key.strip()
+                value = value.strip()
+                return_dict[key] = value
+        return(return_dict)
+    """
+Session Cache: memcache
+session_save: memcache
+session_save_path: tcp://172.24.16.131:11211?persistent=0&weight=2&timeout=10&retry_interval=10
+
+[root@web2 EcommStatusTuning]# nc 172.24.16.131 11211
+
+stats
+STAT pid 27111
+STAT uptime 37578201
+STAT time 1447272815
+STAT version 1.4.4
+STAT pointer_size 64
+STAT rusage_user 1843.374764
+STAT rusage_system 2464.716306
+STAT curr_connections 14
+STAT total_connections 15313369
+STAT connection_structures 313
+STAT cmd_get 24296895
+STAT cmd_set 54920211
+STAT cmd_flush 0
+STAT get_hits 17648856
+STAT get_misses 6648039
+STAT delete_misses 8116
+STAT delete_hits 326720
+STAT incr_misses 9402106
+STAT incr_hits 14894789
+STAT decr_misses 0
+STAT decr_hits 0
+STAT cas_misses 0
+STAT cas_hits 0
+STAT cas_badval 0
+STAT auth_cmds 0
+STAT auth_errors 0
+STAT bytes_read 74468698360
+STAT bytes_written 102428160453
+STAT limit_maxbytes 524288000
+STAT accepting_conns 1
+STAT listen_disabled_num 0
+STAT threads 4
+STAT conn_yields 0
+STAT bytes 1607968
+STAT curr_items 715
+STAT total_items 40465881
+STAT evictions 0
+END
+
+    """
+def socket_client(ip, port, string, **kwargs):
+    if "TIMEOUT" in kwargs:
+        timeout = int(kwargs["TIMEOUT"])
+    else:
+        timeout = 5
+    #ip, port = '172.24.16.68', 6386
+    # SOCK_STREAM == a TCP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    #sock.setdefaulttimeout(timeout)
+    #sock.setblocking(0)  # optional non-blocking
+    try:
+        sock.connect((ip, port))
+        sock.send(string)
+        reply = sock.recv(16384)  # limit reply to 16K
+        sock.close()
+    except socket.error:
+        sys.exit(1)
+        return(0)
+    return reply
 
 def daemon_exe(match_exe):
     """
@@ -1597,6 +1666,10 @@ if not args.jsonfile:
     if globalconfig.get("magento",{}).get("doc_root"):
         for doc_root in globalconfig["magento"]["doc_root"]:
             pp.pprint(doc_root)
+    
+    def MEMCACHE_DATA_GATHER():
+        pass
+
 """
 {'/var/www/html':
     {
@@ -1916,7 +1989,7 @@ class TODO():
     pass
 
 
-# Save the config as a yaml file
+# Save the config as a json file
 #filename = "config_dump.json"
 if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
     json_str=json.dumps(globalconfig)
