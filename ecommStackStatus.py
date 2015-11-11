@@ -1262,6 +1262,16 @@ if ARGPARSE:
                         action="store_true")
     parser.add_argument("-o", "--output", help="Name of json file to place saved config in. Default: ./config_dump.json",
                         default="./config_dump.json")
+    parser.add_argument("--printwholeconfig", help="Print the concat (whole) config of a daemon(s). Requires additional daemon switches.",
+                        action="store_true")
+    parser.add_argument("--apache", help="Daemon specific switch for other options (printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--nginx", help="Daemon specific switch for other options (printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--phpfpm", help="Daemon specific switch for other options (printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--printglobalconfig", help="Pretty print the globalconfig dict",
+                        action="store_true")
     """
     parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
                         action="store_true")
@@ -1381,6 +1391,8 @@ if not args.jsonfile:
         if apache_conf_file and apache_root_path:
             sys.stderr.write("Using config %s\n" % apache_conf_file)
             wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
+            if args.printwholeconfig and args.apache:
+                print(wholeconfig)
             apache_config = apache.parse_config(wholeconfig)
     
             if not "apache" in globalconfig:
@@ -1913,15 +1925,15 @@ if os.path.isfile(filename):
 else:
     print "The file %s does not exist." % filename
 """
-
-# print """
-#   ____ _       _           _  ____             __ _       
-#  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
-# | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
-# | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
-#  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
-#                                                     |___/
-# """
-# pp.pprint(globalconfig)
+if args.printglobalconfig:
+    print """
+  ____ _       _           _  ____             __ _       
+ / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
+| |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+| |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+ \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+                                                    |___/
+"""
+    pp.pprint(globalconfig)
 
 
