@@ -1369,6 +1369,7 @@ else:
     args.nofiglet = None
     args.force = None
     args.printwholeconfig = None
+    args.printglobalconfig = None
     args.apache = None
     args.nginx = None
     args.phpfpm = None
