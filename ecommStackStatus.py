@@ -831,10 +831,10 @@ class MagentoCtl(object):
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
-        if local_xml[section][xml_config_node].lower() == "mage_cache_backend_redis":
-            local_xml[section]["engine"] = "mage_redis" # Magento's redis module
-        elif local_xml[section][xml_config_node].lower() == "cm_cache_backend_redis":
-            local_xml[section]["engine"] = "cm_redis" # Colin M's redis module
+        if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "redis" # Magento's redis module
+        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "redis" # Colin M's redis module
         elif local_xml[section][xml_config_node] == "memcached":
             local_xml[section]["engine"] = "memcache"
         else:
@@ -847,9 +847,9 @@ class MagentoCtl(object):
         xml_config_single = 'slow_backend'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
         if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
-            local_xml[section]["engine"] = "mage_redis" # Magento's redis module
+            local_xml[section]["engine"] = "redis" # Magento's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
-            local_xml[section]["engine"] = "cm_redis" # Colin M's redis module
+            local_xml[section]["engine"] = "redis" # Colin M's redis module
         else:
             local_xml[section]["engine"] = "unknown"
         
