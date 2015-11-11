@@ -154,7 +154,7 @@ class apacheCtl(object):
         vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
-        event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild"]
+        event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild", "minsparethreads", "maxsparethreads"]
         for line in wholeconfig.splitlines():
             linenum += 1
             linecomp = line.strip().lower()
@@ -354,9 +354,35 @@ class apacheCtl(object):
                         stanzas["maxclients"] = int(stanzas["prefork"]["maxclients"])
             elif mpm == "event":
                 if "event" in stanzas:
-                    if "maxclients" in stanzas["event"]:
-                        #print "event maxclients %s" % stanzas["event"]["maxclients"]
-                        stanzas["maxclients"] = int(stanzas["event"]["maxclients"])
+                    """
+                    Two directives set hard limits on the number of active
+                    child processes and the number of server threads in a
+                    child process, and can only be changed by fully stopping
+                    the server and then starting it again. ServerLimit is a
+                    hard limit on the number of active child processes, and
+                    must be greater than or equal to the MaxRequestWorkers
+                    directive divided by the ThreadsPerChild directive.
+                    ThreadLimit is a hard limit of the number of server
+                    threads, and must be greater than or equal to the
+                    ThreadsPerChild directive.
+                    """
+                    if "serverlimit" in stanzas["event"]:
+                        event_limit_one = int(stanzas["event"]["serverlimit"])
+                    else:
+                        event_limit_one = None
+                    if "maxrequestworkers" in stanzas["event"] and "threadsperchild" in stanzas["event"]:
+                        event_limit_two = int(stanzas["event"]["maxrequestworkers"]) / int(stanzas["event"]["threadsperchild"])
+                    else:
+                        event_limit_two = None
+                    if event_limit_one is not None and event_limit_two is not None:
+                        if event_limit_one < event_limit_two:
+                            stanzas["maxclients"] = event_limit_one
+                        else:
+                            stanzas["maxclients"] = event_limit_two
+                    elif event_limit_one is not None:
+                        stanzas["maxclients"] = event_limit_one
+                    elif event_limit_two is not None:
+                        stanzas["maxclients"] = event_limit_two
             elif mpm == "worker":
                 if "worker" in stanzas:
                     if "maxclients" in stanzas["worker"]:
