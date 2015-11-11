@@ -1592,6 +1592,11 @@ if not args.jsonfile:
         #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #    globalconfig["magento"]["doc_root"].update(return_config)
 
+    def REDIS_DATA_GATHER():
+        pass
+    if globalconfig.get("magento",{}).get("doc_root"):
+        for doc_root in globalconfig["magento"]["doc_root"]:
+            pp.pprint(doc_root)
 """
 {'/var/www/html':
     {
