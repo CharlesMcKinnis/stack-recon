@@ -1390,7 +1390,9 @@ if not args.jsonfile:
         # #    apache_conf_file = "conf/httpd.conf"
         if apache_conf_file and apache_root_path:
             sys.stderr.write("Using config %s\n" % apache_conf_file)
-            wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
+            # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as a whole word,
+            # and is a non-capturing group by virtue of the (?:)
+            wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+(\S+)', base_path = apache_root_path)
             if args.printwholeconfig and args.apache:
                 print(wholeconfig)
             apache_config = apache.parse_config(wholeconfig)
