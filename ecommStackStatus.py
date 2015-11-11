@@ -18,6 +18,7 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
+import socket
 try:
     import argparse
     ARGPARSE = True
