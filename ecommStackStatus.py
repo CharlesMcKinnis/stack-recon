@@ -1055,7 +1055,7 @@ def socket_client(ip, port, string, **kwargs):
     #sock.setdefaulttimeout(timeout)
     #sock.setblocking(0)  # optional non-blocking
     try:
-        sock.connect((ip, port))
+        sock.connect((ip, int(port)))
         sock.send(string)
         reply = sock.recv(16384)  # limit reply to 16K
         sock.close()
