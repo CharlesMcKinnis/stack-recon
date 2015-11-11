@@ -2004,7 +2004,7 @@ for doc_root in globalconfig["magento"]["doc_root"]:
             IP = result.group(1)
             PORT = result.group(2)
             print "memcache: %s:%s" % (IP,PORT)
-            pp.pprint(socket_client(IP, PORT, "stats", timeout=10))
+            pp.pprint(socket_client(IP, PORT, "stats\n", timeout=10))
 """
 
     pp.pprint(globalconfig["magento"]["doc_root"])
