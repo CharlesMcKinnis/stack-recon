@@ -964,7 +964,7 @@ class RedisCtl(object):
                 if not section in return_dict:
                     return_dict[section] = {}
                 continue
-            print "%r" % i.split(':', 2)
+            #print "%r" % i.split(':', 2)
             try:
                 [key, value] = i.split(':', 2)
             except ValueError:
@@ -987,7 +987,7 @@ class MemcacheCtl(object):
         for i in reply.splitlines():
             if len(i.strip()) == 0:
                 continue
-            print "%r" % i.split(' ', 3)
+            #print "%r" % i.split(' ', 3)
             try:
                 [STAT, key, value] = i.split(' ', 3)
             except ValueError:
