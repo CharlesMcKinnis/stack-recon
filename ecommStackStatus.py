@@ -2006,6 +2006,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 port = result.group(2)
                 print "memcache: %s:%s" % (ip,port)
                 reply = memcache.get_status(ip, port)
+                # probably stuff the return in globalconfig["memcache"][ip:port].update(memcache.parse_status(reply))
                 pp.pprint(memcache.parse_status(reply))
 """
 
