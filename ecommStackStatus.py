@@ -268,7 +268,7 @@ class apacheCtl(object):
             # virtual host matching
             result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE )
             if result:
-                #print "matched vhost %s" % result.group(1)
+                print "matched vhost %s" % result.group(1)
                 server_line = str(linenum)
                 vhost_start = stanza_count
                 
