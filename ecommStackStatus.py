@@ -1368,6 +1368,10 @@ else:
     args.verbose = None
     args.nofiglet = None
     args.force = None
+    args.printwholeconfig = None
+    args.apache = None
+    args.nginx = None
+    args.phpfpm = None
     args.output = "./config_dump.json"
     # args.nopassword = None
     """
