@@ -1268,7 +1268,7 @@ if not args.jsonfile:
 
 
         if apache_conf_file and apache_root_path:
-            sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
+            sys.stderr.write("Using config %s%s\n" % (apache_root_path,apache_conf_file))
             wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
             apache_config = apache.parse_config(wholeconfig)
     
