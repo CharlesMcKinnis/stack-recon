@@ -343,15 +343,14 @@ class apacheCtl(object):
                     configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
 
         stanzas.update(configuration)
-        if not "maxclients" in stanzas["config"]:
+        if not "maxprocesses" in stanzas: # there was a stanzas["config"] but that isn't what is referenced later
             mpm = self.get_mpm().lower()
             #print "mpm: %r" % mpm
             #print "config %r" % stanzas["prefork"]
             if mpm == "prefork":
-                if "prefork" in stanzas:
-                    if "maxclients" in stanzas["prefork"]:
+                if stanzas.get("prefork",{}).get("maxclients"):
                         #print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
-                        stanzas["maxclients"] = int(stanzas["prefork"]["maxclients"])
+                        stanzas["maxprocesses"] = int(stanzas["prefork"]["maxclients"])
             elif mpm == "event":
                 if "event" in stanzas:
                     """
@@ -366,28 +365,28 @@ class apacheCtl(object):
                     threads, and must be greater than or equal to the
                     ThreadsPerChild directive.
                     """
-                    if "serverlimit" in stanzas["event"]:
+                    if stanzas.get("event",{}).get("serverlimit"):
                         event_limit_one = int(stanzas["event"]["serverlimit"])
                     else:
                         event_limit_one = None
-                    if "maxrequestworkers" in stanzas["event"] and "threadsperchild" in stanzas["event"]:
+                    if stanzas.get("event",{}).get("maxrequestworkers") and stanzas.get("event",{}).get("threadsperchild"):
                         event_limit_two = int(stanzas["event"]["maxrequestworkers"]) / int(stanzas["event"]["threadsperchild"])
                     else:
                         event_limit_two = None
                     if event_limit_one is not None and event_limit_two is not None:
                         if event_limit_one < event_limit_two:
-                            stanzas["maxclients"] = event_limit_one
+                            stanzas["maxprocesses"] = event_limit_one
                         else:
-                            stanzas["maxclients"] = event_limit_two
+                            stanzas["maxprocesses"] = event_limit_two
                     elif event_limit_one is not None:
-                        stanzas["maxclients"] = event_limit_one
+                        stanzas["maxprocesses"] = event_limit_one
                     elif event_limit_two is not None:
-                        stanzas["maxclients"] = event_limit_two
+                        stanzas["maxprocesses"] = event_limit_two
             elif mpm == "worker":
                 if "worker" in stanzas:
-                    if "maxclients" in stanzas["worker"]:
+                    if stanzas.get("worker",{}).get("maxclients"):
                         #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
-                        stanzas["maxclients"] = int(stanzas["worker"]["maxclients"])
+                        stanzas["maxprocesses"] = int(stanzas["worker"]["maxclients"])
             else:
                 sys.stderr.write("Could not identify mpm in use.\n")
                 sys.exit(1)
@@ -601,10 +600,12 @@ class nginxCtl(object):
                 # "access_log", "error_log"
                 configuration["sites"].append( { } )
                 if "server_name" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    if not "domains" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
                 if "listen" in stanzas[i]:
-                    if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                    if not "listening" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["listening"] = []
                     configuration["sites"][-1]["listening"] += stanzas[i]["listen"]
                 if "root" in stanzas[i]:
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
@@ -617,7 +618,7 @@ class nginxCtl(object):
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
             #print "stanza worker_process: %r" % stanzas["worker_processes"]
-            stanzas["maxclients"] = int(stanzas["worker_processes"][0])
+            stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
     
         return stanzas
 
@@ -692,14 +693,14 @@ class phpfpmCtl(object):
                     if not stanza_chain[-1]["title"] in stanzas:
                         stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
-        stanzas["maxclients"] = 0
+        stanzas["maxprocesses"] = 0
         #print "stanzas: %r" % stanzas
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
             #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
             if type(stanzas[one]) is dict:
-                if "pm.max_children" in stanzas[one]:
-                    stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
+                if stanzas.get(one,{}).get("pm.max_children"):
+                    stanzas["maxprocesses"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
 
 class MagentoCtl(object):
@@ -1329,7 +1330,7 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
 for i in daemons:
     #print "%r" % daemons[i]
-    if "error" in daemons[i]:
+    if daemons.get(i,{}).get("error"):
         sys.stderr.write(daemons[i]["error"] + "\n")
 
 """
@@ -1516,11 +1517,11 @@ if not args.jsonfile:
     ################################################
     # get a list of unique document roots
     doc_roots = set()
-    if "sites" in globalconfig.get("apache",{}):
+    if globalconfig.get("apache",{}).get("sites"):
         for one in globalconfig["apache"]["sites"]:
             if "doc_root" in one:
                 doc_roots.add(one["doc_root"])
-    if "sites" in globalconfig.get("nginx",{}):
+    if globalconfig.get("nginx",{}).get("sites"):
         for one in globalconfig["nginx"]["sites"]:
             if "doc_root" in one:
                 doc_roots.add(one["doc_root"])
@@ -1642,7 +1643,7 @@ if "nginx" in globalconfig:
        |___/      
 
 """
-    if "sites" in  globalconfig["nginx"]:
+    if globalconfig.get("nginx",{}).get("sites"):
         print "nginx sites:"
         """
         
@@ -1683,9 +1684,9 @@ if "nginx" in globalconfig:
         #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
         
         # memory profile
-        if "basename" in globalconfig["nginx"] and "maxclients" in globalconfig["nginx"]:
+        if globalconfig.get("nginx",{}).get("basename") and globalconfig.get("nginx",{}).get("maxprocesses"):
             proc_name = globalconfig["nginx"]["basename"]
-            proc_max = int(globalconfig["nginx"]["maxclients"])
+            proc_max = int(globalconfig["nginx"]["maxprocesses"])
             result = memory_estimate(proc_name)
             if result:
                 memory_print(result, proc_name, proc_max)
@@ -1707,7 +1708,7 @@ if "apache" in  globalconfig:
 /_/   \_\ .__/ \__,_|\___|_| |_|\___|
         |_|         
 """
-    if "sites" in  globalconfig["apache"]:
+    if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
         #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
         """
@@ -1735,9 +1736,9 @@ if "apache" in  globalconfig:
         #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
         
         # memory profile
-        if "basename" in globalconfig["apache"] and "maxclients" in globalconfig["apache"]:
+        if "basename" in globalconfig["apache"] and "maxprocesses" in globalconfig["apache"]:
             proc_name = globalconfig["apache"]["basename"]
-            proc_max = globalconfig["apache"]["maxclients"]
+            proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
             #print "result %r" % result
             if result:
@@ -1774,9 +1775,9 @@ if "php-fpm" in globalconfig:
     print
     # memory profile
     print "php-fpm memory profile:"
-    if "basename" in globalconfig["php-fpm"] and "maxclients" in globalconfig["php-fpm"]:
+    if globalconfig.get("php-fpm",{}).get("basename") and globalconfig.get("php-fpm",{}).get("maxprocesses"):
         proc_name = globalconfig["php-fpm"]["basename"]
-        proc_max = int(globalconfig["php-fpm"]["maxclients"])
+        proc_max = int(globalconfig["php-fpm"]["maxprocesses"])
         result = memory_estimate(proc_name)
         #print "php-fpm result: %r" % result
         if result:
