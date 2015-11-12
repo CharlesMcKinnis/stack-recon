@@ -1721,6 +1721,7 @@ if not args.jsonfile:
             if not "apache" in globalconfig:
                 globalconfig["apache"] = {}
             globalconfig["apache"]["version"] = apache.get_version()
+            print "apache version: %s" % apache.get_version()
             globalconfig["apache"] = apache_config
             """
             globalconfig[apache][sites]: [
