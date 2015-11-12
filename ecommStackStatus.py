@@ -8,6 +8,8 @@ Magento is a trademark of Varien. Neither I nor these scripts are affiliated wit
 wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 """
+STACK_STATUS_VERSION = 2015111201
+
 import re
 import glob
 import subprocess
@@ -18,16 +20,17 @@ import fnmatch
 import json
 import xml.etree.ElementTree as ET
 import pprint
+import socket
 try:
     import argparse
     ARGPARSE = True
-except:
+except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
-except:
+except ImportError:
     MYSQL = False
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
 
@@ -71,6 +74,18 @@ class apacheCtl(object):
      -D AP_TYPES_CONFIG_FILE="conf/mime.types"
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
+    def get_version(self):
+        """
+        Discovers installed apache version
+        """
+        version = self.kwargs["exe"]+" -v"
+        p = subprocess.Popen(
+            version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+            )
+        output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+
     def get_conf_parameters(self):
         conf = self.kwargs["exe"]+" -V 2>&1"
         p = subprocess.Popen(
@@ -154,6 +169,7 @@ class apacheCtl(object):
         vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
+        event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild", "minsparethreads", "maxsparethreads"]
         for line in wholeconfig.splitlines():
             linenum += 1
             linecomp = line.strip().lower()
@@ -233,7 +249,37 @@ class apacheCtl(object):
                         stanzas["worker"] = {}
                     stanzas["worker"].update(kwsearch(worker_keywords,linecomp,single_value=True))
                     continue
-    
+
+            # event matching
+            result = re.match('<ifmodule\s+mpm_event', linecomp, re.IGNORECASE )
+            if result:
+                stanza_flags.append({"type" : "event", "linenum" : linenum, "stanza_count" : stanza_count})
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
+            if result:
+                # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
+                if len(stanza_flags) > 0:
+                    if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count+1:
+                        stanza_flags.pop()
+            # If we are in a prefork stanza
+            if len(stanza_flags) > 0:
+                if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                    #print line
+                    if not "event" in stanzas:
+                        stanzas["event"] = {}
+                    stanzas["event"].update(kwsearch(event_keywords,linecomp,single_value=True))
+                    continue
+            """
+<IfModule mpm_event_module>
+    StartServers             3
+    MinSpareThreads         75
+    MaxSpareThreads        250
+    ServerLimit             32
+    ThreadsPerChild         25
+   MaxRequestWorkers      800
+    MaxConnectionsPerChild   0
+</IfModule>
+"""
+
             # virtual host matching
             result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE )
             if result:
@@ -267,7 +313,7 @@ class apacheCtl(object):
                         stanzas[server_line][word] += [result.group(2)]
                 """
             # closing VirtualHost
-            result = re.match('</VirtualHost\s+([^>]+)', linecomp, re.IGNORECASE )
+            result = re.match('</virtualhost', linecomp, re.IGNORECASE )
             if result:
                 vhost_start = -1
                 continue
@@ -312,25 +358,50 @@ class apacheCtl(object):
                     configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
 
         stanzas.update(configuration)
-        if not "maxclients" in stanzas["config"]:
+        if not "maxprocesses" in stanzas: # there was a stanzas["config"] but that isn't what is referenced later
             mpm = self.get_mpm().lower()
             #print "mpm: %r" % mpm
             #print "config %r" % stanzas["prefork"]
             if mpm == "prefork":
-                if "prefork" in stanzas:
-                    if "maxclients" in stanzas["prefork"]:
+                if stanzas.get("prefork",{}).get("maxclients"):
                         #print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
-                        stanzas["maxclients"] = int(stanzas["prefork"]["maxclients"])
+                        stanzas["maxprocesses"] = int(stanzas["prefork"]["maxclients"])
             elif mpm == "event":
                 if "event" in stanzas:
-                    if "maxclients" in stanzas["event"]:
-                        #print "event maxclients %s" % stanzas["event"]["maxclients"]
-                        stanzas["maxclients"] = int(stanzas["event"]["maxclients"])
+                    """
+                    Two directives set hard limits on the number of active
+                    child processes and the number of server threads in a
+                    child process, and can only be changed by fully stopping
+                    the server and then starting it again. ServerLimit is a
+                    hard limit on the number of active child processes, and
+                    must be greater than or equal to the MaxRequestWorkers
+                    directive divided by the ThreadsPerChild directive.
+                    ThreadLimit is a hard limit of the number of server
+                    threads, and must be greater than or equal to the
+                    ThreadsPerChild directive.
+                    """
+                    if stanzas.get("event",{}).get("serverlimit"):
+                        event_limit_one = int(stanzas["event"]["serverlimit"])
+                    else:
+                        event_limit_one = None
+                    if stanzas.get("event",{}).get("maxrequestworkers") and stanzas.get("event",{}).get("threadsperchild"):
+                        event_limit_two = int(stanzas["event"]["maxrequestworkers"]) / int(stanzas["event"]["threadsperchild"])
+                    else:
+                        event_limit_two = None
+                    if event_limit_one is not None and event_limit_two is not None:
+                        if event_limit_one < event_limit_two:
+                            stanzas["maxprocesses"] = event_limit_one
+                        else:
+                            stanzas["maxprocesses"] = event_limit_two
+                    elif event_limit_one is not None:
+                        stanzas["maxprocesses"] = event_limit_one
+                    elif event_limit_two is not None:
+                        stanzas["maxprocesses"] = event_limit_two
             elif mpm == "worker":
                 if "worker" in stanzas:
-                    if "maxclients" in stanzas["worker"]:
+                    if stanzas.get("worker",{}).get("maxclients"):
                         #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
-                        stanzas["maxclients"] = int(stanzas["worker"]["maxclients"])
+                        stanzas["maxprocesses"] = int(stanzas["worker"]["maxclients"])
             else:
                 sys.stderr.write("Could not identify mpm in use.\n")
                 sys.exit(1)
@@ -402,33 +473,36 @@ class nginxCtl(object):
         """
         :returns: nginx binary location
         """
-        try:
+        # try:
+        if True:
             return self.get_conf_parameters()['--sbin-path']
-        except:
-            #print "nginx is not installed!!!"
-            sys.exit(1)
+        # except:
+        #     #print "nginx is not installed!!!"
+        #     sys.exit(1)
 
     def get_pid(self):
         """
         :returns: nginx pid location which is required by nginx services
         """
 
-        try:
+        # try:
+        if True:
             return self.get_conf_parameters()['--pid-path']
-        except:
-            #print "nginx is not installed!!!"
-            return()
+        # except:
+        #     #print "nginx is not installed!!!"
+        #     return()
 
     def get_lock(self):
         """
         :returns: nginx lock file location which is required for nginx services
         """
 
-        try:
+        # try:
+        if True:
             return self.get_conf_parameters()['--lock-path']
-        except:
-            #print "nginx is not installed!!!"
-            return()
+        # except:
+        #     #print "nginx is not installed!!!"
+        #     return()
 
     def parse_config(self,wholeconfig):
         """
@@ -541,10 +615,12 @@ class nginxCtl(object):
                 # "access_log", "error_log"
                 configuration["sites"].append( { } )
                 if "server_name" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]: configuration["sites"][-1]["domains"] = []
+                    if not "domains" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
                 if "listen" in stanzas[i]:
-                    if not "listening" in configuration["sites"][-1]: configuration["sites"][-1]["listening"] = []
+                    if not "listening" in configuration["sites"][-1]:
+                        configuration["sites"][-1]["listening"] = []
                     configuration["sites"][-1]["listening"] += stanzas[i]["listen"]
                 if "root" in stanzas[i]:
                     configuration["sites"][-1]["doc_root"] = stanzas[i]["root"][0]
@@ -557,7 +633,7 @@ class nginxCtl(object):
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
             #print "stanza worker_process: %r" % stanzas["worker_processes"]
-            stanzas["maxclients"] = int(stanzas["worker_processes"][0])
+            stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
     
         return stanzas
 
@@ -566,7 +642,42 @@ class phpfpmCtl(object):
         self.kwargs = kwargs
         if not "exe" in self.kwargs:
             self.kwargs["exe"] = "php-fpm"
-            
+
+    def get_version(self):
+        """
+        Discovers installed nginx version
+        """
+        version = self.kwargs["exe"]+" -v"
+        p = subprocess.Popen(
+            version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+            )
+        output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+
+    def get_conf_parameters(self):
+        conf = self.kwargs["exe"]+" -V 2>&1"
+        p = subprocess.Popen(
+            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+        dict = {}
+        compiled=0
+        for i in output.splitlines():
+            if i.strip()=="Server compiled with....":
+                compiled=1
+                continue
+            if compiled == 0:
+                result = re.match('\s*([^:]+):\s*(.+)', i.strip())
+                if result:
+                    dict[result.group(1)]=result.group(2)
+            else:
+                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
+                if result:
+                    dict[result.group(1)]=result.group(2)
+        return dict
+
     def get_conf(self):
         """
         :returns: configuration path location
@@ -632,14 +743,14 @@ class phpfpmCtl(object):
                     if not stanza_chain[-1]["title"] in stanzas:
                         stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
-        stanzas["maxclients"] = 0
+        stanzas["maxprocesses"] = 0
         #print "stanzas: %r" % stanzas
         for one in stanzas:
             #print "%s %r\n" % (one,stanzas[one])
             #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
             if type(stanzas[one]) is dict:
-                if "pm.max_children" in stanzas[one]:
-                    stanzas["maxclients"] += int(stanzas[one]["pm.max_children"])
+                if stanzas.get(one,{}).get("pm.max_children"):
+                    stanzas["maxprocesses"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
 
 class MagentoCtl(object):
@@ -732,11 +843,12 @@ class MagentoCtl(object):
         
         returns: dict with db and cache information
         """
-        try:
+        # try:
+        if True:
             tree = ET.ElementTree(file=filename)
-        except:
-            sys.stderr.write("Could not open file %s\n" % filename)
-            sys.exit(1)
+        # except:
+        #     sys.stderr.write("Could not open file %s\n" % filename)
+        #     sys.exit(1)
 
         #tree = ET.ElementTree(file='local.xml')
         #tree = ET.ElementTree(file='local-memcache.xml')
@@ -754,12 +866,47 @@ class MagentoCtl(object):
         xml_config_section = 'redis_session'
         xml_config_single = 'session_save_path'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
+        # test for session cache redis
+        resources = tree.find("global/redis_session")
+        if resources is not None:
+            local_xml[section]["engine"] = "redis"
+        elif local_xml[section][xml_config_node] == "memcache":
+            local_xml[section]["engine"] = "memcache"
+        else:
+            local_xml[section]["engine"] = "unknown"
         
         section = "object_cache"
         xml_parent_path = 'global/cache'
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+        if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "redis" # Magento's redis module
+        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "redis" # Colin M's redis module
+        elif local_xml[section][xml_config_node] == "memcached":
+            local_xml[section]["engine"] = "memcache"
+            xml_parent_path = 'global/cache'
+            xml_config_node = 'backend'
+            xml_config_section = 'memcached/servers/server'
+            local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+            """
+            global/cache/    memcached/servers/server
+                    <memcached><!-- memcached cache backend related config -->
+            <servers><!-- any number of server nodes can be included -->
+                <server>
+                    <host><![CDATA[]]></host>
+                    <port><![CDATA[]]></port>
+                    <persistent><![CDATA[]]></persistent>
+                    <weight><![CDATA[]]></weight>
+                    <timeout><![CDATA[]]></timeout>
+                    <retry_interval><![CDATA[]]></retry_interval>
+                    <status><![CDATA[]]></status>
+                </server>
+            </servers>
+            """
+        else:
+            local_xml[section]["engine"] = "unknown"
         
         section = "full_page_cache"
         xml_parent_path = 'global/full_page_cache'
@@ -767,6 +914,12 @@ class MagentoCtl(object):
         xml_config_section = 'backend_options'
         xml_config_single = 'slow_backend'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
+        if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "redis" # Magento's redis module
+        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "redis" # Colin M's redis module
+        else:
+            local_xml[section]["engine"] = "unknown"
         
         return(local_xml)
     
@@ -884,6 +1037,126 @@ class MagentoCtl(object):
             # print " password: %s" % var_password
         #print
         return(return_config)
+class RedisCtl(object):
+    def get_status(self, ip, port):
+        port = int(port)
+        reply = socket_client(ip,port,"INFO\n")
+        return(reply)
+    def parse_status(self, reply):
+        return_dict = {}
+        section = ""
+        for i in reply.splitlines():
+            if len(i.strip()) == 0:
+                continue
+            if i.lstrip()[0] == "#":   # IndexError: string index out of range
+                # new section
+                section = i.lstrip(' #').rstrip()
+                if not section in return_dict:
+                    return_dict[section] = {}
+                continue
+            #print "%r" % i.split(':', 2)
+            try:
+                [key, value] = i.split(':', 2)
+            except ValueError:
+                key = None
+                value = None
+            if key and value:
+                key = key.strip()
+                value = value.strip()
+                return_dict[section][key] = value
+        return(return_dict)
+
+class MemcacheCtl(object):
+    def get_status(self, ip, port):
+        port = int(port)
+        reply = socket_client(ip,port,"stats\n")
+        return(reply)
+    def parse_status(self, reply):
+        return_dict = {}
+        section = ""
+        for i in reply.splitlines():
+            if len(i.strip()) == 0:
+                continue
+            #print "%r" % i.split(' ', 3)
+            try:
+                [STAT, key, value] = i.split(' ', 3)
+            except ValueError:
+                STAT = None
+                key = None
+                value = None
+            if key and value:
+                key = key.strip()
+                value = value.strip()
+                return_dict[key] = value
+        return(return_dict)
+    """
+Session Cache: memcache
+session_save: memcache
+session_save_path: tcp://172.24.16.131:11211?persistent=0&weight=2&timeout=10&retry_interval=10
+
+[root@web2 EcommStatusTuning]# nc 172.24.16.131 11211
+
+stats
+STAT pid 27111
+STAT uptime 37578201
+STAT time 1447272815
+STAT version 1.4.4
+STAT pointer_size 64
+STAT rusage_user 1843.374764
+STAT rusage_system 2464.716306
+STAT curr_connections 14
+STAT total_connections 15313369
+STAT connection_structures 313
+STAT cmd_get 24296895
+STAT cmd_set 54920211
+STAT cmd_flush 0
+STAT get_hits 17648856
+STAT get_misses 6648039
+STAT delete_misses 8116
+STAT delete_hits 326720
+STAT incr_misses 9402106
+STAT incr_hits 14894789
+STAT decr_misses 0
+STAT decr_hits 0
+STAT cas_misses 0
+STAT cas_hits 0
+STAT cas_badval 0
+STAT auth_cmds 0
+STAT auth_errors 0
+STAT bytes_read 74468698360
+STAT bytes_written 102428160453
+STAT limit_maxbytes 524288000
+STAT accepting_conns 1
+STAT listen_disabled_num 0
+STAT threads 4
+STAT conn_yields 0
+STAT bytes 1607968
+STAT curr_items 715
+STAT total_items 40465881
+STAT evictions 0
+END
+
+    """
+def socket_client(ip, port, string, **kwargs):
+    if "TIMEOUT" in kwargs:
+        timeout = int(kwargs["TIMEOUT"])
+    else:
+        timeout = 5
+    #ip, port = '172.24.16.68', 6386
+    # SOCK_STREAM == a TCP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(timeout)
+    #sock.setdefaulttimeout(timeout)
+    #sock.setblocking(0)  # optional non-blocking
+    try:
+        sock.connect((ip, int(port)))
+        sock.send(string)
+        reply = sock.recv(16384)  # limit reply to 16K
+        sock.close()
+    except socket.error:
+        sys.exit(1)
+        return(0)
+    return reply
 
 def daemon_exe(match_exe):
     """
@@ -985,14 +1258,15 @@ def importfile(filename, keyword_regex, **kwargs):
     for onefile in files:
         #print "onefile: %r" % onefile
         # for each file in the glob (may be just one file), open it
-        try:
+        # try:
+        if True:
             onefile_handle = open(onefile, 'r')
             # onefile should always be a file
             if os.path.isfile(onefile):
                 #print "STA onefile: %s" % onefile
                 combined += "## START "+onefile+"\n"
-        except:
-            return()
+        # except:
+        #     return()
 
         # go through the file, line by line
         # if it has an include, go follow it
@@ -1083,8 +1357,8 @@ def memory_estimate(process_name, **kwargs):
 
 def memory_print(result, proc_name, proc_max):
     print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (result["line_count"], proc_name, result["line_sum"], result["free_mem"])
-    print "Average memory per process: %d KB will use %d KB if max clients %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"] / result["line_count"] * proc_max), proc_max)
-    print "Largest process: %d KB will use %d KB if MaxClients is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
+    print "Average memory per process: %d KB will use %d KB if max processes %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"] / result["line_count"] * proc_max), proc_max)
+    print "Largest process: %d KB will use %d KB if max processes is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
     #print "Based on the largest process, use this as a health check: %d" % (int(
     #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
     #    ))
@@ -1093,14 +1367,14 @@ def memory_print(result, proc_name, proc_max):
     # yellow else
     #print "Positive numbers may mean you can have more clients. Negative numbers mean you are overcommited."
     #print "See below for numbers advice.\n"
-    print "What should I set max clients to?"
+    print "What should I set max processes to?"
     print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
     #print "If you use the average size, and commit 100%% of memory: %d or 80%%: %d" % (
     #    int( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ),
     #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8)
     #    )
     print
-    print "Current maximum clients: %d" % proc_max
+    print "Current maximum processes: %d" % proc_max
     print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
     print "     %3d                %3d                %3d              %3d" % (
         int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )),
@@ -1153,6 +1427,16 @@ if ARGPARSE:
                         action="store_true")
     parser.add_argument("-o", "--output", help="Name of json file to place saved config in. Default: ./config_dump.json",
                         default="./config_dump.json")
+    parser.add_argument("--printwholeconfig", help="Print the concat (whole) config of a daemon(s). Requires additional daemon switches.",
+                        action="store_true")
+    parser.add_argument("--apache", help="Daemon specific switch for other options (printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--nginx", help="Daemon specific switch for other options (printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--phpfpm", help="Daemon specific switch for other options (printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--printglobalconfig", help="Pretty print the globalconfig dict",
+                        action="store_true")
     """
     parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
                         action="store_true")
@@ -1174,6 +1458,11 @@ else:
     args.verbose = None
     args.nofiglet = None
     args.force = None
+    args.printwholeconfig = None
+    args.printglobalconfig = None
+    args.apache = None
+    args.nginx = None
+    args.phpfpm = None
     args.output = "./config_dump.json"
     # args.nopassword = None
     """
@@ -1187,12 +1476,13 @@ else:
 
 if args.jsonfile:
     if os.path.isfile(args.jsonfile):
-        try:
+        # try:
+        if True:
             with open(args.jsonfile,'r') as f:
                 globalconfig=json.load(f)
-        except:
-            sys.stderr.write("The file %s exists, but failed to import.\n" % args.jsonfile)
-            sys.exit(1)
+        # except:
+        #     sys.stderr.write("The file %s exists, but failed to import.\n" % args.jsonfile)
+        #     sys.exit(1)
     else:
         sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
@@ -1209,7 +1499,7 @@ drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
 for i in daemons:
     #print "%r" % daemons[i]
-    if "error" in daemons[i]:
+    if daemons.get(i,{}).get("error"):
         sys.stderr.write(daemons[i]["error"] + "\n")
 
 """
@@ -1219,7 +1509,7 @@ for one in daemons:
 #pp = pprint.PrettyPrinter(indent=4)
 #pp.pprint(daemons)
 if not args.jsonfile:
-    globalconfig = {}
+    globalconfig = { "version" : STACK_STATUS_VERSION }
     """
      ____    _  _____  _       ____    _  _____ _   _ _____ ____  
     |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
@@ -1230,7 +1520,7 @@ if not args.jsonfile:
     class DATA_GATHER():
         pass
     # using this as a bookmark in the IDE
-    def APACHE_FPM_DATA_GATHER():
+    def APACHE_DATA_GATHER():
         pass
     ################################################
     # APACHE
@@ -1257,23 +1547,29 @@ if not args.jsonfile:
         sys.stderr.write("Apache is not running\n")
     
     if apache_exe:
-        try:
+        # try:
+        if True:
             apache_conf_file = apache.get_conf()
             apache_root_path = apache.get_root()
             apache_mpm = apache.get_mpm()
-        except:
-            sys.stderr.write("There was an error getting the apache daemon configuration\n")
-            apache_conf_file = ""
-            apache_root_path = ""
-        #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
-        #    apache_conf_file = "conf/httpd.conf"
+        # except:
+        #     sys.stderr.write("There was an error getting the apache daemon configuration\n")
+        #     apache_conf_file = ""
+        #     apache_root_path = ""
+        # #    apache_root_path = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/httpd"
+        # #    apache_conf_file = "conf/httpd.conf"
         if apache_conf_file and apache_root_path:
-            sys.stderr.write("Using config %s\n" % apache_root_path+apache_conf_file)
-            wholeconfig = importfile(apache_conf_file, '\s*include\s+(\S+)', base_path = apache_root_path)
+            sys.stderr.write("Using config %s\n" % apache_conf_file)
+            # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as a whole word,
+            # and is a non-capturing group by virtue of the (?:)
+            wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+(\S+)', base_path = apache_root_path)
+            if args.printwholeconfig and args.apache:
+                print(wholeconfig)
             apache_config = apache.parse_config(wholeconfig)
     
             if not "apache" in globalconfig:
                 globalconfig["apache"] = {}
+            globalconfig["apache"]["version"] = apache.get_version()
             globalconfig["apache"] = apache_config
             """
             globalconfig[apache][sites]: [
@@ -1307,7 +1603,7 @@ if not args.jsonfile:
                 globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
     
     # using this as a bookmark in the IDE
-    def NGINX_FPM_DATA_GATHER():
+    def NGINX_DATA_GATHER():
         pass
     ################################################
     # NGINX
@@ -1316,12 +1612,13 @@ if not args.jsonfile:
         sys.stderr.write("nginx is not running\n")
     else:
         nginx = nginxCtl(exe = daemons["nginx"]["exe"])
-        try:
+        # try:
+        if True:
             nginx_conf_file = nginx.get_conf()
-        except:
-            sys.stderr.write("There was an error getting the nginx daemon configuration\n")
-            #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
-            nginx_conf_file = ""
+        # except:
+        #     sys.stderr.write("There was an error getting the nginx daemon configuration\n")
+        #     #nginx_conf_file = "/home/charles/Documents/Rackspace/ecommstatustuning/etc/nginx/nginx.conf"
+        #     nginx_conf_file = ""
         if nginx_conf_file:
             sys.stderr.write("Using config %s\n" % nginx_conf_file)
             
@@ -1331,6 +1628,7 @@ if not args.jsonfile:
             
             if not "nginx" in globalconfig:
                 globalconfig["nginx"] = {}
+            globalconfig["nginx"]["version"] = nginx.get_version()
             globalconfig["nginx"] = nginx_config
             """
             {
@@ -1365,11 +1663,12 @@ if not args.jsonfile:
     
         sys.stderr.write("\n")
         phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-        try:
+        # try:
+        if True:
             phpfpm_conf_file = phpfpm.get_conf()
-        except:
-            sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
-            phpfpm_conf_file = ""
+        # except:
+        #     sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
+        #     phpfpm_conf_file = ""
         if phpfpm_conf_file:
             #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
             wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
@@ -1377,6 +1676,7 @@ if not args.jsonfile:
             
             if not "php-fpm" in globalconfig:
                 globalconfig["php-fpm"] = {}
+            globalconfig["php-fpm"]["version"] = phpfpm.get_version()
             globalconfig["php-fpm"] = phpfpm_config
             globalconfig["php-fpm"]["basename"] = "php-fpm"
             globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
@@ -1389,11 +1689,11 @@ if not args.jsonfile:
     ################################################
     # get a list of unique document roots
     doc_roots = set()
-    if "sites" in globalconfig.get("apache",{}):
+    if globalconfig.get("apache",{}).get("sites"):
         for one in globalconfig["apache"]["sites"]:
             if "doc_root" in one:
                 doc_roots.add(one["doc_root"])
-    if "sites" in globalconfig.get("nginx",{}):
+    if globalconfig.get("nginx",{}).get("sites"):
         for one in globalconfig["nginx"]["sites"]:
             if "doc_root" in one:
                 doc_roots.add(one["doc_root"])
@@ -1408,24 +1708,26 @@ if not args.jsonfile:
     if not "magento" in globalconfig:
         globalconfig["magento"] = {}
     # find mage.php files in document roots
-    try:
+    # try:
+    if True:
         mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-    except:
-        sys.stderr.write("No Magento found in the web document roots\n")
-        #print "mage files %r" % mage_files
+    # except:
+    #     sys.stderr.write("No Magento found in the web document roots\n")
+    #     #print "mage files %r" % mage_files
     # get Magento information from those Mage.php
     
     mage_file_info = magento.mage_file_info(mage_files)
     globalconfig["magento"]["doc_root"] = mage_file_info
     
     
-    try:
+    # try:
+    if True:
         # print "1265"
         # print type(magento.mage_file_info(mage_files))
         mage_file_info = magento.mage_file_info(mage_files)
         globalconfig["magento"]["doc_root"] = mage_file_info
-    except:
-        sys.stderr.write("Failed to get magento information\n")
+    # except:
+        # sys.stderr.write("Failed to get magento information\n")
     
     #print "Magento dictionary:"
     #pp.pprint(globalconfig["magento"])
@@ -1461,6 +1763,12 @@ if not args.jsonfile:
         #if return_config:
         #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #    globalconfig["magento"]["doc_root"].update(return_config)
+
+    def REDIS_DATA_GATHER():
+        pass
+    
+    def MEMCACHE_DATA_GATHER():
+        pass
 
 """
 {'/var/www/html':
@@ -1513,7 +1821,7 @@ if "nginx" in globalconfig:
        |___/      
 
 """
-    if "sites" in  globalconfig["nginx"]:
+    if globalconfig.get("nginx",{}).get("sites"):
         print "nginx sites:"
         """
         
@@ -1554,9 +1862,9 @@ if "nginx" in globalconfig:
         #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
         
         # memory profile
-        if "basename" in globalconfig["nginx"] and "maxclients" in globalconfig["nginx"]:
+        if globalconfig.get("nginx",{}).get("basename") and globalconfig.get("nginx",{}).get("maxprocesses"):
             proc_name = globalconfig["nginx"]["basename"]
-            proc_max = int(globalconfig["nginx"]["maxclients"])
+            proc_max = int(globalconfig["nginx"]["maxprocesses"])
             result = memory_estimate(proc_name)
             if result:
                 memory_print(result, proc_name, proc_max)
@@ -1578,7 +1886,7 @@ if "apache" in  globalconfig:
 /_/   \_\ .__/ \__,_|\___|_| |_|\___|
         |_|         
 """
-    if "sites" in  globalconfig["apache"]:
+    if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
         #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
         """
@@ -1606,9 +1914,9 @@ if "apache" in  globalconfig:
         #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
         
         # memory profile
-        if "basename" in globalconfig["apache"] and "maxclients" in globalconfig["apache"]:
+        if "basename" in globalconfig["apache"] and "maxprocesses" in globalconfig["apache"]:
             proc_name = globalconfig["apache"]["basename"]
-            proc_max = globalconfig["apache"]["maxclients"]
+            proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
             #print "result %r" % result
             if result:
@@ -1645,9 +1953,9 @@ if "php-fpm" in globalconfig:
     print
     # memory profile
     print "php-fpm memory profile:"
-    if "basename" in globalconfig["php-fpm"] and "maxclients" in globalconfig["php-fpm"]:
+    if globalconfig.get("php-fpm",{}).get("basename") and globalconfig.get("php-fpm",{}).get("maxprocesses"):
         proc_name = globalconfig["php-fpm"]["basename"]
-        proc_max = int(globalconfig["php-fpm"]["maxclients"])
+        proc_max = int(globalconfig["php-fpm"]["maxprocesses"])
         result = memory_estimate(proc_name)
         #print "php-fpm result: %r" % result
         if result:
@@ -1683,16 +1991,19 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
+                print "Session Cache engine: %s" % value["local_xml"]["session_cache"]["engine"]
                 print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
                 for k2,v2 in value["local_xml"]["session_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
+                print "Object Cache engine: %s" % value["local_xml"]["object_cache"]["engine"]
                 print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
                 for k2,v2 in value["local_xml"]["object_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
+                print "Full Page Cache engine: %s" % value["local_xml"]["full_page_cache"]["engine"]
                 print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
                 for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                     print "%s: %s" % (k2,v2)
@@ -1780,8 +2091,162 @@ pp.pprint(local_xml)
 class TODO():
     pass
 
+print "TODO"
+"""
+Go through each magento doc_root and get cache information for session, object and full_page
+If they are memcache, add the host:port to globalconfig["memcache"]["{0}.{1}".format(host,port)]
+"""
+if globalconfig.get("magento",{}).get("doc_root"):
+    # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["session_cache"]["session_save_path"]
+    # 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
+    memcache_instances = set()
+    redis_instances = set()
 
-# Save the config as a yaml file
+    for doc_root in globalconfig["magento"]["doc_root"]:
+        # session cache is memcache
+        # local_xml[section]["engine"]
+        # local_xml["session_cache"]["engine"]
+
+        #print(doc_root)
+        #pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root))
+        
+        # SESSION
+        # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
+        # memcache
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
+            result = re.match('tcp://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)',
+                globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
+                )
+            if result:
+                ip = result.group(1)
+                port = result.group(2)
+                stanza = "{0}:{1}".format(ip,port)
+                memcache_instances.add(stanza)
+        # redis
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "redis":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+            )
+            #print "redis session: %s" % stanza
+            redis_instances.add(stanza)
+        
+        # OBJECT
+        # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
+        # memcache
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
+            )
+            memcache_instances.add(stanza)
+        # redis
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
+            )
+            #print "redis object: %s" % stanza
+            redis_instances.add(stanza)
+
+        # FULL PAGE CACHE
+        # redis
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
+            )
+            #print "redis FPC: %s" % stanza
+            redis_instances.add(stanza)
+
+memcache = MemcacheCtl()
+redis = RedisCtl()
+
+for instance in memcache_instances:
+    [ip, port] = instance.split(":")
+    if not globalconfig.get("memcache"):
+        globalconfig["memcache"] = {}
+    if not globalconfig.get("memcache",{}).get(instance):
+        globalconfig["memcache"][instance] = {}
+    #print "memcache: %s" % (instance)
+    reply = memcache.get_status(ip, port)
+    globalconfig["memcache"][instance] = memcache.parse_status(reply)
+
+for instance in redis_instances:
+    [ip, port] = instance.split(":")
+    if not globalconfig.get("redis"):
+        globalconfig["redis"] = {}
+    if not globalconfig.get("redis",{}).get(instance):
+        globalconfig["redis"][instance] = {}
+    #print "redis: %s" % (instance)
+    reply = redis.get_status(ip, port)
+    globalconfig["redis"][instance] = redis.parse_status(reply)
+
+if globalconfig.get("memcache"):
+    print "MEMCACHE"
+    pp.pprint(globalconfig.get("memcache"))
+if globalconfig.get("redis"):
+    print "REDIS"
+    pp.pprint(globalconfig.get("redis"))
+"""
+
+    pp.pprint(globalconfig["magento"]["doc_root"])
+{
+    '/var/www/vhosts/example.org/httpdocs/marketplace_2/':
+    {
+        'Mage.php': '/var/www/vhosts/example.org/httpdocs/marketplace_2/app/Mage.php',
+        'cache':
+        {
+            'cache_option_table': '+-------------+-------+\n| code        | value |\n+-------------+-------+\n| block_html  |     0 |\n| collections |     1 |\n| config      |     1 |\n| config_api  |     1 |\n| config_api2 |     1 |\n| eav         |     1 |\n| full_page   |     1 |\n| layout      |     1 |\n| translate   |     1 |\n+-------------+-------+\n'
+        },
+        'local_xml':
+        {
+            'db':
+            {
+                'active': '1',
+                'dbname': 'marketplace_2',
+                'host': '172.24.16.1',
+                'initStatements': 'SET NAMES utf8',
+                'model': 'mysql4',
+                'password': 'password',
+                'pdoType': None,
+                'type': 'pdo_mysql',
+                'username': 'magentouser'
+            },
+            'filename': '/var/www/vhosts/example.org/httpdocs/marketplace_2/app/etc/local.xml',
+            'full_page_cache':
+            {
+            },
+            'object_cache':
+            {
+                'backend': 'memcached'
+            },
+            'session_cache':
+            {
+                'session_save': 'memcache',
+                'session_save_path': 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
+            }
+        },
+        'mage_version':
+        {
+            'edition': 'EDITION_ENTERPRISE',
+            'major': '1',
+            'minor': '13',
+            'number': '',
+            'patch': '0',
+            'revision': '0',
+            'stability': '',
+            'version': '1.13.0.0'
+        },
+        'magento_path': '/var/www/vhosts/example.org/httpdocs/marketplace_2',
+        'magento_version': '1.13.0.0 EDITION_ENTERPRISE'
+    }
+}
+
+"""
+
+
+# Save the config as a json file
 #filename = "config_dump.json"
 if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
     json_str=json.dumps(globalconfig)
@@ -1798,15 +2263,15 @@ if os.path.isfile(filename):
 else:
     print "The file %s does not exist." % filename
 """
-
-# print """
-#   ____ _       _           _  ____             __ _       
-#  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
-# | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
-# | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
-#  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
-#                                                     |___/
-# """
-# pp.pprint(globalconfig)
+if args.printglobalconfig:
+    print """
+  ____ _       _           _  ____             __ _       
+ / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _ 
+| |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+| |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+ \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+                                                    |___/
+"""
+    pp.pprint(globalconfig)
 
 
