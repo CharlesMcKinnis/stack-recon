@@ -1906,7 +1906,7 @@ def APACHE_PRINT():
 if "apache" in  globalconfig:
     apache.figlet()
     if globalconfig.get("apache",{}).get("version"):
-        print globalconfig.get("apache",{}).get("version")
+        print "Apache version: %s" % globalconfig.get("apache",{}).get("version")
     else:
         print "No apache version?"
     if globalconfig.get("apache",{}).get("sites"):
@@ -1943,7 +1943,7 @@ def PHP_FPM_PRINT():
 if "php-fpm" in globalconfig:
     phpfpm.figlet()
     if globalconfig.get("php-fpm",{}).get("version"):
-        print globalconfig.get("php-fpm",{}).get("version")
+        print "php-fpm version: %s" % globalconfig.get("php-fpm",{}).get("version")
     else:
         print "No php version?"
     print "php-fpm pools:"
