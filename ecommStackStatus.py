@@ -868,15 +868,11 @@ class MagentoCtl(object):
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
-        print "922 %s" % local_xml[section][xml_config_node]
         if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
-            print "924 matched"
             local_xml[section]["engine"] = "redis" # Magento's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
-            print "927 matched"
             local_xml[section]["engine"] = "redis" # Colin M's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcached":
-            print "930 matched"
             xml_parent_path = 'global/cache'
             xml_config_node = 'backend'
             xml_config_section = 'memcached/servers/server'
