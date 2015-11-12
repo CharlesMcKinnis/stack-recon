@@ -2166,7 +2166,7 @@ for instance in memcache_instances:
         globalconfig["memcache"] = {}
     if not globalconfig.get("memcache",{}).get(instance):
         globalconfig["memcache"][instance] = {}
-    print "memcache: %s" % (instance)
+    #print "memcache: %s" % (instance)
     reply = memcache.get_status(ip, port)
     globalconfig["memcache"][instance] = memcache.parse_status(reply)
 
@@ -2176,7 +2176,7 @@ for instance in redis_instances:
         globalconfig["redis"] = {}
     if not globalconfig.get("redis",{}).get(instance):
         globalconfig["redis"][instance] = {}
-    print "redis: %s" % (instance)
+    #print "redis: %s" % (instance)
     reply = redis.get_status(ip, port)
     globalconfig["redis"][instance] = redis.parse_status(reply)
 
