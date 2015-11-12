@@ -1726,9 +1726,9 @@ if not args.jsonfile:
     
             if not "apache" in globalconfig:
                 globalconfig["apache"] = {}
+            globalconfig["apache"] = apache_config
             globalconfig["apache"]["version"] = apache.get_version()
             print "apache version: %s" % apache.get_version()
-            globalconfig["apache"] = apache_config
             """
             globalconfig[apache][sites]: [
                 {
@@ -1781,15 +1781,15 @@ if not args.jsonfile:
         if nginx_conf_file:
             sys.stderr.write("Using config %s\n" % nginx_conf_file)
             error_collection.append("Using config %s\n" % nginx_conf_file)
-            
+
             # configuration fetch and parse
             wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
             nginx_config = nginx.parse_config(wholeconfig)
             
             if not "nginx" in globalconfig:
                 globalconfig["nginx"] = {}
-            globalconfig["nginx"]["version"] = nginx.get_version()
             globalconfig["nginx"] = nginx_config
+            globalconfig["nginx"]["version"] = nginx.get_version()
             """
             {
             'domains': ['www.domain.com'],
@@ -1837,8 +1837,8 @@ if not args.jsonfile:
             
             if not "php-fpm" in globalconfig:
                 globalconfig["php-fpm"] = {}
-            globalconfig["php-fpm"]["version"] = phpfpm.get_version()
             globalconfig["php-fpm"] = phpfpm_config
+            globalconfig["php-fpm"]["version"] = phpfpm.get_version()
             globalconfig["php-fpm"]["basename"] = "php-fpm"
             globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
             globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
