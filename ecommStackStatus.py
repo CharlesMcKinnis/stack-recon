@@ -1855,14 +1855,14 @@ if not args.jsonfile:
     redis = RedisCtl()
     
     redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
-    pp.pprint(redis_instances)
+    #pp.pprint(redis_instances)
 
     if not globalconfig.get("redis") and redis_instances:
-        print "1858"
+        #print "1858"
         globalconfig["redis"] = {}
     if redis_instances:
-        print "1861"
-        pp.pprint(redis.get_all_statuses(redis_instances))
+        #print "1861"
+        #pp.pprint(redis.get_all_statuses(redis_instances))
         globalconfig["redis"].update(redis.get_all_statuses(redis_instances))
 
 """
@@ -2171,9 +2171,9 @@ if globalconfig.get("redis"):
         print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak"]
         print "Evicted keys: %s" % globalconfig["redis"][instance]["Stats"]["evicted_keys"]
         print "Keyspace:"
-        for key,value in globalconfig["redis"][instance]["Stats"].iteritems():
+        for key,value in globalconfig["redis"][instance]["Keyspace"].iteritems():
             print "%s: %s" % (key,value)
-    pp.pprint(globalconfig.get("redis"))
+    #pp.pprint(globalconfig.get("redis"))
 
 """
  _____ ___  ____   ___  
