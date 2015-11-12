@@ -430,6 +430,7 @@ class nginxCtl(object):
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
         output, err = p.communicate()
+        print "433 %s" % output
         if p.returncode > 0:
             return()
         else:
@@ -1668,6 +1669,7 @@ if not args.jsonfile:
             if not "nginx" in globalconfig:
                 globalconfig["nginx"] = {}
             globalconfig["nginx"] = nginx_config
+            print "1672 %s" % nginx.get_version()
             globalconfig["nginx"]["version"] = nginx.get_version()
             """
             {
@@ -2089,6 +2091,7 @@ if globalconfig.get("memcache"):
         print "Get hits: %s" % globalconfig["memcache"][instance].get('get_hits',"")
         print "Get misses: %s" % globalconfig["memcache"][instance].get('get_misses',"")
         print "Limit MaxBytes: %s" % globalconfig["memcache"][instance].get('limit_maxbytes',"")
+        print
 def REDIS_PRINT():
     pass
 if globalconfig.get("redis"):
