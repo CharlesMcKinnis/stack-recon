@@ -2105,7 +2105,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
         # local_xml[section]["engine"]
         # local_xml["session_cache"]["engine"]
 
-        print(doc_root)
+        #print(doc_root)
         #pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root))
         
         # SESSION
@@ -2126,7 +2126,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"),
                 globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
             )
-            print "redis session: %s" % stanza
+            #print "redis session: %s" % stanza
             redis_instances.add(stanza)
         
         # OBJECT
@@ -2144,7 +2144,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
                 globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
             )
-            print "redis object: %s" % stanza
+            #print "redis object: %s" % stanza
             redis_instances.add(stanza)
 
         # FULL PAGE CACHE
@@ -2154,7 +2154,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
                 globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
             )
-            print "redis FPC: %s" % stanza
+            #print "redis FPC: %s" % stanza
             redis_instances.add(stanza)
 
 memcache = MemcacheCtl()
@@ -2180,8 +2180,12 @@ for instance in redis_instances:
     reply = redis.get_status(ip, port)
     globalconfig["redis"][instance] = redis.parse_status(reply)
 
-pp.pprint(globalconfig.get("memcache",{}))
-pp.pprint(globalconfig.get("redis",{}))
+if globalconfig.get("memcache"):
+    print "MEMCACHE"
+    pp.pprint(globalconfig.get("memcache"))
+if globalconfig.get("redis"):
+    print "REDIS"
+    pp.pprint(globalconfig.get("redis"))
 """
 
     pp.pprint(globalconfig["magento"]["doc_root"])
