@@ -425,6 +425,7 @@ class nginxCtl(object):
         """
         Discovers installed nginx version
         """
+        print "428 %s" % self.kwargs["exe"]
         version = self.kwargs["exe"]+" -v"
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
@@ -432,6 +433,7 @@ class nginxCtl(object):
         output, err = p.communicate()
         print "433 %s" % output
         if p.returncode > 0:
+            print "435 error"
             return()
         else:
             return(output)
