@@ -1927,7 +1927,13 @@ if not args.jsonfile:
         #print "1861"
         #pp.pprint(redis.get_all_statuses(redis_instances))
         globalconfig["redis"].update(redis.get_all_statuses(redis_instances))
-
+else:
+    apache = apacheCtl()
+    nginx = nginxCtl()
+    phpfpm = phpfpmCtl()
+    magento = MagentoCtl()
+    redis = RedisCtl()
+    memcache = MemcacheCtl()
 """
 {'/var/www/html':
     {
@@ -2151,7 +2157,6 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     "compression_lib","connect_retries"
                     ]
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
-                #local_xml[section]["engine"]
                 print "Object Cache engine: %s" % value.get("local_xml",{}).get("object_cache",{}).get("engine","EMPTY")
                 print "Object Cache: %s" % value.get("local_xml",{}).get("object_cache",{}).get("backend","EMPTY")
                 for k2,v2 in value["local_xml"]["object_cache"].iteritems():
