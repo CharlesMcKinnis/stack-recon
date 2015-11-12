@@ -40,7 +40,7 @@ except ImportError:
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
     error_collection.append("This program will be more robust if mysql.connector installed.\n")
     
-print "%r" % error_collection
+#print "%r" % error_collection
 class argsAlt(object):
     pass
 
@@ -420,6 +420,7 @@ class apacheCtl(object):
                         stanzas["maxprocesses"] = int(stanzas["worker"]["maxclients"])
             else:
                 sys.stderr.write("Could not identify mpm in use.\n")
+                error_collection.append("apache error: Could not identify mpm in use.\n")
                 sys.exit(1)
             pass
 
@@ -561,8 +562,10 @@ class nginxCtl(object):
             # this doesn't do well if you open and close a stanza on the same line
             if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
                 if not "error" in stanzas:
-                    stanzas["error"] = "This script does not consistently support opening { and closing } stanzas on the same line.\n"
+                    stanzas["error"] = "nginx config file: This script does not consistently support opening { and closing } stanzas on the same line.\n"
+                    error_collection.append("nginx config file: This script does not consistently support opening { and closing } stanzas on the same line.\n")
                 stanzas["error"] += "line %d: %s\n" % (linenum,line.strip())
+                error_collection.append("line %d: %s\n" % (linenum,line.strip()))
             stanza_count+=len(re.findall('{',line))
             stanza_count-=len(re.findall('}',line))
             result = re.match("(\S+)\s*{",linecomp)
@@ -840,7 +843,8 @@ class MagentoCtl(object):
                     #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
-                sys.stderr.write("There are multiple Mage.php files in the Document Root. Choosing the shortest path.\n")
+                sys.stderr.write("There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
+                error_collection.append("Magento error: There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
                 smallest_size = 0
                 smallest_line = ""
                 for i in mage_php_matches:
@@ -1061,10 +1065,12 @@ class MagentoCtl(object):
             if p.returncode > 0 or not output:
                 #return()
                 sys.stderr.write("MySQL cache table query failed\n")
+                error_collection.append("MySQL cache table query failed: %s\n" % conf)
                 if err:
                     sys.stderr.write("err %s\n" % err)
+                    error_collection.append("err %s\n" % err)
                 sys.stderr.write("command: %s\n" % conf)
-                pass
+                error_collection.append("command: %s\n" % conf)
             else:
                 # print "Mysql cache table:"
                 # print "%s" % output
@@ -1377,6 +1383,7 @@ def importfile(filename, keyword_regex, **kwargs):
     if kwargs["recurse_count"] > 10:
         #arbitrary number
         sys.stderr.write("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
+        error_collection.append("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         sys.exit(1)
     def full_file_path(right_file, base_path):
         # If the right side of the full name doesn't have a leading slash, it is a relative path.
@@ -1626,6 +1633,7 @@ if args.jsonfile:
         #     sys.exit(1)
     else:
         sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
+        error_collection.append("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
 
 """
@@ -1648,6 +1656,7 @@ if not args.jsonfile:
         #print "%r" % daemons[i]
         if daemons.get(i,{}).get("error"):
             sys.stderr.write(daemons[i]["error"] + "\n")
+            error_collection.append(daemons[i]["error"] + "\n")
     globalconfig = { "version" : STACK_STATUS_VERSION }
     globalconfig["daemons"].update(daemons)
     """
@@ -1685,6 +1694,7 @@ if not args.jsonfile:
         apache = apacheCtl(exe = daemons["httpd.worker"]["exe"])
     else:
         sys.stderr.write("Apache is not running\n")
+        error_collection.append("Apache is not running\n")
     
     if apache_exe:
         # try:
@@ -1700,6 +1710,7 @@ if not args.jsonfile:
         # #    apache_conf_file = "conf/httpd.conf"
         if apache_conf_file and apache_root_path:
             sys.stderr.write("Using config %s\n" % apache_conf_file)
+            error_collection.append("Using config %s\n" % apache_conf_file)
             # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as a whole word,
             # and is a non-capturing group by virtue of the (?:)
             wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+(\S+)', base_path = apache_root_path)
@@ -1750,6 +1761,7 @@ if not args.jsonfile:
     ################################################
     if not "nginx" in daemons:
         sys.stderr.write("nginx is not running\n")
+        error_collection.append("nginx is not running\n")
     else:
         nginx = nginxCtl(exe = daemons["nginx"]["exe"])
         # try:
@@ -1761,6 +1773,7 @@ if not args.jsonfile:
         #     nginx_conf_file = ""
         if nginx_conf_file:
             sys.stderr.write("Using config %s\n" % nginx_conf_file)
+            error_collection.append("Using config %s\n" % nginx_conf_file)
             
             # configuration fetch and parse
             wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
@@ -1798,10 +1811,11 @@ if not args.jsonfile:
     #phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
     if not "php-fpm" in daemons:
         sys.stderr.write("php-fpm is not running\n")
+        error_collection.append("php-fpm is not running\n")
     else:
         #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
     
-        sys.stderr.write("\n")
+        #sys.stderr.write("\n")
         phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
         # try:
         if True:
@@ -1937,10 +1951,8 @@ else:
     magento = MagentoCtl()
     redis = RedisCtl()
     memcache = MemcacheCtl()
-    for i in globalconfig["daemons"]:
-        #print "%r" % daemons[i]
-        if globalconfig["daemons"].get(i,{}).get("error"):
-            sys.stderr.write(globalconfig["daemons"][i]["error"] + "\n")
+    for i in globalconfig["errors"]:
+        print i
 """
 {'/var/www/html':
     {
@@ -2006,6 +2018,7 @@ if "nginx" in globalconfig:
         """
         if globalconfig.get("nginx",{}).get("error"):
             sys.stderr.write("Errors: \n%s\n" % globalconfig["nginx"]["error"])
+            error_collection.append("Errors: \n%s\n" % globalconfig["nginx"]["error"])
         
         print_sites(globalconfig["nginx"]["sites"])
         # for one in sorted(globalconfig["nginx"]["sites"]):
@@ -2328,6 +2341,7 @@ If they are memcache, add the host:port to globalconfig["memcache"]["{0}.{1}".fo
 # Save the config as a json file
 #filename = "config_dump.json"
 if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
+    globalconfig["errors"]=error_collection
     json_str=json.dumps(globalconfig)
     with open(args.output,'w') as outfile:
         outfile.write( json_str )
