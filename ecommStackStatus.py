@@ -101,6 +101,8 @@ class apacheCtl(object):
         output, err = p.communicate()
         if p.returncode > 0:
             return()
+        else:
+            return(output)
 
     def get_conf_parameters(self):
         conf = self.kwargs["exe"]+" -V 2>&1"
@@ -464,6 +466,8 @@ class nginxCtl(object):
         output, err = p.communicate()
         if p.returncode > 0:
             return()
+        else:
+            return(output)
 
     def get_conf_parameters(self):
         """
@@ -691,6 +695,8 @@ class phpfpmCtl(object):
         output, err = p.communicate()
         if p.returncode > 0:
             return()
+        else:
+            return(output)
 
     def get_conf_parameters(self):
         conf = self.kwargs["exe"]+" -V 2>&1"
