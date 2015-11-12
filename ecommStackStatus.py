@@ -429,11 +429,12 @@ class nginxCtl(object):
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
+        print "%r" % p.communicate()
         output, err = p.communicate()
         if p.returncode > 0:
             return()
         else:
-            return(stdout)
+            return(output)
 
     def get_conf_parameters(self):
         """
