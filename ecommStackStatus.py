@@ -2077,8 +2077,18 @@ def MEMCACHE_PRINT():
     pass
 if globalconfig.get("memcache"):
     memcache.figlet()
-    pp.pprint(globalconfig.get("memcache"))
-    
+    #pp.pprint(globalconfig.get("memcache"))
+    for instance in globalconfig.get("memcache"):
+        print "Server: %s" % instance
+        print "Version: %s" % globalconfig["memcache"][instance].get('version',"")
+        print "Bytes: %s" % globalconfig["memcache"][instance].get('bytes',"")
+        print "Bytes Read: %s" % globalconfig["memcache"][instance].get('bytes_read',"")
+        print "Bytes Written: %s" % globalconfig["memcache"][instance].get('bytes_written',"")
+        print "Current items: %s" % globalconfig["memcache"][instance].get('curr_items',"")
+        print "Evictions: %s" % globalconfig["memcache"][instance].get('evictions',"")
+        print "Get hits: %s" % globalconfig["memcache"][instance].get('get_hits',"")
+        print "Get misses: %s" % globalconfig["memcache"][instance].get('get_misses',"")
+        print "Limit MaxBytes: %s" % globalconfig["memcache"][instance].get('limit_maxbytes',"")
 def REDIS_PRINT():
     pass
 if globalconfig.get("redis"):
