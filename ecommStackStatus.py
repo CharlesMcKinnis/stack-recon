@@ -37,7 +37,7 @@ try:
     MYSQL = True
 except ImportError:
     MYSQL = False
-    sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
+    #sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
     #error_collection.append("This program will be more robust if mysql.connector installed.\n")
     
 #print "%r" % error_collection
@@ -1998,7 +1998,9 @@ def NGINX_PRINT():
 if "nginx" in globalconfig:
     nginx.figlet()
     if globalconfig.get("nginx",{}).get("version"):
-        print globalconfig.get("nginx",{}).get("sites")
+        print globalconfig.get("nginx",{}).get("version")
+    else:
+        print "No nginx version?"
     if globalconfig.get("nginx",{}).get("sites"):
         print "nginx sites:"
         """
@@ -2059,7 +2061,9 @@ def APACHE_PRINT():
 if "apache" in  globalconfig:
     apache.figlet()
     if globalconfig.get("apache",{}).get("version"):
-        print globalconfig.get("apache",{}).get("sites")
+        print globalconfig.get("apache",{}).get("version")
+    else:
+        print "No apache version?"
     if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
         #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
@@ -2110,7 +2114,9 @@ def PHP_FPM_PRINT():
 if "php-fpm" in globalconfig:
     phpfpm.figlet()
     if globalconfig.get("php-fpm",{}).get("version"):
-        print globalconfig.get("php-fpm",{}).get("sites")
+        print globalconfig.get("php-fpm",{}).get("version")
+    else:
+        print "No php version?"
     #print "php-fpm configs"
     print "php-fpm pools:"
     for one in globalconfig["php-fpm"]:
