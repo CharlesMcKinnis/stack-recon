@@ -1855,8 +1855,11 @@ if not args.jsonfile:
     pp.pprint(redis_instances)
 
     if not globalconfig.get("redis") and redis_instances:
+        print "1858"
         globalconfig["redis"] = {}
     if globalconfig.get("redis"):
+        print "1861"
+        pp.pprint(redis.get_all_statuses(redis_instances))
         globalconfig["redis"].update(redis.get_all_statuses(redis_instances))
 
 """
