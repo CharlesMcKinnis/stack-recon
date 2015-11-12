@@ -1844,7 +1844,8 @@ if not args.jsonfile:
 
     if not globalconfig.get("memcache") and memcache_instances:
         globalconfig["memcache"] = {}
-    globalconfig["memcache"].update(memcache_class.get_all_statuses(memcache_instances))
+    if globalconfig.get("memcache"):
+        globalconfig["memcache"].update(memcache_class.get_all_statuses(memcache_instances))
 
     def REDIS_DATA_GATHER():
         pass
@@ -1854,7 +1855,8 @@ if not args.jsonfile:
     
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
-    globalconfig["redis"].update(get_all_statuses(redis_class.redis_instances, redis_class))
+    if globalconfig.get("redis"):
+        globalconfig["redis"].update(get_all_statuses(redis_class.redis_instances))
 
 """
 {'/var/www/html':
