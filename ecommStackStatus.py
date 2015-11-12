@@ -2087,9 +2087,12 @@ if globalconfig.get("magento",{}).get("doc_root"):
             print "Version: %s" % value["magento_version"]
             print
             # database settings
+            skip = ["pdoType","initStatements","model","type"]
             if value.get("local_xml",{}).get("db"):
                 print "Database info"
                 for k2,v2 in value["local_xml"]["db"].iteritems():
+                    if k2 in skip:
+                        continue
                     print "%s: %s" % (k2,v2)
                 print
             # session cache settings
