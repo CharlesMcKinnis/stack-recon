@@ -2133,7 +2133,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     "break_after_frontend","password","connect_retries"
                     ]
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
-                print "Session Cache engine: %s" % value["local_xml"]["session_cache"]["engine"]
+                print "Object Cache engine: %s" % value.get("local_xml",{}).get("session_cache",{}).get("engine","EMPTY")
                 print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
                 for k2,v2 in value["local_xml"]["session_cache"].iteritems():
                     if k2 in skip:
@@ -2147,8 +2147,8 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     "compression_lib","connect_retries"
                     ]
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
-                print "Object Cache engine: %s" % value["local_xml"]["object_cache"]["engine"]
-                print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
+                print "Object Cache engine: %s" % value.get("local_xml",{}).get("object_cache",{}).get("engine","EMPTY")
+                print "Object Cache: %s" % value.get("local_xml",{}).get("object_cache",{}).get("backend","EMPTY")
                 for k2,v2 in value["local_xml"]["object_cache"].iteritems():
                     if k2 in skip:
                         continue
@@ -2159,8 +2159,8 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     "compress_data","password"
                     ]
             if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
-                print "Full Page Cache engine: %s" % value["local_xml"]["full_page_cache"]["engine"]
-                print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
+                print "Full Page Cache engine: %s" % value.get("local_xml",{}).get("full_page_cache",{}).get("engine","EMPTY")
+                print "Full Page Cache: %s" % value.get("local_xml",{}).get("full_page_cache",{}).get("backend","EMPTY")
                 for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
                     if k2 in skip:
                         continue
