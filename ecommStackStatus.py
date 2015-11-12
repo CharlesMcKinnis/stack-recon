@@ -2092,7 +2092,7 @@ if globalconfig.get("redis"):
         for key,value in globalconfig["redis"][instance]["Keyspace"].iteritems():
             print "%s: %s" % (key,value)
     #pp.pprint(globalconfig.get("redis"))
-
+print
 """
  _____ ___  ____   ___  
 |_   _/ _ \|  _ \ / _ \ 
