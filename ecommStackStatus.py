@@ -1066,6 +1066,7 @@ class RedisCtl(object):
                 return_dict[section][key] = value
         return(return_dict)
     def get_all_statuses(self, instances):
+        return_dict = {}
         for instance in instances:
             [ip, port] = instance.split(":")
             if not return_dict.get(instance):
@@ -1128,6 +1129,7 @@ class MemcacheCtl(object):
                 return_dict[key] = value
         return(return_dict)
     def get_all_statuses(self, instances):
+        return_dict = {}
         for instance in instances:
             [ip, port] = instance.split(":")
             if not return_dict.get(instance):
