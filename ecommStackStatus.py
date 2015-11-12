@@ -31,14 +31,14 @@ try:
 except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
-    error_collection.append("This program is more robust if python argparse installed.\n")
+    #error_collection.append("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
 except ImportError:
     MYSQL = False
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
-    error_collection.append("This program will be more robust if mysql.connector installed.\n")
+    #error_collection.append("This program will be more robust if mysql.connector installed.\n")
     
 #print "%r" % error_collection
 class argsAlt(object):
@@ -1952,7 +1952,7 @@ else:
     redis = RedisCtl()
     memcache = MemcacheCtl()
     for i in globalconfig["errors"]:
-        print i
+        sys.stdout.write(i)
 """
 {'/var/www/html':
     {
