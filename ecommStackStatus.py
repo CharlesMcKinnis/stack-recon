@@ -2152,6 +2152,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
 
 
 for instance in memcache_instances:
+    [ip, port] = instance.split(":")
     if not globalconfig.get("memcache"):
         globalconfig["memcache"] = {}
     if not globalconfig.get("memcache",{}).get(instance):
@@ -2161,6 +2162,7 @@ for instance in memcache_instances:
     globalconfig["memcache"][instance] = memcache.parse_status(reply)
 
 for instance in redis_instances:
+    [ip, port] = instance.split(":")
     if not globalconfig.get("redis"):
         globalconfig["redis"] = {}
     if not globalconfig.get("redis",{}).get(instance):
