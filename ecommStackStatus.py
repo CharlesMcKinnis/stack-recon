@@ -1658,7 +1658,7 @@ if not args.jsonfile:
             sys.stderr.write(daemons[i]["error"] + "\n")
             error_collection.append(daemons[i]["error"] + "\n")
     globalconfig = { "version" : STACK_STATUS_VERSION }
-    globalconfig["daemons"].update(daemons)
+    globalconfig["daemons"] = daemons
     """
      ____    _  _____  _       ____    _  _____ _   _ _____ ____  
     |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
