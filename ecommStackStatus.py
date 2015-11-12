@@ -2141,8 +2141,8 @@ if globalconfig.get("magento",{}).get("doc_root"):
         # redis
         if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
             stanza = "{0}:{1}".format(
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("server"),
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
             )
             print "redis object: %s" % stanza
             redis_instances.add(stanza)
@@ -2151,8 +2151,8 @@ if globalconfig.get("magento",{}).get("doc_root"):
         # redis
         if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
             stanza = "{0}:{1}".format(
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("server"),
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
             )
             print "redis FPC: %s" % stanza
             redis_instances.add(stanza)
