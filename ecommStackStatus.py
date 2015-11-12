@@ -8,6 +8,8 @@ Magento is a trademark of Varien. Neither I nor these scripts are affiliated wit
 wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 """
+STACK_STATUS_VERSION = 2015111201
+
 import re
 import glob
 import subprocess
@@ -1507,7 +1509,7 @@ for one in daemons:
 #pp = pprint.PrettyPrinter(indent=4)
 #pp.pprint(daemons)
 if not args.jsonfile:
-    globalconfig = {}
+    globalconfig = { "version" : STACK_STATUS_VERSION }
     """
      ____    _  _____  _       ____    _  _____ _   _ _____ ____  
     |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
