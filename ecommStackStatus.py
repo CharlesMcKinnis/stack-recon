@@ -2105,6 +2105,8 @@ if globalconfig.get("magento",{}).get("doc_root"):
         # session cache is memcache
         # local_xml[section]["engine"]
         # local_xml["session_cache"]["engine"]
+
+        pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}))
         
         # SESSION
         # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
