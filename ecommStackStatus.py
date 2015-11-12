@@ -2168,7 +2168,7 @@ if globalconfig.get("redis"):
     for instance in globalconfig.get("redis"):
         print instance
 
-        print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak"]
+        print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak_human"]
         print "Evicted keys: %s" % globalconfig["redis"][instance]["Stats"]["evicted_keys"]
         print "Keyspace:"
         for key,value in globalconfig["redis"][instance]["Keyspace"].iteritems():
