@@ -2086,27 +2086,50 @@ if globalconfig.get("magento",{}).get("doc_root"):
             print "Magento path: %s" % key
             print "Version: %s" % value["magento_version"]
             print
+            # database settings
             if value.get("local_xml",{}).get("db"):
                 print "Database info"
                 for k2,v2 in value["local_xml"]["db"].iteritems():
                     print "%s: %s" % (k2,v2)
                 print
+            # session cache settings
+            skip = ["engine","disable_locking","compression_threshold",
+                    "log_level","first_lifetime","bot_first_lifetime",
+                    "bot_lifetime","compression_lib","break_after_adminhtml",
+                    "break_after_frontend","password","connect_retries"
+                    ]
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
                 print "Session Cache engine: %s" % value["local_xml"]["session_cache"]["engine"]
                 print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
                 for k2,v2 in value["local_xml"]["session_cache"].iteritems():
+                    if k2 in skip:
+                        continue
                     print "%s: %s" % (k2,v2)
                 print
+            # object cache settings
+            skip = ["engine","compress_tags","use_lua",
+                    "automatic_cleaning_factor","force_standalone",
+                    "compress_data","compress_threshold","password",
+                    "compression_lib","connect_retries"
+                    ]
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
                 print "Object Cache engine: %s" % value["local_xml"]["object_cache"]["engine"]
                 print "Object Cache: %s" % value["local_xml"]["object_cache"]["backend"]
                 for k2,v2 in value["local_xml"]["object_cache"].iteritems():
+                    if k2 in skip:
+                        continue
                     print "%s: %s" % (k2,v2)
                 print
+            # full page cache settings
+            skip = ["engine","connect_retries","force_standalone",
+                    "compress_data","password"
+                    ]
             if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
                 print "Full Page Cache engine: %s" % value["local_xml"]["full_page_cache"]["engine"]
                 print "Full Page Cache: %s" % value["local_xml"]["full_page_cache"]["backend"]
                 for k2,v2 in value["local_xml"]["full_page_cache"].iteritems():
+                    if k2 in skip:
+                        continue
                     print "%s: %s" % (k2,v2)
                 print
             if value.get("cache",{}).get("cache_option_table"):
@@ -2155,18 +2178,32 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
+print """
+                                         _          
+ _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___ 
+| '_ ` _ \ / _ \ '_ ` _ \ / __/ _` |/ __| '_ \ / _ \\
+| | | | | |  __/ | | | | | (_| (_| | (__| | | |  __/
+|_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
+"""
 if globalconfig.get("memcache"):
     print "MEMCACHE"
-        
-    
+
     pp.pprint(globalconfig.get("memcache"))
     
 def REDIS_PRINT():
     pass
+print """
+              _ _     
+ _ __ ___  __| (_)___ 
+| '__/ _ \/ _` | / __|
+| | |  __/ (_| | \__ \\
+|_|  \___|\__,_|_|___/
+                     
+"""
 if globalconfig.get("redis"):
     print "REDIS"
     for instance in globalconfig.get("redis"):
-        print instance
+        print "Server: %s" % instance
 
         print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak_human"]
         print "Evicted keys: %s" % globalconfig["redis"][instance]["Stats"]["evicted_keys"]
