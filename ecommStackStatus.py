@@ -425,7 +425,7 @@ class nginxCtl(object):
         """
         Discovers installed nginx version
         """
-        version = self.kwargs["exe"]+" -v"
+        version = self.kwargs["exe"]+" -v 2>&1"
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
@@ -1906,7 +1906,7 @@ def APACHE_PRINT():
 if "apache" in  globalconfig:
     apache.figlet()
     if globalconfig.get("apache",{}).get("version"):
-        print globalconfig.get("apache",{}).get("version")
+        print "Apache version: %s" % globalconfig.get("apache",{}).get("version")
     else:
         print "No apache version?"
     if globalconfig.get("apache",{}).get("sites"):
@@ -1943,7 +1943,7 @@ def PHP_FPM_PRINT():
 if "php-fpm" in globalconfig:
     phpfpm.figlet()
     if globalconfig.get("php-fpm",{}).get("version"):
-        print globalconfig.get("php-fpm",{}).get("version")
+        print "php-fpm version: %s" % globalconfig.get("php-fpm",{}).get("version")
     else:
         print "No php version?"
     print "php-fpm pools:"
@@ -2089,6 +2089,7 @@ if globalconfig.get("memcache"):
         print "Get hits: %s" % globalconfig["memcache"][instance].get('get_hits',"")
         print "Get misses: %s" % globalconfig["memcache"][instance].get('get_misses',"")
         print "Limit MaxBytes: %s" % globalconfig["memcache"][instance].get('limit_maxbytes',"")
+        print
 def REDIS_PRINT():
     pass
 if globalconfig.get("redis"):
