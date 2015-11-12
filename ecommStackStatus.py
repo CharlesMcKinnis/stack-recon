@@ -1065,6 +1065,44 @@ class RedisCtl(object):
                 value = value.strip()
                 return_dict[section][key] = value
         return(return_dict)
+    def get_all_statuses(self, instances):
+        for instance in memcache:
+            [ip, port] = instance.split(":")
+            if not return_dict.get(instance):
+                return_dict[instance] = {}
+            reply = self.get_status(ip, port)
+            return_dict[instance] = self.parse_status(reply)
+        return(return_dict)
+    def instances(self, doc_roots):
+        redis_instances = set()
+        for doc_root in doc_roots:
+            # SESSION
+            # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
+            # redis
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "redis":
+                stanza = "{0}:{1}".format(
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"),
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+                )
+                redis_instances.add(stanza)
+            # OBJECT
+            # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
+            # redis
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
+                stanza = "{0}:{1}".format(
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
+                )
+                redis_instances.add(stanza)
+            # FULL PAGE CACHE
+            # redis
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
+                stanza = "{0}:{1}".format(
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
+                )
+                redis_instances.add(stanza)
+        return(list(redis_instances))
 
 class MemcacheCtl(object):
     def get_status(self, ip, port):
@@ -1089,6 +1127,40 @@ class MemcacheCtl(object):
                 value = value.strip()
                 return_dict[key] = value
         return(return_dict)
+    def get_all_statuses(self, instances):
+        for instance in memcache:
+            [ip, port] = instance.split(":")
+            if not return_dict.get(instance):
+                return_dict[instance] = {}
+            reply = self.get_status(ip, port)
+            return_dict[instance] = self.parse_status(reply)
+        return(return_dict)
+    def instances(self, doc_roots):
+        memcache_instances = set()
+        for doc_root in doc_roots:
+            # SESSION
+            # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
+            # memcache
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
+                result = re.match('tcp://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)',
+                    globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
+                    )
+                if result:
+                    ip = result.group(1)
+                    port = result.group(2)
+                    stanza = "{0}:{1}".format(ip,port)
+                    memcache_instances.add(stanza)
+            # OBJECT
+            # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
+            # memcache
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
+                stanza = "{0}:{1}".format(
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
+                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
+                )
+                memcache_instances.add(stanza)
+        return(list(memcache_instances))
+
     """
 Session Cache: memcache
 session_save: memcache
@@ -1764,11 +1836,25 @@ if not args.jsonfile:
         #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #    globalconfig["magento"]["doc_root"].update(return_config)
 
-    def REDIS_DATA_GATHER():
-        pass
-    
     def MEMCACHE_DATA_GATHER():
         pass
+    memcache_class = MemcacheCtl()
+    
+    memcache_instances = memcache_class.instances(globalconfig.get("magento",{}).get("doc_root",{}))
+
+    if not globalconfig.get("memcache") and memcache_instances:
+        globalconfig["memcache"] = {}
+    globalconfig["memcache"].update(memcache_class.get_all_statuses(memcache_instances))
+
+    def REDIS_DATA_GATHER():
+        pass
+    redis_class = RedisCtl()
+    
+    redis_instances = redis_class.instances(globalconfig.get("magento",{}).get("doc_root",{}))
+    
+    if not globalconfig.get("redis") and redis_instances:
+        globalconfig["redis"] = {}
+    globalconfig["redis"].update(get_all_statuses(redis_class.redis_instances, redis_class))
 
 """
 {'/var/www/html':
@@ -2058,34 +2144,17 @@ This output is flawed because local.xml was not configured correctly
 
 """
 
-
-
-
-
-
-
-#print "1424: %r" % globalconfig["magento"]["doc_root"]
-"""
-m = magentoCtl()
-filename="local.xml"
-local_xml = m.open_local_xml(filename)
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(local_xml)
-"""
-
-
-
-
-
-
-
-"""
-{'domains':
-    ['example.com', 'www.example.com new.example.com'],
-    'config_file': '/etc/httpd/conf/httpd.conf',
-    'doc_root': '/var/www/html',
-    'listening': ['*:80']}
-"""
+def MEMCACHE_PRINT():
+    pass
+if globalconfig.get("memcache"):
+    print "MEMCACHE"
+    pp.pprint(globalconfig.get("memcache"))
+    
+def REDIS_PRINT():
+    pass
+if globalconfig.get("redis"):
+    print "REDIS"
+    pp.pprint(globalconfig.get("redis"))
 
 """
  _____ ___  ____   ___  
@@ -2102,98 +2171,11 @@ print "TODO"
 Go through each magento doc_root and get cache information for session, object and full_page
 If they are memcache, add the host:port to globalconfig["memcache"]["{0}.{1}".format(host,port)]
 """
-if globalconfig.get("magento",{}).get("doc_root"):
-    # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["session_cache"]["session_save_path"]
-    # 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
-    memcache_instances = set()
-    redis_instances = set()
+#if globalconfig.get("magento",{}).get("doc_root"):
 
-    for doc_root in globalconfig["magento"]["doc_root"]:
-        # session cache is memcache
-        # local_xml[section]["engine"]
-        # local_xml["session_cache"]["engine"]
 
-        #print(doc_root)
-        #pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root))
-        
-        # SESSION
-        # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
-        # memcache
-        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
-            result = re.match('tcp://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)',
-                globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
-                )
-            if result:
-                ip = result.group(1)
-                port = result.group(2)
-                stanza = "{0}:{1}".format(ip,port)
-                memcache_instances.add(stanza)
-        # redis
-        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "redis":
-            stanza = "{0}:{1}".format(
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"),
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
-            )
-            #print "redis session: %s" % stanza
-            redis_instances.add(stanza)
-        
-        # OBJECT
-        # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
-        # memcache
-        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
-            stanza = "{0}:{1}".format(
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
-            )
-            memcache_instances.add(stanza)
-        # redis
-        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
-            stanza = "{0}:{1}".format(
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
-            )
-            #print "redis object: %s" % stanza
-            redis_instances.add(stanza)
 
-        # FULL PAGE CACHE
-        # redis
-        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
-            stanza = "{0}:{1}".format(
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
-                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
-            )
-            #print "redis FPC: %s" % stanza
-            redis_instances.add(stanza)
 
-memcache = MemcacheCtl()
-redis = RedisCtl()
-
-for instance in memcache_instances:
-    [ip, port] = instance.split(":")
-    if not globalconfig.get("memcache"):
-        globalconfig["memcache"] = {}
-    if not globalconfig.get("memcache",{}).get(instance):
-        globalconfig["memcache"][instance] = {}
-    #print "memcache: %s" % (instance)
-    reply = memcache.get_status(ip, port)
-    globalconfig["memcache"][instance] = memcache.parse_status(reply)
-
-for instance in redis_instances:
-    [ip, port] = instance.split(":")
-    if not globalconfig.get("redis"):
-        globalconfig["redis"] = {}
-    if not globalconfig.get("redis",{}).get(instance):
-        globalconfig["redis"][instance] = {}
-    #print "redis: %s" % (instance)
-    reply = redis.get_status(ip, port)
-    globalconfig["redis"][instance] = redis.parse_status(reply)
-
-if globalconfig.get("memcache"):
-    print "MEMCACHE"
-    pp.pprint(globalconfig.get("memcache"))
-if globalconfig.get("redis"):
-    print "REDIS"
-    pp.pprint(globalconfig.get("redis"))
 """
 
     pp.pprint(globalconfig["magento"]["doc_root"])
