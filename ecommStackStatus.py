@@ -31,14 +31,14 @@ try:
 except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
-    error_collection += "This program is more robust if python argparse installed.\n"
+    error_collection.add("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
 except ImportError:
     MYSQL = False
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
-    error_collection += "This program will be more robust if mysql.connector installed.\n"
+    error_collection.add("This program will be more robust if mysql.connector installed.\n")
     
 print "%r" % error_collection
 class argsAlt(object):
