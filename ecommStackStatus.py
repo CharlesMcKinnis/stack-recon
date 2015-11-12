@@ -928,11 +928,11 @@ class MagentoCtl(object):
             local_xml[section]["engine"] = "redis" # Colin M's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcached":
             print "930 matched"
-            local_xml[section]["engine"] = "memcache"
             xml_parent_path = 'global/cache'
             xml_config_node = 'backend'
             xml_config_section = 'memcached/servers/server'
             local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+            local_xml[section]["engine"] = "memcache"
             """
             global/cache/    memcached/servers/server
                     <memcached><!-- memcached cache backend related config -->
@@ -2151,6 +2151,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     "compression_lib","connect_retries"
                     ]
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
+                #local_xml[section]["engine"]
                 print "Object Cache engine: %s" % value.get("local_xml",{}).get("object_cache",{}).get("engine","EMPTY")
                 print "Object Cache: %s" % value.get("local_xml",{}).get("object_cache",{}).get("backend","EMPTY")
                 for k2,v2 in value["local_xml"]["object_cache"].iteritems():
