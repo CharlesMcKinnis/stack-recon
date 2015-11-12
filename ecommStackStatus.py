@@ -72,6 +72,18 @@ class apacheCtl(object):
      -D AP_TYPES_CONFIG_FILE="conf/mime.types"
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
+    def get_version(self):
+        """
+        Discovers installed apache version
+        """
+        version = self.kwargs["exe"]+" -v"
+        p = subprocess.Popen(
+            version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+            )
+        output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+
     def get_conf_parameters(self):
         conf = self.kwargs["exe"]+" -V 2>&1"
         p = subprocess.Popen(
@@ -628,7 +640,42 @@ class phpfpmCtl(object):
         self.kwargs = kwargs
         if not "exe" in self.kwargs:
             self.kwargs["exe"] = "php-fpm"
-            
+
+    def get_version(self):
+        """
+        Discovers installed nginx version
+        """
+        version = self.kwargs["exe"]+" -v"
+        p = subprocess.Popen(
+            version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
+            )
+        output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+
+    def get_conf_parameters(self):
+        conf = self.kwargs["exe"]+" -V 2>&1"
+        p = subprocess.Popen(
+            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, err = p.communicate()
+        if p.returncode > 0:
+            return()
+        dict = {}
+        compiled=0
+        for i in output.splitlines():
+            if i.strip()=="Server compiled with....":
+                compiled=1
+                continue
+            if compiled == 0:
+                result = re.match('\s*([^:]+):\s*(.+)', i.strip())
+                if result:
+                    dict[result.group(1)]=result.group(2)
+            else:
+                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
+                if result:
+                    dict[result.group(1)]=result.group(2)
+        return dict
+
     def get_conf(self):
         """
         :returns: configuration path location
@@ -837,6 +884,25 @@ class MagentoCtl(object):
             local_xml[section]["engine"] = "redis" # Colin M's redis module
         elif local_xml[section][xml_config_node] == "memcached":
             local_xml[section]["engine"] = "memcache"
+            xml_parent_path = 'global/cache'
+            xml_config_node = 'backend'
+            xml_config_section = 'memcached/servers/server'
+            local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+            """
+            global/cache/    memcached/servers/server
+                    <memcached><!-- memcached cache backend related config -->
+            <servers><!-- any number of server nodes can be included -->
+                <server>
+                    <host><![CDATA[]]></host>
+                    <port><![CDATA[]]></port>
+                    <persistent><![CDATA[]]></persistent>
+                    <weight><![CDATA[]]></weight>
+                    <timeout><![CDATA[]]></timeout>
+                    <retry_interval><![CDATA[]]></retry_interval>
+                    <status><![CDATA[]]></status>
+                </server>
+            </servers>
+            """
         else:
             local_xml[section]["engine"] = "unknown"
         
@@ -1452,7 +1518,7 @@ if not args.jsonfile:
     class DATA_GATHER():
         pass
     # using this as a bookmark in the IDE
-    def APACHE_FPM_DATA_GATHER():
+    def APACHE_DATA_GATHER():
         pass
     ################################################
     # APACHE
@@ -1501,6 +1567,7 @@ if not args.jsonfile:
     
             if not "apache" in globalconfig:
                 globalconfig["apache"] = {}
+            globalconfig["apache"]["version"] = apache.get_version()
             globalconfig["apache"] = apache_config
             """
             globalconfig[apache][sites]: [
@@ -1534,7 +1601,7 @@ if not args.jsonfile:
                 globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
     
     # using this as a bookmark in the IDE
-    def NGINX_FPM_DATA_GATHER():
+    def NGINX_DATA_GATHER():
         pass
     ################################################
     # NGINX
@@ -1559,6 +1626,7 @@ if not args.jsonfile:
             
             if not "nginx" in globalconfig:
                 globalconfig["nginx"] = {}
+            globalconfig["nginx"]["version"] = nginx.get_version()
             globalconfig["nginx"] = nginx_config
             """
             {
@@ -1606,6 +1674,7 @@ if not args.jsonfile:
             
             if not "php-fpm" in globalconfig:
                 globalconfig["php-fpm"] = {}
+            globalconfig["php-fpm"]["version"] = phpfpm.get_version()
             globalconfig["php-fpm"] = phpfpm_config
             globalconfig["php-fpm"]["basename"] = "php-fpm"
             globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
@@ -2021,23 +2090,87 @@ class TODO():
     pass
 
 print "TODO"
+"""
+Go through each magento doc_root and get cache information for session, object and full_page
+If they are memcache, add the host:port to globalconfig["memcache"]["{0}.{1}".format(host,port)]
+"""
 if globalconfig.get("magento",{}).get("doc_root"):
     # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["session_cache"]["session_save_path"]
     # 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
+    memcache_instances = set()
+    redis_instances = set()
     for doc_root in globalconfig["magento"]["doc_root"]:
         memcache = MemcacheCtl()
+        redis = RedisCtl()
         # session cache is memcache
-        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("session_save") == "memcache":
+        # local_xml[section]["engine"]
+        # local_xml["session_cache"]["engine"]
+        
+        # SESSION
+        # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
+        # memcache
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
             result = re.match('tcp://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)',
                 globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
                 )
             if result:
                 ip = result.group(1)
                 port = result.group(2)
-                print "memcache: %s:%s" % (ip,port)
-                reply = memcache.get_status(ip, port)
-                # probably stuff the return in globalconfig["memcache"][ip:port].update(memcache.parse_status(reply))
-                pp.pprint(memcache.parse_status(reply))
+                stanza = "{0}:{1}".format(ip,port)
+                memcache_instances.add(stanza)
+        # redis
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "redis":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+            )                
+            redis_instances.add(stanza)
+        
+        # OBJECT
+        # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
+        # memcache
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
+            )
+            memcache_instances.add(stanza)
+        # redis
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+            )
+            redis_instances.add(stanza)
+
+        if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
+            stanza = "{0}:{1}".format(
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("server"),
+                globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+            )
+            redis_instances.add(stanza)
+
+
+for instance in memcache_instances:
+    if not globalconfig.get("memcache"):
+        globalconfig["memcache"] = {}
+    if not globalconfig.get("memcache",{}).get(instance):
+        globalconfig["memcache"][instance] = {}
+    print "memcache: %s" % (instance)
+    reply = memcache.get_status(ip, port)
+    globalconfig["memcache"][instance] = memcache.parse_status(reply)
+
+for instance in redis_instances:
+    if not globalconfig.get("redis"):
+        globalconfig["redis"] = {}
+    if not globalconfig.get("redis",{}).get(instance):
+        globalconfig["redis"][instance] = {}
+    print "redis: %s" % (instance)
+    reply = redis.get_status(ip, port)
+    globalconfig["redis"][instance] = redis.parse_status(reply)
+
+pp.pprint(globalconfig["memcache"])
+pp.pprint(globalconfig["redis"])
 """
 
     pp.pprint(globalconfig["magento"]["doc_root"])
