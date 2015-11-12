@@ -1838,25 +1838,26 @@ if not args.jsonfile:
 
     def MEMCACHE_DATA_GATHER():
         pass
-    memcache_class = MemcacheCtl()
+    memcache = MemcacheCtl()
     
-    memcache_instances = memcache_class.instances(globalconfig.get("magento",{}).get("doc_root",{}))
+    memcache_instances = memcache.instances(globalconfig.get("magento",{}).get("doc_root",{}))
 
     if not globalconfig.get("memcache") and memcache_instances:
         globalconfig["memcache"] = {}
     if globalconfig.get("memcache"):
-        globalconfig["memcache"].update(memcache_class.get_all_statuses(memcache_instances))
+        globalconfig["memcache"].update(memcache.get_all_statuses(memcache_instances))
 
     def REDIS_DATA_GATHER():
         pass
-    redis_class = RedisCtl()
+    redis = RedisCtl()
     
-    redis_instances = redis_class.instances(globalconfig.get("magento",{}).get("doc_root",{}))
-    
+    redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
+    pp.pprint(redis_instances)
+
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
     if globalconfig.get("redis"):
-        globalconfig["redis"].update(get_all_statuses(redis_class.redis_instances))
+        globalconfig["redis"].update(redis.get_all_statuses(redis_instances))
 
 """
 {'/var/www/html':
