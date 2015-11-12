@@ -40,7 +40,6 @@ except ImportError:
     #sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
     #error_collection.append("This program will be more robust if mysql.connector installed.\n")
     
-#print "%r" % error_collection
 class argsAlt(object):
     pass
 
@@ -141,7 +140,6 @@ class apacheCtl(object):
         try:
             return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'],self.get_conf_parameters()['SERVER_CONFIG_FILE'])
         except KeyError:
-            #print " is not installed!!!"
             sys.exit(1)
 
     def get_mpm(self):
@@ -202,7 +200,6 @@ class apacheCtl(object):
                         stanzas["config_file"] = []
                     stanzas["config_file"].append(filechange.group(1)) 
                 continue
-                #print "filechain: %r" % filechange
             filechange = re.match("## END (.*)",line)
             if filechange:
                 filechain.pop()
@@ -213,7 +210,6 @@ class apacheCtl(object):
             if result:
                 stanza_count += 1
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-                #print "stanza_chain len %d" % len(stanza_chain)
             result = re.match('</', linecomp )
             if result:
                 stanza_count -= 1
@@ -243,7 +239,6 @@ class apacheCtl(object):
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                    #print line
                     if not "prefork" in stanzas:
                         stanzas["prefork"] = {}
                     stanzas["prefork"].update(kwsearch(prefork_keywords,line,single_value=True))
@@ -262,7 +257,6 @@ class apacheCtl(object):
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                    #print line
                     if not "worker" in stanzas:
                         stanzas["worker"] = {}
                     stanzas["worker"].update(kwsearch(worker_keywords,linecomp,single_value=True))
@@ -281,7 +275,6 @@ class apacheCtl(object):
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                    #print line
                     if not "event" in stanzas:
                         stanzas["event"] = {}
                     stanzas["event"].update(kwsearch(event_keywords,linecomp,single_value=True))
@@ -301,7 +294,6 @@ class apacheCtl(object):
             # virtual host matching
             result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE )
             if result:
-                #print "matched vhost %s" % result.group(1)
                 server_line = str(linenum)
                 vhost_start = stanza_count
                 
@@ -317,19 +309,7 @@ class apacheCtl(object):
             # only match these in a virtual host
             if vhost_start == stanza_count:
                 keywords = vhost_keywords
-                #print "in a vhost file %s: %s" % (stanzas[server_line]["config_file"][-1],line.strip())
-                #print kwsearch(keywords,line.strip() )
                 stanzas[server_line].update( kwsearch(keywords,line.strip() ) )
-                """
-                for word in keywords:
-                    #print "word: %s in line: %s" % (word,line.strip("\s\t;"))
-                    result = re.search("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
-                    if result:
-                        #print "keyword match %s" % word
-                        if not word in stanzas[server_line]:
-                            stanzas[server_line][word] = []
-                        stanzas[server_line][word] += [result.group(2)]
-                """
             # closing VirtualHost
             result = re.match('</virtualhost', linecomp, re.IGNORECASE )
             if result:
@@ -341,19 +321,9 @@ class apacheCtl(object):
         # think magento location
         configuration = {}
         configuration["sites"] =  []
-        #print "parsed apache: %r" % stanzas
         for i in stanzas.keys():
-            #print "i %s" %i
-            #print "pre-match %r" % stanzas[i]
             if ("documentroot" in stanzas[i]) or ("servername" in stanzas[i]) or ("serveralias" in stanzas[i]) or ("virtualhost" in stanzas[i]):
-                #print "matched %r" % stanzas[i]
                 configuration["sites"].append( { } )
-                #configuration["sites"].append( {
-                #    "domains" : [],
-                #    "doc_root" : "",
-                #    "config_file" : "",
-                #    "listening" : [] } )
-                # "customlog", "errorlog"
                 if "servername" in stanzas[i]:
                     if not "domains" in configuration["sites"][-1]:
                         configuration["sites"][-1]["domains"] = []
@@ -378,11 +348,8 @@ class apacheCtl(object):
         stanzas.update(configuration)
         if not "maxprocesses" in stanzas: # there was a stanzas["config"] but that isn't what is referenced later
             mpm = self.get_mpm().lower()
-            #print "mpm: %r" % mpm
-            #print "config %r" % stanzas["prefork"]
             if mpm == "prefork":
                 if stanzas.get("prefork",{}).get("maxclients"):
-                        #print "prefork maxclients %s" % stanzas["prefork"]["maxclients"]
                         stanzas["maxprocesses"] = int(stanzas["prefork"]["maxclients"])
             elif mpm == "event":
                 if "event" in stanzas:
@@ -418,7 +385,6 @@ class apacheCtl(object):
             elif mpm == "worker":
                 if "worker" in stanzas:
                     if stanzas.get("worker",{}).get("maxclients"):
-                        #print "worker maxclients %s" % stanzas["worker"]["maxclients"]
                         stanzas["maxprocesses"] = int(stanzas["worker"]["maxclients"])
             else:
                 sys.stderr.write("Could not identify mpm in use.\n")
@@ -496,7 +462,6 @@ class nginxCtl(object):
         try:
             return self.get_conf_parameters()['--conf-path']
         except KeyError:
-            #print "nginx is not installed!!!"
             sys.exit(1)
 
     def get_bin(self):
@@ -506,9 +471,6 @@ class nginxCtl(object):
         # try:
         if True:
             return self.get_conf_parameters()['--sbin-path']
-        # except:
-        #     #print "nginx is not installed!!!"
-        #     sys.exit(1)
 
     def get_pid(self):
         """
@@ -518,9 +480,6 @@ class nginxCtl(object):
         # try:
         if True:
             return self.get_conf_parameters()['--pid-path']
-        # except:
-        #     #print "nginx is not installed!!!"
-        #     return()
 
     def get_lock(self):
         """
@@ -530,9 +489,6 @@ class nginxCtl(object):
         # try:
         if True:
             return self.get_conf_parameters()['--lock-path']
-        # except:
-        #     #print "nginx is not installed!!!"
-        #     return()
 
     def parse_config(self,wholeconfig):
         """
@@ -575,10 +531,8 @@ class nginxCtl(object):
             result = re.match("(\S+)\s*{",linecomp)
             if result:
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-                #print "stanza_chain len %d" % len(stanza_chain)
             if len(re.findall('}',line)) and len(stanza_chain) > 0:
                 stanza_chain.pop()
-            #print "stanza_chain len %d" % len(stanza_chain)
     
             # start server { section
             # is this a "server {" line?
@@ -623,7 +577,6 @@ class nginxCtl(object):
                 # if server_start > stanza_count and server_start > 0: # The lowest stanza_count goes is 0, so it is redundant
                 # we are no longer in the server { block
                 server_start = -1
-                #print ""
             # end server { section
             
             # keywords is a list of keywords to search for
@@ -636,14 +589,10 @@ class nginxCtl(object):
         # think magento location
         configuration = {}
         configuration["sites"] =  []
-        #print "parsed apache: %r" % stanzas
         
         # pressing the whole web daemon config in to a specific framework so it is easier to work with
         for i in stanzas.keys():
-            #print "i %s" %i
-            #print "pre-match %r" % stanzas[i]
             if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
-                #print "matched %r" % stanzas[i]
                 # "access_log", "error_log"
                 configuration["sites"].append( { } )
                 if "server_name" in stanzas[i]:
@@ -664,7 +613,6 @@ class nginxCtl(object):
                     configuration["sites"][-1]["error_log"] = stanzas[i]["error_log"][0]
         stanzas.update(configuration)
         if "worker_processes" in stanzas:
-            #print "stanza worker_process: %r" % stanzas["worker_processes"]
             stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
     
         return stanzas
@@ -769,28 +717,18 @@ class phpfpmCtl(object):
                 if len(stanza_chain) > 0:
                     stanza_chain.pop()
                 # start
-                #print "stanza match ln 541: %r" % result.group(1)
                 stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-                #print "stanza_chain len %d" % len(stanza_chain)
             else:
-                #print "else line: %r" % line.strip()
                 #match not spaces or =, then match = and spaces, then not spaces
                 result = re.match('([^=\s]+)\s*=\s*(\S+)', linecomp )
                 if result:
                     key = result.group(1)
                     value = result.group(2)
-                    #print "Current stanza: %r" % stanza_chain
-                    #print "stanza chain -1 %r" % stanza_chain[-1]
-                    #print "stanza title -1 %r" % stanza_chain[-1]["title"]
-                    #print "stanzas %r" % stanzas
                     if not stanza_chain[-1]["title"] in stanzas:
                         stanzas[stanza_chain[-1]["title"]] = {}
                     stanzas[stanza_chain[-1]["title"]][key] = value
         stanzas["maxprocesses"] = 0
-        #print "stanzas: %r" % stanzas
         for one in stanzas:
-            #print "%s %r\n" % (one,stanzas[one])
-            #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
             if type(stanzas[one]) is dict:
                 if stanzas.get(one,{}).get("pm.max_children"):
                     stanzas["maxprocesses"] += int(stanzas[one]["pm.max_children"])
@@ -846,7 +784,6 @@ class MagentoCtl(object):
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
-                    #print "652 %r %r %r" % (root,dirnames,filenames)
         
             if len(mage_php_matches) > 1:
                 sys.stderr.write("There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
@@ -874,8 +811,6 @@ class MagentoCtl(object):
 
     def mage_file_info(self,mage_files):
         return_dict = {}
-        #magento = MagentoCtl()
-        #print "668 %r" % mage_files
         for doc_root_path, mage_php_match in mage_files.iteritems():
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
@@ -992,11 +927,9 @@ class MagentoCtl(object):
     
         returns a dict with key named "section"
         """
-        #print tree, section, xml_parent_path, xml_config_node, xml_config_section
         local_xml = {}
         # full page cache (FPC) - redis
         #section = "full_page_cache"
-        #print "\nsection: %s" % section
         #xml_parent_path = 'global/full_page_cache'
         #xml_config_node = 'backend'
         #xml_config_section = 'backend_options'
@@ -1009,17 +942,14 @@ class MagentoCtl(object):
             local_xml[section] = {}
 
         resources = tree.find(xml_parent_path)
-        #print resources
         if resources is not None:
             i = resources.find(xml_config_node)
             if i is not None:
                 if i.text is not None:
-                    #print "%s: %s" % (xml_config_node,i.text)
                     local_xml[section][xml_config_node] = i.text
 
             if resources.find(xml_config_section) is not None:
                 for i in resources.find(xml_config_section):
-                    #print "%s: %s" % (i.tag,i.text)
                     local_xml[section][i.tag] = i.text
             # else:
             #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
@@ -1027,7 +957,6 @@ class MagentoCtl(object):
             if xml_config_single:
                 if resources.find(xml_config_single) is not None:
                     i = resources.find(xml_config_single)
-                    #print "%s: %s" % (i.tag,i.text)
                     local_xml[section][i.tag] = i.text
                 # else:
                 #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
@@ -1040,23 +969,12 @@ class MagentoCtl(object):
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
-        #print "Magento path: %s" % doc_root
-        #print "Version: %s" % value["magento_version"]
-        #print
-        # pp.pprint(value)
         var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
         var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
         var_host = value.get("local_xml",{}).get("db",{}).get("host","")
         var_username = value.get("local_xml",{}).get("db",{}).get("username","")
         var_password = value.get("local_xml",{}).get("db",{}).get("password","")
         if (var_dbname and var_host and var_username and var_password ):
-            #if "db" in value["local_xml"]:
-            # print " host: %s" % var_host
-            # print " dbname: %s" % var_dbname
-            # if var_table_prefix:
-            #     print " Table prefix: %s" % var_table_prefix
-            # print " username: %s" % var_username
-            #print " password: %s" % var_password
             sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
             conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
                 var_username,
@@ -1122,7 +1040,6 @@ class RedisCtl(object):
                 if not section in return_dict:
                     return_dict[section] = {}
                 continue
-            #print "%r" % i.split(':', 2)
             try:
                 [key, value] = i.split(':', 2)
             except ValueError:
@@ -1192,7 +1109,6 @@ class MemcacheCtl(object):
         for i in reply.splitlines():
             if len(i.strip()) == 0:
                 continue
-            #print "%r" % i.split(' ', 3)
             try:
                 [STAT, key, value] = i.split(' ', 3)
             except ValueError:
@@ -1329,13 +1245,11 @@ def daemon_exe(match_exe):
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-        #print pid, ppid, pscmd, psexe
 
         # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
         if psexe:
             if re.search('\(deleted\)', psexe):
                 # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
-                #print "WARNING: %s is reporting the binary running is deleted"
                 pserror = psexe
                 result = re.match('([^\(]+)', psexe)
                 psexe = result.group(1).rstrip()
@@ -1400,21 +1314,16 @@ def importfile(filename, keyword_regex, **kwargs):
             return(os.path.join(base_path, right_file))
         else:
             return(right_file) # this is the fix!
-    #print "full path to file: %s" % full_file_path(filename)
-    #print "globbing %r" % full_file_path(filename, base_path)
     files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
-    #print "%r" % files
     combined = ""
 
     for onefile in files:
-        #print "onefile: %r" % onefile
         # for each file in the glob (may be just one file), open it
         # try:
         if True:
             onefile_handle = open(onefile, 'r')
             # onefile should always be a file
             if os.path.isfile(onefile):
-                #print "STA onefile: %s" % onefile
                 combined += "## START "+onefile+"\n"
         # except:
         #     return()
@@ -1428,17 +1337,13 @@ def importfile(filename, keyword_regex, **kwargs):
             # figure out the full filename
             # and import it inline
             if result:
-                #print "nested! %s" % result.group(1)
                 combined += "#"+line+"\n"
                 nestedfile = full_file_path(result.group(1), base_path)
-                #print "nestedfile: %r" % nestedfile
-                #print "line %r" % line.strip()
                 combined += importfile(nestedfile, keyword_regex, **kwargs)
             else:
                 combined += line
         # END of the file import, if it was a file and not a glob, make the ending. onefile should always be a file
         if os.path.isfile(onefile):
-            #print "END onefile: %s" % onefile
             combined += "## END "+onefile+"\n"
         onefile_handle.close()
     return combined
@@ -1457,7 +1362,6 @@ def kwsearch(keywords,line, **kwargs):
         #result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str,keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
         if result:
-            #print "keyword match %s" % word
             if not "single_value" in kwargs:
                 if not result.group(1).lower() in stanza:
                     stanza[result.group(1).lower()] = []
@@ -1510,20 +1414,8 @@ def memory_print(result, proc_name, proc_max):
     print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (result["line_count"], proc_name, result["line_sum"], result["free_mem"])
     print "Average memory per process: %d KB will use %d KB if max processes %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"] / result["line_count"] * proc_max), proc_max)
     print "Largest process: %d KB will use %d KB if max processes is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
-    #print "Based on the largest process, use this as a health check: %d" % (int(
-    #    (result["free_mem"]+result["line_sum"]) - (result["biggest"]*proc_max) / result["biggest"]
-    #    ))
-    # red if proc_max > int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
-    # green elif proc_max <= int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
-    # yellow else
-    #print "Positive numbers may mean you can have more clients. Negative numbers mean you are overcommited."
-    #print "See below for numbers advice.\n"
     print "What should I set max processes to?"
     print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
-    #print "If you use the average size, and commit 100%% of memory: %d or 80%%: %d" % (
-    #    int( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ),
-    #    int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8)
-    #    )
     print
     print "Current maximum processes: %d" % proc_max
     print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
@@ -1533,12 +1425,6 @@ def memory_print(result, proc_name, proc_max):
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"]),
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
         )
-    # print "How many max clients you may be able to handle based on the average size? %d" % (
-    #     int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )*.8)
-    #     )
-    # print "How many max clients you can handle based on largest process and 100%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] )
-    #print
-    #print "A safe maximum clients based on the largest process, free memory and 80%% commit? %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
 
 def print_sites(localconfig):
     for one in sorted(localconfig):
@@ -1546,7 +1432,6 @@ def print_sites(localconfig):
             print "Domains: %s" % "  ".join(one["domains"])
         if "listening" in one:
             print "listening: %r" % ", ".join(one["listening"])
-            #print "Listening on: %s" % " ".join(one["listening"])
         if "doc_root" in one:
             print "Doc root: %s" % one["doc_root"]
         if "config_file" in one:
@@ -1659,7 +1544,6 @@ if not args.jsonfile:
     # these are the daemon executable names we are looking for
     daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
     for i in daemons:
-        #print "%r" % daemons[i]
         if daemons.get(i,{}).get("error"):
             sys.stderr.write(daemons[i]["error"] + "\n")
             error_collection.append(daemons[i]["error"] + "\n")
@@ -1728,7 +1612,6 @@ if not args.jsonfile:
                 globalconfig["apache"] = {}
             globalconfig["apache"] = apache_config
             globalconfig["apache"]["version"] = apache.get_version()
-            print "apache version: %s" % apache.get_version()
             """
             globalconfig[apache][sites]: [
                 {
@@ -1820,9 +1703,6 @@ if not args.jsonfile:
         sys.stderr.write("php-fpm is not running\n")
         error_collection.append("php-fpm is not running\n")
     else:
-        #print "one: %r stanzas[one]: %r" % (one,stanzas[one])
-    
-        #sys.stderr.write("\n")
         phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
         # try:
         if True:
@@ -1831,7 +1711,6 @@ if not args.jsonfile:
         #     sys.stderr.write("There was an error getting the php-fpm daemon configuration\n")
         #     phpfpm_conf_file = ""
         if phpfpm_conf_file:
-            #wholeconfig = importfile("/etc/php-fpm.conf", '\s*include[\s=]+(\S+)')
             wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
             phpfpm_config = phpfpm.parse_config(wholeconfig)
             
@@ -1861,11 +1740,8 @@ if not args.jsonfile:
     #if not "doc_roots" in globalconfig:
     #    globalconfig["doc_roots"] = set()
     globalconfig["doc_roots"] = list(doc_roots)
-    #print "doc_roots %r" % globalconfig["doc_roots"]
-    
     
     magento = MagentoCtl()
-    #print "%r" % magento
     if not "magento" in globalconfig:
         globalconfig["magento"] = {}
     # find mage.php files in document roots
@@ -1874,7 +1750,6 @@ if not args.jsonfile:
         mage_files = magento.find_mage_php(globalconfig["doc_roots"])
     # except:
     #     sys.stderr.write("No Magento found in the web document roots\n")
-    #     #print "mage files %r" % mage_files
     # get Magento information from those Mage.php
     
     mage_file_info = magento.mage_file_info(mage_files)
@@ -1890,11 +1765,6 @@ if not args.jsonfile:
     # except:
         # sys.stderr.write("Failed to get magento information\n")
     
-    #print "Magento dictionary:"
-    #pp.pprint(globalconfig["magento"])
-    
-    #pp.pprint(globalconfig)
-    
     for doc_root in globalconfig["magento"]["doc_root"]:
         if not doc_root in globalconfig["magento"]["doc_root"]:
             globalconfig["magento"]["doc_root"][doc_root] = {}
@@ -1909,15 +1779,8 @@ if not args.jsonfile:
         #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
         
         #testvar = magento.open_local_xml(local_xml)
-        #print "1252: %r" % testvar
         # var_dict = magento.open_local_xml(local_xml)
-        # print "doc_root: %r" % doc_root
-        # print type(globalconfig["magento"]["doc_root"][doc_root])
-        # print globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
-        # print type(localdict)
-        # pprint(localdict)
         globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
-        #pp.pprint(globalconfig["magento"]["doc_root"])
     
         globalconfig["magento"]["doc_root"][doc_root].update(magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
     
@@ -1945,11 +1808,8 @@ if not args.jsonfile:
     #pp.pprint(redis_instances)
 
     if not globalconfig.get("redis") and redis_instances:
-        #print "1858"
         globalconfig["redis"] = {}
     if redis_instances:
-        #print "1861"
-        #pp.pprint(redis.get_all_statuses(redis_instances))
         globalconfig["redis"].update(redis.get_all_statuses(redis_instances))
 else:
     apache = apacheCtl()
@@ -2030,25 +1890,7 @@ if "nginx" in globalconfig:
             error_collection.append("Errors: \n%s\n" % globalconfig["nginx"]["error"])
         
         print_sites(globalconfig["nginx"]["sites"])
-        # for one in sorted(globalconfig["nginx"]["sites"]):
-        #     if "domains" in one:
-        #         print "Domains: %s" % "  ".join(one["domains"])
-        #     if "listening" in one:
-        #         print "listening: %r" % ", ".join(one["listening"])
-        #         #print "Listening on: %s" % " ".join(one["listening"])
-        #     if "doc_root" in one:
-        #         print "Doc root: %s" % one["doc_root"]
-        #     if "config_file" in one:
-        #         print "Config file: %s" % one["config_file"]
-        #     if "access_log" in one:
-        #         print "Access log: %s" % one["config_file"]
-        #     if "error_log" in one:
-        #         print "Error log: %s" % one["config_file"]
-        print # an empty line between sections
-            #print "%r\n" % (one)
-        #if "daemon" in globalconfig["nginx"]:
-        #    print "nginx daemon config: %r" % globalconfig["nginx"]["daemon"]
-        
+
         # memory profile
         if globalconfig.get("nginx",{}).get("basename") and globalconfig.get("nginx",{}).get("maxprocesses"):
             proc_name = globalconfig["nginx"]["basename"]
@@ -2056,7 +1898,7 @@ if "nginx" in globalconfig:
             result = memory_estimate(proc_name)
             if result:
                 memory_print(result, proc_name, proc_max)
-        print "\n"
+        print
 
 #globalconfig["nginx"]["maxclients"]
 
@@ -2073,7 +1915,6 @@ if "apache" in  globalconfig:
         print "No apache version?"
     if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
-        #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
         """
         28 Oct 2015
         {'domains':
@@ -2083,27 +1924,12 @@ if "apache" in  globalconfig:
         'listening': ['*:80']}
         """
         print_sites(globalconfig["apache"]["sites"])
-        # for one in sorted(globalconfig["apache"]["sites"]):
-        #     out_string = "Domains:"
-        #     if "domains" in one:
-        #         print "Domains: %s" % "  ".join(one["domains"])
-        #     if "listening" in one:
-        #         print "Listening on: %s" % ", ".join(one["listening"])
-        #     if "doc_root" in one:
-        #         print "Doc root: %s" % one["doc_root"]
-        #     if "config_file" in one:
-        #         print "Config file: %s" % one["config_file"]
-        print # an empty line between sections
-        #if "daemon" in globalconfig["apache"]:
-        #    print "Apache daemon config: %r" % globalconfig["apache"]["daemon"]
-        #print "apache complete %r" % globalconfig["apache"] # ["config"]["maxclients"]
         
         # memory profile
         if "basename" in globalconfig["apache"] and "maxprocesses" in globalconfig["apache"]:
             proc_name = globalconfig["apache"]["basename"]
             proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
-            #print "result %r" % result
             if result:
                 memory_print(result, proc_name, proc_max)
         print "\n"
@@ -2124,7 +1950,6 @@ if "php-fpm" in globalconfig:
         print globalconfig.get("php-fpm",{}).get("version")
     else:
         print "No php version?"
-    #print "php-fpm configs"
     print "php-fpm pools:"
     for one in globalconfig["php-fpm"]:
         if type(globalconfig["php-fpm"][one]) is dict:
@@ -2139,7 +1964,6 @@ if "php-fpm" in globalconfig:
         proc_name = globalconfig["php-fpm"]["basename"]
         proc_max = int(globalconfig["php-fpm"]["maxprocesses"])
         result = memory_estimate(proc_name)
-        #print "php-fpm result: %r" % result
         if result:
             memory_print(result, proc_name, proc_max)
 
@@ -2283,74 +2107,6 @@ if globalconfig.get("redis"):
 class TODO():
     pass
 
-#print "TODO"
-"""
-Go through each magento doc_root and get cache information for session, object and full_page
-If they are memcache, add the host:port to globalconfig["memcache"]["{0}.{1}".format(host,port)]
-"""
-#if globalconfig.get("magento",{}).get("doc_root"):
-
-
-
-
-"""
-
-    pp.pprint(globalconfig["magento"]["doc_root"])
-{
-    '/var/www/vhosts/example.org/httpdocs/marketplace_2/':
-    {
-        'Mage.php': '/var/www/vhosts/example.org/httpdocs/marketplace_2/app/Mage.php',
-        'cache':
-        {
-            'cache_option_table': '+-------------+-------+\n| code        | value |\n+-------------+-------+\n| block_html  |     0 |\n| collections |     1 |\n| config      |     1 |\n| config_api  |     1 |\n| config_api2 |     1 |\n| eav         |     1 |\n| full_page   |     1 |\n| layout      |     1 |\n| translate   |     1 |\n+-------------+-------+\n'
-        },
-        'local_xml':
-        {
-            'db':
-            {
-                'active': '1',
-                'dbname': 'marketplace_2',
-                'host': '172.24.16.1',
-                'initStatements': 'SET NAMES utf8',
-                'model': 'mysql4',
-                'password': 'password',
-                'pdoType': None,
-                'type': 'pdo_mysql',
-                'username': 'magentouser'
-            },
-            'filename': '/var/www/vhosts/example.org/httpdocs/marketplace_2/app/etc/local.xml',
-            'full_page_cache':
-            {
-            },
-            'object_cache':
-            {
-                'backend': 'memcached'
-            },
-            'session_cache':
-            {
-                'session_save': 'memcache',
-                'session_save_path': 'tcp://172.24.16.2:11211?persistent=0&weight=2&timeout=10&retry_interval=10'
-            }
-        },
-        'mage_version':
-        {
-            'edition': 'EDITION_ENTERPRISE',
-            'major': '1',
-            'minor': '13',
-            'number': '',
-            'patch': '0',
-            'revision': '0',
-            'stability': '',
-            'version': '1.13.0.0'
-        },
-        'magento_path': '/var/www/vhosts/example.org/httpdocs/marketplace_2',
-        'magento_version': '1.13.0.0 EDITION_ENTERPRISE'
-    }
-}
-
-"""
-
-
 # Save the config as a json file
 #filename = "config_dump.json"
 if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
@@ -2359,16 +2115,7 @@ if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
     with open(args.output,'w') as outfile:
         outfile.write( json_str )
     outfile.close()
-"""
-if os.path.isfile(filename):
-    try:
-        with open(filename,'r') as f:
-            globalconfig=json.load(f)
-    except:
-        print "The file %s exists, but failed to import." % filename
-else:
-    print "The file %s does not exist." % filename
-"""
+
 if args.printglobalconfig:
     print """
   ____ _       _           _  ____             __ _       
