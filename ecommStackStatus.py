@@ -2157,12 +2157,22 @@ def MEMCACHE_PRINT():
     pass
 if globalconfig.get("memcache"):
     print "MEMCACHE"
+        
+    
     pp.pprint(globalconfig.get("memcache"))
     
 def REDIS_PRINT():
     pass
 if globalconfig.get("redis"):
     print "REDIS"
+    for instance in globalconfig.get("redis"):
+        print instance
+
+        print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak"]
+        print "Evicted keys: %s" % globalconfig["redis"][instance]["Stats"]["evicted_keys"]
+        print "Keyspace:"
+        for key,value in globalconfig["redis"][instance]["Stats"].iteritems():
+            print "%s: %s" % (key,value)
     pp.pprint(globalconfig.get("redis"))
 
 """
@@ -2175,7 +2185,7 @@ if globalconfig.get("redis"):
 class TODO():
     pass
 
-print "TODO"
+#print "TODO"
 """
 Go through each magento doc_root and get cache information for session, object and full_page
 If they are memcache, add the host:port to globalconfig["memcache"]["{0}.{1}".format(host,port)]
