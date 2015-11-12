@@ -2157,28 +2157,28 @@ if globalconfig.get("magento",{}).get("doc_root"):
             print "redis FPC: %s" % stanza
             redis_instances.add(stanza)
 
-# memcache = MemcacheCtl()
-# redis = RedisCtl()
+memcache = MemcacheCtl()
+redis = RedisCtl()
 
-# for instance in memcache_instances:
-#     [ip, port] = instance.split(":")
-#     if not globalconfig.get("memcache"):
-#         globalconfig["memcache"] = {}
-#     if not globalconfig.get("memcache",{}).get(instance):
-#         globalconfig["memcache"][instance] = {}
-#     print "memcache: %s" % (instance)
-#     reply = memcache.get_status(ip, port)
-#     globalconfig["memcache"][instance] = memcache.parse_status(reply)
-# 
-# for instance in redis_instances:
-#     [ip, port] = instance.split(":")
-#     if not globalconfig.get("redis"):
-#         globalconfig["redis"] = {}
-#     if not globalconfig.get("redis",{}).get(instance):
-#         globalconfig["redis"][instance] = {}
-#     print "redis: %s" % (instance)
-#     reply = redis.get_status(ip, port)
-#     globalconfig["redis"][instance] = redis.parse_status(reply)
+for instance in memcache_instances:
+    [ip, port] = instance.split(":")
+    if not globalconfig.get("memcache"):
+        globalconfig["memcache"] = {}
+    if not globalconfig.get("memcache",{}).get(instance):
+        globalconfig["memcache"][instance] = {}
+    print "memcache: %s" % (instance)
+    reply = memcache.get_status(ip, port)
+    globalconfig["memcache"][instance] = memcache.parse_status(reply)
+
+for instance in redis_instances:
+    [ip, port] = instance.split(":")
+    if not globalconfig.get("redis"):
+        globalconfig["redis"] = {}
+    if not globalconfig.get("redis",{}).get(instance):
+        globalconfig["redis"][instance] = {}
+    print "redis: %s" % (instance)
+    reply = redis.get_status(ip, port)
+    globalconfig["redis"][instance] = redis.parse_status(reply)
 
 pp.pprint(globalconfig.get("memcache",{}))
 pp.pprint(globalconfig.get("redis",{}))
