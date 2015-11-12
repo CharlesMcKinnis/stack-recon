@@ -8,7 +8,7 @@ Magento is a trademark of Varien. Neither I nor these scripts are affiliated wit
 wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 """
-STACK_STATUS_VERSION = 2015111201
+STACK_STATUS_VERSION = 2015111202
 
 import re
 import glob
@@ -1821,6 +1821,8 @@ if "nginx" in globalconfig:
        |___/      
 
 """
+    if globalconfig.get("nginx",{}).get("version"):
+        print globalconfig.get("nginx",{}).get("sites")
     if globalconfig.get("nginx",{}).get("sites"):
         print "nginx sites:"
         """
@@ -1886,6 +1888,8 @@ if "apache" in  globalconfig:
 /_/   \_\ .__/ \__,_|\___|_| |_|\___|
         |_|         
 """
+    if globalconfig.get("apache",{}).get("version"):
+        print globalconfig.get("apache",{}).get("sites")
     if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
         #print "globalconfig[apache][sites]: %r" % globalconfig["apache"]["sites"]
@@ -1942,6 +1946,8 @@ if "php-fpm" in globalconfig:
 | .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
 |_|         |_|             |_|
 """
+    if globalconfig.get("php-fpm",{}).get("version"):
+        print globalconfig.get("php-fpm",{}).get("sites")
     #print "php-fpm configs"
     print "php-fpm pools:"
     for one in globalconfig["php-fpm"]:
