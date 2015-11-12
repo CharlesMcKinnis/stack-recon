@@ -2181,21 +2181,21 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
-print """
+if globalconfig.get("memcache"):
+    print """
                                          _          
  _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___ 
 | '_ ` _ \ / _ \ '_ ` _ \ / __/ _` |/ __| '_ \ / _ \\
 | | | | | |  __/ | | | | | (_| (_| | (__| | | |  __/
 |_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
 """
-if globalconfig.get("memcache"):
-    print "MEMCACHE"
 
     pp.pprint(globalconfig.get("memcache"))
     
 def REDIS_PRINT():
     pass
-print """
+if globalconfig.get("redis"):
+    print """
               _ _     
  _ __ ___  __| (_)___ 
 | '__/ _ \/ _` | / __|
@@ -2203,8 +2203,6 @@ print """
 |_|  \___|\__,_|_|___/
                      
 """
-if globalconfig.get("redis"):
-    print "REDIS"
     for instance in globalconfig.get("redis"):
         print "Server: %s" % instance
 
