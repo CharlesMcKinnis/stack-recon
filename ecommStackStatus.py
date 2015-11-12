@@ -6,7 +6,10 @@ Magento is a trademark of Varien. Neither I nor these scripts are affiliated wit
 
 """
 wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
+
 git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
+#dev branch
+git checkout -b dev origin/dev
 """
 STACK_STATUS_VERSION = 2015111202
 
@@ -74,6 +77,15 @@ class apacheCtl(object):
      -D AP_TYPES_CONFIG_FILE="conf/mime.types"
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
+    def figlet(self):
+        print """
+    _                     _          
+   / \   _ __   __ _  ___| |__   ___ 
+  / _ \ | '_ \ / _` |/ __| '_ \ / _ \\
+ / ___ \| |_) | (_| | (__| | | |  __/
+/_/   \_\ .__/ \__,_|\___|_| |_|\___|
+        |_|         
+"""
     def get_version(self):
         """
         Discovers installed apache version
@@ -426,7 +438,16 @@ class nginxCtl(object):
     TLS SNI support enabled
     configure arguments: --prefix=/usr/share/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --http-client-body-temp-path=/var/lib/nginx/tmp/client_body --http-proxy-temp-path=/var/lib/nginx/tmp/proxy --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi --http-scgi-temp-path=/var/lib/nginx/tmp/scgi --pid-path=/var/run/nginx.pid --lock-path=/var/lock/subsys/nginx --user=nginx --group=nginx --with-file-aio --with-ipv6 --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_xslt_module --with-http_image_filter_module --with-http_geoip_module --with-http_sub_module --with-http_dav_module --with-http_flv_module --with-http_mp4_module --with-http_gzip_static_module --with-http_random_index_module --with-http_secure_link_module --with-http_degradation_module --with-http_stub_status_module --with-http_perl_module --with-mail --with-mail_ssl_module --with-debug --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' --with-ld-opt=-Wl,-E
     """
+    def figlet(self):
+        print """
+             _            
+ _ __   __ _(_)_ __ __  __
+| '_ \ / _` | | '_ \\\ \/ /
+| | | | (_| | | | | |>  < 
+|_| |_|\__, |_|_| |_/_/\_\\
+       |___/      
 
+"""
     def get_version(self):
         """
         Discovers installed nginx version
@@ -642,6 +663,15 @@ class phpfpmCtl(object):
         self.kwargs = kwargs
         if not "exe" in self.kwargs:
             self.kwargs["exe"] = "php-fpm"
+    def figlet(self):
+        print """
+       _                  __                 
+ _ __ | |__  _ __        / _|_ __  _ __ ___  
+| '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \ 
+| |_) | | | | |_) |_____|  _| |_) | | | | | |
+| .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
+|_|         |_|             |_|
+"""
 
     def get_version(self):
         """
@@ -754,7 +784,16 @@ class phpfpmCtl(object):
         return(stanzas)
 
 class MagentoCtl(object):
-    
+    def figlet(self):
+        print """
+ __  __                        _        
+|  \/  | __ _  __ _  ___ _ __ | |_ ___  
+| |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \ 
+| |  | | (_| | (_| |  __/ | | | || (_) |
+|_|  |_|\__,_|\__, |\___|_| |_|\__\___/ 
+              |___/
+"""
+
     def parse_version(self, mage_php_file):
         mage = {}
         file_handle = open(mage_php_file, 'r')
@@ -1038,6 +1077,15 @@ class MagentoCtl(object):
         #print
         return(return_config)
 class RedisCtl(object):
+    def figlet(self):
+        print """
+              _ _     
+ _ __ ___  __| (_)___ 
+| '__/ _ \/ _` | / __|
+| | |  __/ (_| | \__ \\
+|_|  \___|\__,_|_|___/
+                     
+"""
     def get_status(self, ip, port):
         port = int(port)
         reply = socket_client(ip,port,"INFO\n")
@@ -1106,6 +1154,14 @@ class RedisCtl(object):
         return(list(redis_instances))
 
 class MemcacheCtl(object):
+    def figlet(self):
+        print """
+                                         _          
+ _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___ 
+| '_ ` _ \ / _ \ '_ ` _ \ / __/ _` |/ __| '_ \ / _ \\
+| | | | | |  __/ | | | | | (_| (_| | (__| | | |  __/
+|_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
+"""
     def get_status(self, ip, port):
         port = int(port)
         reply = socket_client(ip,port,"stats\n")
@@ -1511,6 +1567,8 @@ if ARGPARSE:
                         action="store_true")
     parser.add_argument("--printglobalconfig", help="Pretty print the globalconfig dict",
                         action="store_true")
+    parser.add_argument("--printjson", help="Pretty print the globalconfig json",
+                        action="store_true")    
     """
     parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
                         action="store_true")
@@ -1538,6 +1596,7 @@ else:
     args.nginx = None
     args.phpfpm = None
     args.output = "./config_dump.json"
+    args.printjson = None
     # args.nopassword = None
     """
     defaults:
@@ -1900,6 +1959,7 @@ class OUTPUT():
 # Output body for checking values below
 ################################################
 
+#if not args.silent:
 def NGINX_PRINT():
     pass
 ################################################
@@ -1907,15 +1967,7 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
-    print """
-             _            
- _ __   __ _(_)_ __ __  __
-| '_ \ / _` | | '_ \\\ \/ /
-| | | | (_| | | | | |>  < 
-|_| |_|\__, |_|_| |_/_/\_\\
-       |___/      
-
-"""
+    nginx.figlet()
     if globalconfig.get("nginx",{}).get("version"):
         print globalconfig.get("nginx",{}).get("sites")
     if globalconfig.get("nginx",{}).get("sites"):
@@ -1975,14 +2027,7 @@ def APACHE_PRINT():
 # APACHE
 ################################################
 if "apache" in  globalconfig:
-    print """
-    _                     _          
-   / \   _ __   __ _  ___| |__   ___ 
-  / _ \ | '_ \ / _` |/ __| '_ \ / _ \\
- / ___ \| |_) | (_| | (__| | | |  __/
-/_/   \_\ .__/ \__,_|\___|_| |_|\___|
-        |_|         
-"""
+    apache.figlet()
     if globalconfig.get("apache",{}).get("version"):
         print globalconfig.get("apache",{}).get("sites")
     if globalconfig.get("apache",{}).get("sites"):
@@ -2033,14 +2078,7 @@ def PHP_FPM_PRINT():
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
 if "php-fpm" in globalconfig:
-    print """
-       _                  __                 
- _ __ | |__  _ __        / _|_ __  _ __ ___  
-| '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \ 
-| |_) | | | | |_) |_____|  _| |_) | | | | | |
-| .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
-|_|         |_|             |_|
-"""
+    phpfpm.figlet()
     if globalconfig.get("php-fpm",{}).get("version"):
         print globalconfig.get("php-fpm",{}).get("sites")
     #print "php-fpm configs"
@@ -2071,14 +2109,7 @@ def MAGENTO_PRINT():
 ################################################
 
 if globalconfig.get("magento",{}).get("doc_root"):
-    print """
- __  __                        _        
-|  \/  | __ _  __ _  ___ _ __ | |_ ___  
-| |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \ 
-| |  | | (_| | (_| |  __/ | | | || (_) |
-|_|  |_|\__,_|\__, |\___|_| |_|\__\___/ 
-              |___/
-"""
+    magento.figlet()
     print "\nMagento versions installed:"
     if globalconfig.get("magento",{}).get("doc_root"):
         for key, value in globalconfig["magento"]["doc_root"].iteritems():
@@ -2182,27 +2213,13 @@ This output is flawed because local.xml was not configured correctly
 def MEMCACHE_PRINT():
     pass
 if globalconfig.get("memcache"):
-    print """
-                                         _          
- _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___ 
-| '_ ` _ \ / _ \ '_ ` _ \ / __/ _` |/ __| '_ \ / _ \\
-| | | | | |  __/ | | | | | (_| (_| | (__| | | |  __/
-|_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
-"""
-
+    memcache.figlet()
     pp.pprint(globalconfig.get("memcache"))
     
 def REDIS_PRINT():
     pass
 if globalconfig.get("redis"):
-    print """
-              _ _     
- _ __ ___  __| (_)___ 
-| '__/ _ \/ _` | / __|
-| | |  __/ (_| | \__ \\
-|_|  \___|\__,_|_|___/
-                     
-"""
+    redis.figlet()
     for instance in globalconfig.get("redis"):
         print "Server: %s" % instance
 
@@ -2319,4 +2336,5 @@ if args.printglobalconfig:
 """
     pp.pprint(globalconfig)
 
-
+if args.printjson:
+    print json.dumps(globalconfig)
