@@ -12,6 +12,7 @@ git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
 git checkout -b dev origin/dev
 """
 STACK_STATUS_VERSION = 2015111202
+error_collection = []
 
 import re
 import glob
@@ -30,13 +31,16 @@ try:
 except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
+    error_collection += "This program is more robust if python argparse installed.\n"
 try:
     import mysql.connector
     MYSQL = True
 except ImportError:
     MYSQL = False
     sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
-
+    error_collection += "This program will be more robust if mysql.connector installed.\n"
+    
+print "%r" % error_collection
 class argsAlt(object):
     pass
 
@@ -1624,20 +1628,12 @@ if args.jsonfile:
         sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
 
-if not args.output:
-    args.output = "./config_dump.json"
 """
 need to check directory permissions
 [root@localhost vhosts]# ll
 total 4
 drwxrwxr-x 3 user user 4096 Sep 15 17:11 example.com
 """
-# these are the daemon executable names we are looking for
-daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
-for i in daemons:
-    #print "%r" % daemons[i]
-    if daemons.get(i,{}).get("error"):
-        sys.stderr.write(daemons[i]["error"] + "\n")
 
 """
 for one in daemons:
@@ -1646,7 +1642,14 @@ for one in daemons:
 #pp = pprint.PrettyPrinter(indent=4)
 #pp.pprint(daemons)
 if not args.jsonfile:
+    # these are the daemon executable names we are looking for
+    daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
+    for i in daemons:
+        #print "%r" % daemons[i]
+        if daemons.get(i,{}).get("error"):
+            sys.stderr.write(daemons[i]["error"] + "\n")
     globalconfig = { "version" : STACK_STATUS_VERSION }
+    globalconfig["daemons"].update(daemons)
     """
      ____    _  _____  _       ____    _  _____ _   _ _____ ____  
     |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \ 
@@ -1934,6 +1937,10 @@ else:
     magento = MagentoCtl()
     redis = RedisCtl()
     memcache = MemcacheCtl()
+    for i in globalconfig["daemons"]:
+        #print "%r" % daemons[i]
+        if globalconfig["daemons"].get(i,{}).get("error"):
+            sys.stderr.write(globalconfig["daemons"][i]["error"] + "\n")
 """
 {'/var/www/html':
     {
