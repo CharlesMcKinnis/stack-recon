@@ -5,9 +5,9 @@ Magento is a trademark of Varien. Neither I nor these scripts are affiliated wit
 """
 
 """
-wget https://raw.githubusercontent.com/CharlesMcKinnis/EcommStatusTuning/master/ecommStackStatus.py
+wget https://raw.githubusercontent.com/CharlesMcKinnis/ecommStackStatus/master/ecommStackStatus.py
 
-git clone https://github.com/CharlesMcKinnis/EcommStatusTuning.git
+git clone https://github.com/CharlesMcKinnis/ecommStackStatus.git
 #dev branch
 git checkout -b dev origin/dev
 """
