@@ -2155,5 +2155,5 @@ if args.printglobalconfig:
 """
     pp.pprint(globalconfig)
 
-if args.printjson and JSON = True:
+if args.printjson and JSON == True:
     print json.dumps(globalconfig)
