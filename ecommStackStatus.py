@@ -2135,7 +2135,7 @@ class TODO(object):
 
 # Save the config as a json file
 #filename = "config_dump.json"
-if (not os.path.isfile(args.output) or args.force) and not args.jsonfile and JSON = True:
+if (not os.path.isfile(args.output) or args.force) and not args.jsonfile and JSON == True:
     globalconfig["errors"]=error_collection
     json_str=json.dumps(globalconfig)
     # with open(args.output,'w') as outfile:
