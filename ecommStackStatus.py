@@ -21,11 +21,15 @@ import sys
 import os
 #import yaml
 import fnmatch
-import json
 import xml.etree.ElementTree as ET
 import pprint
 import socket
 import collections
+try:
+    import json
+    JSON = True
+except ImportError:
+    JSON = False
 try:
     import argparse
     ARGPARSE = True
@@ -1522,12 +1526,14 @@ else:
         json filename, default config_dump.json
     """
 
-if args.jsonfile:
+if args.jsonfile and JSON == True:
     if os.path.isfile(args.jsonfile):
         # try:
         if True:
-            with open(args.jsonfile,'r') as f:
-                globalconfig=json.load(f)
+            # with open(args.jsonfile,'r') as f:
+            #     globalconfig=json.load(f)
+            f = open(args.jsonfile,'r')
+            globalconfig=json.load(f)
         # except:
         #     sys.stderr.write("The file %s exists, but failed to import.\n" % args.jsonfile)
         #     sys.exit(1)
@@ -1565,7 +1571,7 @@ if not args.jsonfile:
     | |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ < 
     |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\                                                           
     """
-    class DATA_GATHER():
+    class DATA_GATHER(object):
         pass
     # using this as a bookmark in the IDE
     def APACHE_DATA_GATHER():
@@ -1851,7 +1857,7 @@ else:
 
 
 # using this as a bookmark in the IDE
-class OUTPUT():
+class OUTPUT(object):
     pass
 """
   ___  _   _ _____ ____  _   _ _____ 
@@ -2124,16 +2130,18 @@ print
   | || |_| | |_| | |_| |
   |_| \___/|____/ \___/ 
 """
-class TODO():
+class TODO(object):
     pass
 
 # Save the config as a json file
 #filename = "config_dump.json"
-if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
+if (not os.path.isfile(args.output) or args.force) and not args.jsonfile and JSON = True:
     globalconfig["errors"]=error_collection
     json_str=json.dumps(globalconfig)
-    with open(args.output,'w') as outfile:
-        outfile.write( json_str )
+    # with open(args.output,'w') as outfile:
+    #     outfile.write( json_str )
+    outfile = open(args.output,'w')
+    outfile.write( json_str )
     outfile.close()
 
 if args.printglobalconfig:
@@ -2147,5 +2155,5 @@ if args.printglobalconfig:
 """
     pp.pprint(globalconfig)
 
-if args.printjson:
+if args.printjson and JSON = True:
     print json.dumps(globalconfig)
