@@ -25,6 +25,7 @@ import json
 import xml.etree.ElementTree as ET
 import pprint
 import socket
+import collections
 try:
     import argparse
     ARGPARSE = True
@@ -221,7 +222,7 @@ class apacheCtl(object):
                 keywords = base_keywords + vhost_keywords
                 if not "config" in stanzas:
                     stanzas["config"] = { }
-                stanzas["config"].update(kwsearch(keywords,linecomp))
+                update(stanzas["config"], kwsearch(keywords,linecomp))
     
             # prefork matching
             result = re.match('<ifmodule\s+prefork.c', linecomp, re.IGNORECASE )
@@ -241,7 +242,7 @@ class apacheCtl(object):
                 if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
                     if not "prefork" in stanzas:
                         stanzas["prefork"] = {}
-                    stanzas["prefork"].update(kwsearch(prefork_keywords,line,single_value=True))
+                    update(stanzas["prefork"], kwsearch(prefork_keywords,line,single_value=True))
                     continue
     
             # worker matching
@@ -259,7 +260,7 @@ class apacheCtl(object):
                 if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count:
                     if not "worker" in stanzas:
                         stanzas["worker"] = {}
-                    stanzas["worker"].update(kwsearch(worker_keywords,linecomp,single_value=True))
+                    update(stanzas["worker"], kwsearch(worker_keywords,linecomp,single_value=True))
                     continue
 
             # event matching
@@ -277,7 +278,7 @@ class apacheCtl(object):
                 if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count:
                     if not "event" in stanzas:
                         stanzas["event"] = {}
-                    stanzas["event"].update(kwsearch(event_keywords,linecomp,single_value=True))
+                    update(stanzas["event"], kwsearch(event_keywords,linecomp,single_value=True))
                     continue
             """
 <IfModule mpm_event_module>
@@ -309,7 +310,7 @@ class apacheCtl(object):
             # only match these in a virtual host
             if vhost_start == stanza_count:
                 keywords = vhost_keywords
-                stanzas[server_line].update( kwsearch(keywords,line.strip() ) )
+                update(stanzas[server_line], kwsearch(keywords,line.strip() ) )
             # closing VirtualHost
             result = re.match('</virtualhost', linecomp, re.IGNORECASE )
             if result:
@@ -345,7 +346,7 @@ class apacheCtl(object):
                 if "errorlog" in stanzas[i]:
                     configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
 
-        stanzas.update(configuration)
+        update(stanzas, configuration)
         if not "maxprocesses" in stanzas: # there was a stanzas["config"] but that isn't what is referenced later
             mpm = self.get_mpm().lower()
             if mpm == "prefork":
@@ -556,7 +557,7 @@ class nginxCtl(object):
                 keywords = server_keywords
                 if not server_line in stanzas:
                     stanzas[server_line] = { }
-                stanzas[server_line].update(kwsearch(keywords,line))
+                update(stanzas[server_line], kwsearch(keywords,line))
                 keywords = server_keywords_split
                 if not server_line in stanzas:
                     stanzas[server_line] = { }
@@ -583,7 +584,7 @@ class nginxCtl(object):
             # look for keywords in the line
             # pass the keywords to the function and it will extract the keyword and value
             keywords = ["worker_processes"]
-            stanzas.update(kwsearch(keywords,line))
+            update(stanzas, kwsearch(keywords,line))
     
         # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
         # think magento location
@@ -611,7 +612,7 @@ class nginxCtl(object):
                     configuration["sites"][-1]["access_log"] = stanzas[i]["access_log"][0]
                 if "error_log" in stanzas[i]:
                     configuration["sites"][-1]["error_log"] = stanzas[i]["error_log"][0]
-        stanzas.update(configuration)
+        update(stanzas, configuration)
         if "worker_processes" in stanzas:
             stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
     
@@ -846,14 +847,14 @@ class MagentoCtl(object):
         xml_parent_path = 'global/resources'
         xml_config_node = 'db/table_prefix'
         xml_config_section = 'default_setup/connection'
-        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
         
         section = "session_cache"
         xml_parent_path = 'global'
         xml_config_node = 'session_save'
         xml_config_section = 'redis_session'
         xml_config_single = 'session_save_path'
-        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
+        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
         # test for session cache redis
         resources = tree.find("global/redis_session")
         if resources is not None:
@@ -867,7 +868,7 @@ class MagentoCtl(object):
         xml_parent_path = 'global/cache'
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
-        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
         if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
             local_xml[section]["engine"] = "redis" # Magento's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
@@ -876,7 +877,7 @@ class MagentoCtl(object):
             xml_parent_path = 'global/cache'
             xml_config_node = 'backend'
             xml_config_section = 'memcached/servers/server'
-            local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
+            update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
             local_xml[section]["engine"] = "memcache"
             """
             global/cache/    memcached/servers/server
@@ -901,7 +902,7 @@ class MagentoCtl(object):
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         xml_config_single = 'slow_backend'
-        local_xml.update(self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
+        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
         if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
             local_xml[section]["engine"] = "redis" # Magento's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
@@ -1438,6 +1439,18 @@ def print_sites(localconfig):
             print "Error log: %s" % one["error_log"]
         print
 
+def update(d, u):
+    """
+    update dictionary d with updated dictionary u recursively
+    """   
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
+
 pp = pprint.PrettyPrinter(indent=4)
 
 # The argparse module is not installed on many systems. This way, it will work regardless
@@ -1776,9 +1789,9 @@ if not args.jsonfile:
         
         #testvar = magento.open_local_xml(local_xml)
         # var_dict = magento.open_local_xml(local_xml)
-        globalconfig["magento"]["doc_root"][doc_root]["local_xml"].update(magento.open_local_xml(local_xml))
+        update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(local_xml))
     
-        globalconfig["magento"]["doc_root"][doc_root].update(magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+        update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
     
         #if return_config:
         #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
@@ -1793,7 +1806,7 @@ if not args.jsonfile:
     if not globalconfig.get("memcache") and memcache_instances:
         globalconfig["memcache"] = {}
     if memcache_instances:
-        globalconfig["memcache"].update(memcache.get_all_statuses(memcache_instances))
+        update(globalconfig["memcache"], memcache.get_all_statuses(memcache_instances))
 
 
     def REDIS_DATA_GATHER():
@@ -1806,7 +1819,7 @@ if not args.jsonfile:
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
     if redis_instances:
-        globalconfig["redis"].update(redis.get_all_statuses(redis_instances))
+        update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
 else:
     apache = apacheCtl()
     nginx = nginxCtl()
