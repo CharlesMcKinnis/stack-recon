@@ -21,11 +21,24 @@ import sys
 import os
 #import yaml
 import fnmatch
-import json
-import xml.etree.ElementTree as ET
+try:
+    import xml.etree.ElementTree as ET
+except ImportError:
+    import cElementTree as ET
 import pprint
 import socket
 import collections
+try:
+    import json
+    JSON = True
+except ImportError:
+    try:
+        import simplejson
+    except ImportError:
+        JSON = False
+        sys.stderr.write("Data export omitted, module json and simplejson are not installed\n")
+        sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: yum install python-simplejson")
+        error_collection.append("Data export omitted because the json module is not installed\n")
 try:
     import argparse
     ARGPARSE = True
@@ -567,7 +580,7 @@ class nginxCtl(object):
                     stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
                 """
                 for word in keywords:
-                    result = re.match("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                    result = re.match("\s*(%s)\s*(.*)" % word, line.strip("\s\t;"), re.IGNORECASE)
                     if result:
                         if not word in stanzas[server_line]:
                             stanzas[server_line][word] = []
@@ -972,7 +985,7 @@ class MagentoCtl(object):
         var_username = value.get("local_xml",{}).get("db",{}).get("username","")
         var_password = value.get("local_xml",{}).get("db",{}).get("password","")
         if (var_dbname and var_host and var_username and var_password ):
-            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
+            sqlquery = "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix)
             conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
                 var_username,
                 var_password,
@@ -1063,7 +1076,7 @@ class RedisCtl(object):
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "redis":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
                 )
@@ -1072,7 +1085,7 @@ class RedisCtl(object):
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
                 )
@@ -1080,7 +1093,7 @@ class RedisCtl(object):
             # FULL PAGE CACHE
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
                 )
@@ -1139,13 +1152,13 @@ class MemcacheCtl(object):
                 if result:
                     ip = result.group(1)
                     port = result.group(2)
-                    stanza = "{0}:{1}".format(ip,port)
+                    stanza = "%s:%s" % (ip,port)
                     memcache_instances.add(stanza)
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # memcache
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
                 )
@@ -1311,7 +1324,8 @@ def importfile(filename, keyword_regex, **kwargs):
             return(os.path.join(base_path, right_file))
         else:
             return(right_file) # this is the fix!
-    files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
+    #files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
+    files = glob.glob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
     combined = ""
 
     for onefile in files:
@@ -1355,7 +1369,7 @@ def kwsearch(keywords,line, **kwargs):
     line = line.lower()
     stanza = {}
     for word in keywords:
-        result = re.match("({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
+        result = re.match("(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str,keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
         if result:
@@ -1444,7 +1458,8 @@ def update(d, u):
     update dictionary d with updated dictionary u recursively
     """   
     for k, v in u.iteritems():
-        if isinstance(v, collections.Mapping):
+        # if isinstance(v, collections.Mapping):
+        if isinstance(v, dict):
             r = update(d.get(k, {}), v)
             d[k] = r
         else:
@@ -1522,12 +1537,14 @@ else:
         json filename, default config_dump.json
     """
 
-if args.jsonfile:
+if args.jsonfile and JSON == True:
     if os.path.isfile(args.jsonfile):
         # try:
         if True:
-            with open(args.jsonfile,'r') as f:
-                globalconfig=json.load(f)
+            # with open(args.jsonfile,'r') as f:
+            #     globalconfig=json.load(f)
+            f = open(args.jsonfile,'r')
+            globalconfig=json.load(f)
         # except:
         #     sys.stderr.write("The file %s exists, but failed to import.\n" % args.jsonfile)
         #     sys.exit(1)
@@ -1565,7 +1582,7 @@ if not args.jsonfile:
     | |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ < 
     |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\                                                           
     """
-    class DATA_GATHER():
+    class DATA_GATHER(object):
         pass
     # using this as a bookmark in the IDE
     def APACHE_DATA_GATHER():
@@ -1851,7 +1868,7 @@ else:
 
 
 # using this as a bookmark in the IDE
-class OUTPUT():
+class OUTPUT(object):
     pass
 """
   ___  _   _ _____ ____  _   _ _____ 
@@ -2110,10 +2127,10 @@ if globalconfig.get("redis"):
     for instance in globalconfig.get("redis"):
         print "Server: %s" % instance
 
-        print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak_human"]
-        print "Evicted keys: %s" % globalconfig["redis"][instance]["Stats"]["evicted_keys"]
+        print "Used memory peak: %s" % globalconfig.get("redis", {}).get(instance, {}).get("Memory",{}).get("used_memory_peak_human")
+        print "Evicted keys: %s" % globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys")
         print "Keyspace:"
-        for key,value in globalconfig["redis"][instance]["Keyspace"].iteritems():
+        for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
             print "%s: %s" % (key,value)
     #pp.pprint(globalconfig.get("redis"))
 print
@@ -2124,16 +2141,18 @@ print
   | || |_| | |_| | |_| |
   |_| \___/|____/ \___/ 
 """
-class TODO():
+class TODO(object):
     pass
 
 # Save the config as a json file
 #filename = "config_dump.json"
-if (not os.path.isfile(args.output) or args.force) and not args.jsonfile:
+if (not os.path.isfile(args.output) or args.force) and not args.jsonfile and JSON == True:
     globalconfig["errors"]=error_collection
     json_str=json.dumps(globalconfig)
-    with open(args.output,'w') as outfile:
-        outfile.write( json_str )
+    # with open(args.output,'w') as outfile:
+    #     outfile.write( json_str )
+    outfile = open(args.output,'w')
+    outfile.write( json_str )
     outfile.close()
 
 if args.printglobalconfig:
@@ -2147,5 +2166,5 @@ if args.printglobalconfig:
 """
     pp.pprint(globalconfig)
 
-if args.printjson:
+if args.printjson and JSON == True:
     print json.dumps(globalconfig)
