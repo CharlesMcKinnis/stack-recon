@@ -1034,9 +1034,12 @@ class RedisCtl(object):
 |_|  \___|\__,_|_|___/
                      
 """
-    def get_status(self, ip, port):
+    def get_status(self, ip, port, **kwargs):
         port = int(port)
-        reply = socket_client(ip,port,"INFO\n")
+        if kwargs.get("password"):
+            reply = socket_client(ip,port,"AUTH %s\nINFO\n" % kwargs["password"])
+        else:
+            reply = socket_client(ip,port,"INFO\n")
         return(reply)
     def parse_status(self, reply):
         return_dict = {}
@@ -1066,6 +1069,8 @@ class RedisCtl(object):
             [ip, port] = instance.split(":")
             if not return_dict.get(instance):
                 return_dict[instance] = {}
+            print "1072 %r" % (instance)
+            # need to check for a password
             reply = self.get_status(ip, port)
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
