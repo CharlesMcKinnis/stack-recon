@@ -920,6 +920,8 @@ class MagentoCtl(object):
             local_xml[section]["engine"] = "redis" # Magento's redis module
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
             local_xml[section]["engine"] = "redis" # Colin M's redis module
+        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcached":
+            local_xml[section]["engine"] = "memcache" # Colin M's redis module
         else:
             local_xml[section]["engine"] = "unknown"
         
@@ -1063,7 +1065,7 @@ class RedisCtl(object):
                 value = value.strip()
                 return_dict[section][key] = value
         return(return_dict)
-    def get_all_statuses(self, instances):
+    def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
         for instance in instances:
             [ip, port] = instance.split(":")
@@ -1076,6 +1078,7 @@ class RedisCtl(object):
         return(return_dict)
     def instances(self, doc_roots):
         redis_instances = set()
+        redis_dict = {} # "host:port" : {host:"",port:"",password:""}
         for doc_root in doc_roots:
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
@@ -1086,6 +1089,13 @@ class RedisCtl(object):
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
                 )
                 redis_instances.add(stanza)
+redis_dict[stanza] = {}
+if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"):
+    redis_dict[stanza]["host"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host")
+if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port"):
+    redis_dict[stanza]["port"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+
+
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
@@ -1843,6 +1853,7 @@ if not args.jsonfile:
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
     if redis_instances:
+        #fixme add redis password
         update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
 else:
     apache = apacheCtl()
