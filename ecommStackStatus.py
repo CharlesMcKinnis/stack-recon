@@ -2127,10 +2127,10 @@ if globalconfig.get("redis"):
     for instance in globalconfig.get("redis"):
         print "Server: %s" % instance
 
-        print "Used memory peak: %s" % globalconfig["redis"][instance]["Memory"]["used_memory_peak_human"]
-        print "Evicted keys: %s" % globalconfig["redis"][instance]["Stats"]["evicted_keys"]
+        print "Used memory peak: %s" % globalconfig.get("redis", {}).get(instance, {}).get("Memory",{}).get("used_memory_peak_human")
+        print "Evicted keys: %s" % globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys")
         print "Keyspace:"
-        for key,value in globalconfig["redis"][instance]["Keyspace"].iteritems():
+        for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
             print "%s: %s" % (key,value)
     #pp.pprint(globalconfig.get("redis"))
 print
