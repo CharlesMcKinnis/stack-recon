@@ -1182,7 +1182,7 @@ class MemcacheCtl(object):
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # memcache
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
-                result = re.match('tcp://(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)',
+                result = re.match('tcp://([^:]+):(\d+)',
                     globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
                     )
                 if result:
