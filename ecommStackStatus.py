@@ -21,7 +21,9 @@ import sys
 import os
 #import yaml
 import fnmatch
-import xml.etree.ElementTree as ET
+try:
+    import xml.etree.ElementTree as ET
+    import cElementTree as ET
 import pprint
 import socket
 import collections
@@ -571,7 +573,7 @@ class nginxCtl(object):
                     stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
                 """
                 for word in keywords:
-                    result = re.match("\s*({0})\s*(.*)".format(word), line.strip("\s\t;"), re.IGNORECASE)
+                    result = re.match("\s*(%s)\s*(.*)" % word, line.strip("\s\t;"), re.IGNORECASE)
                     if result:
                         if not word in stanzas[server_line]:
                             stanzas[server_line][word] = []
@@ -976,7 +978,7 @@ class MagentoCtl(object):
         var_username = value.get("local_xml",{}).get("db",{}).get("username","")
         var_password = value.get("local_xml",{}).get("db",{}).get("password","")
         if (var_dbname and var_host and var_username and var_password ):
-            sqlquery = "select * FROM {0}.{1}core_cache_option;".format(var_dbname,var_table_prefix)
+            sqlquery = "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix)
             conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
                 var_username,
                 var_password,
@@ -1067,7 +1069,7 @@ class RedisCtl(object):
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "redis":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
                 )
@@ -1076,7 +1078,7 @@ class RedisCtl(object):
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "redis":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("server"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
                 )
@@ -1084,7 +1086,7 @@ class RedisCtl(object):
             # FULL PAGE CACHE
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("server"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
                 )
@@ -1143,13 +1145,13 @@ class MemcacheCtl(object):
                 if result:
                     ip = result.group(1)
                     port = result.group(2)
-                    stanza = "{0}:{1}".format(ip,port)
+                    stanza = "%s:%s" % (ip,port)
                     memcache_instances.add(stanza)
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # memcache
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
-                stanza = "{0}:{1}".format(
+                stanza = "%s:%s" % (
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
                 )
@@ -1360,7 +1362,7 @@ def kwsearch(keywords,line, **kwargs):
     line = line.lower()
     stanza = {}
     for word in keywords:
-        result = re.match("({0})\s*(.*)".format(word), line.strip(), re.IGNORECASE)
+        result = re.match("(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         #result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str,keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
         if result:
