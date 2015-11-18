@@ -1129,8 +1129,9 @@ class RedisCtl(object):
                 redis_dict[stanza]["port"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
                 redis_dict[stanza]["password"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("password")
                 print "1131 redis_dict %r" % redis_dict
-            print "redis_dict:"
-            pp.pprint(redis_dict)
+            if redis_dict:
+                print "redis_dict:"
+                pp.pprint(redis_dict)
         return(list(redis_instances))
 
 class MemcacheCtl(object):
