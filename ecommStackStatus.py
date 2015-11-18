@@ -23,6 +23,7 @@ import os
 import fnmatch
 try:
     import xml.etree.ElementTree as ET
+except ImportError:
     import cElementTree as ET
 import pprint
 import socket
@@ -32,6 +33,8 @@ try:
     JSON = True
 except ImportError:
     JSON = False
+    sys.stderr.write("Data export omitted because the json module is not installed\n")
+    error_collection.append("Data export omitted because the json module is not installed\n")
 try:
     import argparse
     ARGPARSE = True
@@ -1451,7 +1454,8 @@ def update(d, u):
     update dictionary d with updated dictionary u recursively
     """   
     for k, v in u.iteritems():
-        if isinstance(v, collections.Mapping):
+        # if isinstance(v, collections.Mapping):
+        if isinstance(v, dict):
             r = update(d.get(k, {}), v)
             d[k] = r
         else:
