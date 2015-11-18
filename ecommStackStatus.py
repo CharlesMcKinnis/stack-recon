@@ -1315,7 +1315,8 @@ def importfile(filename, keyword_regex, **kwargs):
             return(os.path.join(base_path, right_file))
         else:
             return(right_file) # this is the fix!
-    files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
+    #files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
+    files = glob.glob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
     combined = ""
 
     for onefile in files:
