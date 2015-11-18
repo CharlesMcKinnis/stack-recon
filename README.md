@@ -16,8 +16,6 @@ Memory profile for nginx, apache and php-fpm. This is most useful for the php pr
 Magento queries for each document root
 Database configuration, cache configuration for session, objects and full page cache, and whether the cache is enabled in the Magento configuration portal.
 
-MySQL cache table is queried
-
-memcache queried via tcp for status
-
-redis queried via tcp for status
+# Upcoming
+memcache port connectivity
+redis port connectivity

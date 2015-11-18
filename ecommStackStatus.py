@@ -1089,12 +1089,13 @@ class RedisCtl(object):
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
                 )
                 redis_instances.add(stanza)
-redis_dict[stanza] = {}
-if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"):
-    redis_dict[stanza]["host"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host")
-if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port"):
-    redis_dict[stanza]["port"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
-
+                redis_dict[stanza] = {}
+                #if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"):
+                redis_dict[stanza]["host"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host")
+                #if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port"):
+                redis_dict[stanza]["port"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+                redis_dict[stanza]["password"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("password")
+                print "1098 redis_dict %r" % redis_dict
 
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
@@ -1105,6 +1106,14 @@ if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
                 )
                 redis_instances.add(stanza)
+                redis_dict[stanza] = {}
+                #if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"):
+                redis_dict[stanza]["host"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host")
+                #if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port"):
+                redis_dict[stanza]["port"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+                redis_dict[stanza]["password"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("password")
+                print "1115 redis_dict %r" % redis_dict
+
             # FULL PAGE CACHE
             # redis
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("engine") == "redis":
@@ -1113,6 +1122,15 @@ if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local
                     globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("full_page_cache",{}).get("port")
                 )
                 redis_instances.add(stanza)
+                redis_dict[stanza] = {}
+                #if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host"):
+                redis_dict[stanza]["host"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("host")
+                #if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port"):
+                redis_dict[stanza]["port"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("port")
+                redis_dict[stanza]["password"] = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("password")
+                print "1131 redis_dict %r" % redis_dict
+            print "redis_dict:"
+            pp.pprint(redis_dict)
         return(list(redis_instances))
 
 class MemcacheCtl(object):
