@@ -1141,6 +1141,8 @@ class MemcacheCtl(object):
             [ip, port] = instance.split(":")
             if not return_dict.get(instance):
                 return_dict[instance] = {}
+            print "1144 %r" % (instance)
+            # need to check for a password
             reply = self.get_status(ip, port)
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
