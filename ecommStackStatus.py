@@ -1494,10 +1494,11 @@ def update(d, u):
     """
     update dictionary d with updated dictionary u recursively
     """   
-    for k, v in u.iteritems():
+    #for k, v in u.iteritems():
+    for k in u:
         # if isinstance(v, collections.Mapping):
-        if isinstance(v, dict):
-            r = update(d.get(k, {}), v)
+        if isinstance(u[k], dict):
+            r = update(d.get(k, {}), u[k])
             d[k] = r
         else:
             d[k] = u[k]
