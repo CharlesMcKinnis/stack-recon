@@ -850,7 +850,8 @@ class MagentoCtl(object):
             tree = ET.ElementTree(file=filename)
         except IOError:
             sys.stderr.write("Could not open file %s\n" % filename)
-            sys.exit(1)
+            return()
+            #sys.exit(1)
 
         #tree = ET.ElementTree(file='local.xml')
         #tree = ET.ElementTree(file='local-memcache.xml')
