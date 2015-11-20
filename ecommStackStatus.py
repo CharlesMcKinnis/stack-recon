@@ -845,12 +845,12 @@ class MagentoCtl(object):
         
         returns: dict with db and cache information
         """
-        # try:
-        if True:
+        try:
+            #if True:
             tree = ET.ElementTree(file=filename)
-        # except:
-        #     sys.stderr.write("Could not open file %s\n" % filename)
-        #     sys.exit(1)
+        except IOError:
+            sys.stderr.write("Could not open file %s\n" % filename)
+            sys.exit(1)
 
         #tree = ET.ElementTree(file='local.xml')
         #tree = ET.ElementTree(file='local-memcache.xml')
