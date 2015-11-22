@@ -1039,7 +1039,7 @@ class RedisCtl(object):
 """
     def get_status(self, ip, port, **kwargs):
         port = int(port)
-        if kwargs.get("password"):
+        if kwargs.get("password") is not None:
             reply = socket_client(ip,port,"AUTH %s\nINFO\n" % kwargs["password"])
         else:
             reply = socket_client(ip,port,"INFO\n")
@@ -1068,14 +1068,22 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        for instance in instances:
-            [ip, port] = instance.split(":")
-            if not return_dict.get(instance):
-                return_dict[instance] = {}
-            print "1072 %r" % (instance)
+        for i in instances:
+            host = instances[i]["host"]
+            port = instances[i]["port"]
+            password = instances[i]["password"]
+            # [host, port] = i.split(":")
+            if not return_dict.get(i):
+                return_dict[i] = {}
+            print "1072 %r" % (i)
             # need to check for a password
-            reply = self.get_status(ip, port)
-            return_dict[instance] = self.parse_status(reply)
+            # password will be None if there wasn't one in the local.xml
+            # I could just pass the None value through without checking because it is check for None in get_status
+            if password is not None:
+                reply = self.get_status(host, port, "password" = password)
+            else:
+                reply = self.get_status(host, port)
+            return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
         """
