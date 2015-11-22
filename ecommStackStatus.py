@@ -11,6 +11,32 @@ git clone https://github.com/CharlesMcKinnis/ecommStackStatus.git
 #dev branch
 git checkout -b dev origin/dev
 """
+
+"""
+The script will look for apache, nginx and php-fpm binaries in memory, and identify their configuration source.
+Using the web server config, the document root and domain information is collected and displayed
+php-fpm configuration is collected and displayed
+
+Using the document roots, it searches for Mage.php to identify Magento installations.
+
+For each Magento installation, version and edition is collected from Mage.php
+Configuration for database, and session, object and full page caches
+
+The database (assumed to be MySQL) is queried for whether cache is enabled
+
+If either redis or memcache is configured, it is queried via tcp for status information, that is collected and displayed
+
+* things to add
+We could get information similar to MySQL Buddy and display it, to name a few:
+long_query_time
+query_cache_size
+join_buffer_size
+table_open_cache
+innodb_buffer_pool_size
+innodb_buffer_pool_instances
+innodb_log_buffer_size
+uery_cache_limit
+"""
 STACK_STATUS_VERSION = 2015111202
 error_collection = []
 
