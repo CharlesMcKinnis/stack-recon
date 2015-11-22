@@ -1075,7 +1075,7 @@ class RedisCtl(object):
             # [host, port] = i.split(":")
             if not return_dict.get(i):
                 return_dict[i] = {}
-            print "1072 %r" % (i)
+            # print "1072 %r" % (i)
             # need to check for a password
             # password will be None if there wasn't one in the local.xml
             # I could just pass the None value through without checking because it is check for None in get_status
