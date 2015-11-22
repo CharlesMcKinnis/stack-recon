@@ -2026,7 +2026,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                     "break_after_frontend","password","connect_retries"
                     ]
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
-                print "Object Cache engine: %s" % value.get("local_xml",{}).get("session_cache",{}).get("engine","EMPTY")
+                print "Session Cache engine: %s" % value.get("local_xml",{}).get("session_cache",{}).get("engine","EMPTY")
                 print "Session Cache: %s" % value["local_xml"]["session_cache"]["session_save"]
                 for k2,v2 in value["local_xml"]["session_cache"].iteritems():
                     if k2 in skip:
