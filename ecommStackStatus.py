@@ -37,9 +37,15 @@ innodb_buffer_pool_instances
 innodb_log_buffer_size
 uery_cache_limit
 
+* add hostname in globalconfig
+* name json file by hostname and date+time
+
+DONE
 * also need to check, if session cache is using redis - DONE 
 app/etc/modules/Cm_RedisSessions.xml
 value of <active> to true
+
+
 """
 STACK_STATUS_VERSION = 2015111202
 error_collection = []
