@@ -869,12 +869,13 @@ class MagentoCtl(object):
             return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
-    def open_local_xml(self, filename):
+    def open_local_xml(self, doc_root):
         """
         provide the filename (absolute or relative) of local.xml
         
         returns: dict with db and cache information
         """
+        filename = os.path.join(doc_root,"app","etc","local.xml")
         try:
             #if True:
             tree = ET.ElementTree(file=filename)
@@ -903,6 +904,16 @@ class MagentoCtl(object):
         resources = tree.find("global/redis_session")
         if resources is not None:
             local_xml[section]["engine"] = "redis"
+            redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
+            # app/etc/modules/Cm_RedisSession.xml
+            # xml config/modules/Cm_RedisSession/active
+            tree = ET.ElementTree(file=redis_module_xml)
+            resources = tree.find("config/modules/Cm_RedisSession/active")
+            if resources is not None:
+                print "opened Cm_RedisSession.xml"
+                if resources.text is not None:
+                    print "and found %s" % resources.text
+                    local_xml[section]["Cm_RedisSession.xml"] = resources.text
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
         else:
@@ -1901,8 +1912,11 @@ if not args.jsonfile:
         
         #testvar = magento.open_local_xml(local_xml)
         # var_dict = magento.open_local_xml(local_xml)
-        update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(local_xml))
-    
+        update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
+        # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
+        # app/etc/modules/Cm_RedisSession.xml
+        # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
+
         update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
     
         #if return_config:
