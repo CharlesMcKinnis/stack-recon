@@ -908,12 +908,12 @@ class MagentoCtl(object):
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
             tree = ET.ElementTree(file=redis_module_xml)
-            resources = tree.find("config/modules/Cm_RedisSession/active")
-            if resources is not None:
+            Cm_RedisSession = tree.find("config/modules/Cm_RedisSession/active")
+            if Cm_RedisSession is not None:
                 print "opened Cm_RedisSession.xml"
-                if resources.text is not None:
-                    print "and found %s" % resources.text
-                    local_xml[section]["Cm_RedisSession.xml"] = resources.text
+                if Cm_RedisSession.text is not None:
+                    print "and found %s" % Cm_RedisSession.text
+                    local_xml[section]["Cm_RedisSession.xml"] = Cm_RedisSession.text
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
         else:
