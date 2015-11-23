@@ -2223,6 +2223,7 @@ if globalconfig.get("redis"):
         print "Keyspace:"
         for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
             print "%s: %s" % (key,value)
+        print
     #pp.pprint(globalconfig.get("redis"))
 print
 """
