@@ -910,7 +910,7 @@ class MagentoCtl(object):
             # xml config/modules/Cm_RedisSession/active
             redis_tree = ET.ElementTree(file=redis_module_xml)
             print "tree %r" % redis_tree
-            Cm_RedisSession = redis_tree.find("config/modules/Cm_RedisSession/active")
+            Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
             if Cm_RedisSession is not None:
                 print "opened Cm_RedisSession.xml"
                 if Cm_RedisSession.text is not None:
