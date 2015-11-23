@@ -905,17 +905,17 @@ class MagentoCtl(object):
         if resources is not None:
             local_xml[section]["engine"] = "redis"
             redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
-            print "908 redis module xml: %s" % redis_module_xml
+            #print "908 redis module xml: %s" % redis_module_xml
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
             redis_tree = ET.ElementTree(file=redis_module_xml)
-            print "tree %r" % redis_tree
+            #print "tree %r" % redis_tree
             Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
             if Cm_RedisSession is not None:
-                print "opened Cm_RedisSession.xml"
+                #print "opened Cm_RedisSession.xml"
                 if Cm_RedisSession.text is not None:
-                    print "and found %s" % Cm_RedisSession.text
-                    local_xml[section]["Cm_RedisSession.xml"] = Cm_RedisSession.text
+                    #print "and found %s" % Cm_RedisSession.text
+                    local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
         else:
@@ -1161,7 +1161,7 @@ class RedisCtl(object):
                 #if local_xml.get("session_cache",{}).get("port"):
                 redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
                 redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
-                print "1098 redis_dict %r" % redis_dict
+                #print "1098 redis_dict %r" % redis_dict
 
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
@@ -1176,7 +1176,7 @@ class RedisCtl(object):
                 redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
                 redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
                 redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
-                print "1115 redis_dict %r" % redis_dict
+                #print "1115 redis_dict %r" % redis_dict
 
             # FULL PAGE CACHE
             # redis
@@ -1192,10 +1192,10 @@ class RedisCtl(object):
                 #if local_xml.get("session_cache",{}).get("port"):
                 redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
                 redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
-                print "1131 redis_dict %r" % redis_dict
-            if redis_dict:
-                print "redis_dict:"
-                pp.pprint(redis_dict)
+                #print "1131 redis_dict %r" % redis_dict
+            # if redis_dict:
+            #     print "redis_dict:"
+            #     pp.pprint(redis_dict)
         #return(list(redis_instances))
         return(redis_dict)
 
