@@ -1110,7 +1110,7 @@ class RedisCtl(object):
             # password will be None if there wasn't one in the local.xml
             # I could just pass the None value through without checking because it is check for None in get_status
             if password is not None:
-                reply = self.get_status(host, port, "password" = password)
+                reply = self.get_status(host, port, password = password)
             else:
                 reply = self.get_status(host, port)
             return_dict[i] = self.parse_status(reply)
