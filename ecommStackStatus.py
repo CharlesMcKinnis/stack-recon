@@ -905,10 +905,12 @@ class MagentoCtl(object):
         if resources is not None:
             local_xml[section]["engine"] = "redis"
             redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
+            print "908 redis module xml: %s" % redis_module_xml
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
-            tree = ET.ElementTree(file=redis_module_xml)
-            Cm_RedisSession = tree.find("config/modules/Cm_RedisSession/active")
+            redis_tree = ET.ElementTree(file=redis_module_xml)
+            print "tree %r" % redis_tree
+            Cm_RedisSession = redis_tree.find("config/modules/Cm_RedisSession/active")
             if Cm_RedisSession is not None:
                 print "opened Cm_RedisSession.xml"
                 if Cm_RedisSession.text is not None:
