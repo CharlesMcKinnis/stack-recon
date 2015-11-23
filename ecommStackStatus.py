@@ -40,6 +40,8 @@ uery_cache_limit
 * add hostname in globalconfig
 * name json file by hostname and date+time
 
+* I would like to load all xml in app/etc/ and overwrite values of local.xml so the config is complete
+
 DONE
 * also need to check, if session cache is using redis - DONE 
 app/etc/modules/Cm_RedisSessions.xml
