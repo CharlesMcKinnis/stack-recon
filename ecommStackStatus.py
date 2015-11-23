@@ -1184,7 +1184,7 @@ class RedisCtl(object):
                 print "redis_dict:"
                 pp.pprint(redis_dict)
         #return(list(redis_instances))
-        return(list(redis_dict))
+        return(redis_dict)
 
 class MemcacheCtl(object):
     def figlet(self):
