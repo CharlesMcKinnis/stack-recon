@@ -1932,7 +1932,7 @@ if not args.jsonfile:
         globalconfig["redis"] = {}
     if redis_instances:
         #fixme add redis password
-        update(globalconfig["redis"], redis.get_all_statuses(redis_dict))
+        update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
 else:
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
