@@ -37,7 +37,7 @@ innodb_buffer_pool_instances
 innodb_log_buffer_size
 uery_cache_limit
 
-* also need to check, if session cache is using redis
+* also need to check, if session cache is using redis - DONE 
 app/etc/modules/Cm_RedisSessions.xml
 value of <active> to true
 """
