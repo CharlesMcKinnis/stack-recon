@@ -1927,7 +1927,8 @@ if not args.jsonfile:
     
     redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
     #pp.pprint(redis_instances)
-
+    print "1930 redis_instances"
+    pp.pprint(redis_instances)
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
     if redis_instances:
