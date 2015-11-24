@@ -35,11 +35,19 @@ table_open_cache
 innodb_buffer_pool_size
 innodb_buffer_pool_instances
 innodb_log_buffer_size
-uery_cache_limit
+query_cache_limit
 
-* also need to check, if session cache is using redis
+* add hostname in globalconfig
+* name json file by hostname and date+time
+
+* I would like to load all xml in app/etc/ and overwrite values of local.xml so the config is complete
+
+DONE
+* also need to check, if session cache is using redis - DONE 
 app/etc/modules/Cm_RedisSessions.xml
 value of <active> to true
+
+
 """
 STACK_STATUS_VERSION = 2015111202
 error_collection = []
@@ -1681,7 +1689,8 @@ if not args.jsonfile:
         if daemons.get(i,{}).get("error"):
             sys.stderr.write(daemons[i]["error"] + "\n")
             error_collection.append(daemons[i]["error"] + "\n")
-    globalconfig = { "version" : STACK_STATUS_VERSION }
+    localfqdn = socket.getfqdn()
+    globalconfig = { "version" : STACK_STATUS_VERSION, "fqdn": localfqdn }
     globalconfig["daemons"] = daemons
     """
      ____    _  _____  _       ____    _  _____ _   _ _____ ____  
@@ -1691,7 +1700,8 @@ if not args.jsonfile:
     |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\                                                           
     """
     class DATA_GATHER(object):
-        pass
+        pass    
+    
     # using this as a bookmark in the IDE
     def APACHE_DATA_GATHER():
         pass
@@ -1987,6 +1997,8 @@ class OUTPUT(object):
 ################################################
 # Output body for checking values below
 ################################################
+
+print "FQDN: %s" % localfqdn
 
 #if not args.silent:
 def NGINX_PRINT():
