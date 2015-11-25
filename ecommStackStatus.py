@@ -1094,10 +1094,10 @@ class RedisCtl(object):
     def get_status(self, ip, port, **kwargs):
         port = int(port)
         if kwargs.get("password") is not None:
-            print "1097 redis password found" #rmme
+            # print "1097 redis password found" #rmme
             reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
-            print "1100 redis password skipped" #rmme
+            # print "1100 redis password skipped" #rmme
             reply = socket_client(ip,port,"INFO\n")
         return(reply)
     def parse_status(self, reply):
@@ -1124,8 +1124,8 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        print "1127 get_all_statuses" #rmme
-        pp.pprint(instances) #rmme
+        # print "1127 get_all_statuses" #rmme
+        # pp.pprint(instances) #rmme
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
@@ -2259,12 +2259,15 @@ if globalconfig.get("redis"):
     for instance in globalconfig.get("redis"):
         print "Server: %s" % instance
 
+        # if this is ObjectRocket, it won't have Evicted Keys or Keyspace; it is less confusing to not display them
         print "Used memory peak: %s" % globalconfig.get("redis", {}).get(instance, {}).get("Memory",{}).get("used_memory_peak_human")
-        print "Evicted keys: %s" % globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys")
-        print "Keyspace:"
-        for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
-            print "%s: %s" % (key,value)
-        print
+        if globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys"):
+            print "Evicted keys: %s" % globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys")
+        if globalconfig.get("redis",{}).get(instance,{}).get("Keyspace"):
+            print "Keyspace:"
+            for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
+                print "%s: %s" % (key,value)
+            print
     #pp.pprint(globalconfig.get("redis"))
 print
 """
