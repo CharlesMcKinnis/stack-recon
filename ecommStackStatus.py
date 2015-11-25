@@ -1094,7 +1094,7 @@ class RedisCtl(object):
     def get_status(self, ip, port, **kwargs):
         port = int(port)
         if kwargs.get("password") is not None:
-            reply = socket_client(ip,port,"AUTH %s\nINFO\n" % kwargs["password"])
+            reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
             reply = socket_client(ip,port,"INFO\n")
         return(reply)
@@ -1330,6 +1330,10 @@ def socket_client(ip, port, string, **kwargs):
         timeout = int(kwargs["TIMEOUT"])
     else:
         timeout = 5
+    if isinstance(string, basestring):
+        strings = [ string ]
+    else:
+        strings = string
     #ip, port = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1338,8 +1342,9 @@ def socket_client(ip, port, string, **kwargs):
     #sock.setblocking(0)  # optional non-blocking
     try:
         sock.connect((ip, int(port)))
-        sock.send(string)
-        reply = sock.recv(16384)  # limit reply to 16K
+        for string in strings:
+            sock.send(string)
+            reply = sock.recv(16384)  # limit reply to 16K
         sock.close()
     except socket.error:
         sys.exit(1)
