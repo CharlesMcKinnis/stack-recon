@@ -1094,8 +1094,10 @@ class RedisCtl(object):
     def get_status(self, ip, port, **kwargs):
         port = int(port)
         if kwargs.get("password") is not None:
+            print "1097 redis password found"
             reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
+            print "1100 redis password skipped"
             reply = socket_client(ip,port,"INFO\n")
         return(reply)
     def parse_status(self, reply):
@@ -1122,6 +1124,8 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
+        print "1127 get_all_statuses"
+        pp.pprint(instances)
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
