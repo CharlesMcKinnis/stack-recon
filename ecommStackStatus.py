@@ -919,7 +919,7 @@ class MagentoCtl(object):
             try:
                 redis_tree = ET.ElementTree(file=redis_module_xml)
             except IOError:
-                error_collection.add("The file %s could not be opened." % redis_module_xml)
+                error_collection.append("The file %s could not be opened." % redis_module_xml)
             #print "tree %r" % redis_tree
             if redis_tree:
                 Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
