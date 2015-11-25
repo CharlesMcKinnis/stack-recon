@@ -49,7 +49,7 @@ value of <active> to true
 
 
 """
-STACK_STATUS_VERSION = 2015111202
+STACK_STATUS_VERSION = 2015112401
 error_collection = []
 
 import re
@@ -916,14 +916,17 @@ class MagentoCtl(object):
             #print "908 redis module xml: %s" % redis_module_xml
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
-            redis_tree = ET.ElementTree(file=redis_module_xml)
-            #print "tree %r" % redis_tree
-            Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
-            if Cm_RedisSession is not None:
-                #print "opened Cm_RedisSession.xml"
-                if Cm_RedisSession.text is not None:
-                    #print "and found %s" % Cm_RedisSession.text
-                    local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
+            try:
+                redis_tree = ET.ElementTree(file=redis_module_xml)
+                Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
+                if Cm_RedisSession is not None:
+                    #print "opened Cm_RedisSession.xml"
+                    if Cm_RedisSession.text is not None:
+                        #print "and found %s" % Cm_RedisSession.text
+                        local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
+            except IOError:
+                error_collection.append("The file %s could not be opened." % redis_module_xml)
+                local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
         else:
@@ -1091,8 +1094,10 @@ class RedisCtl(object):
     def get_status(self, ip, port, **kwargs):
         port = int(port)
         if kwargs.get("password") is not None:
-            reply = socket_client(ip,port,"AUTH %s\nINFO\n" % kwargs["password"])
+            # print "1097 redis password found" #rmme
+            reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
+            # print "1100 redis password skipped" #rmme
             reply = socket_client(ip,port,"INFO\n")
         return(reply)
     def parse_status(self, reply):
@@ -1119,6 +1124,8 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
+        # print "1127 get_all_statuses" #rmme
+        # pp.pprint(instances) #rmme
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
@@ -1322,11 +1329,15 @@ STAT evictions 0
 END
 
     """
-def socket_client(ip, port, string, **kwargs):
+def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
     else:
         timeout = 5
+    if isinstance(string, basestring):
+        strings = [ string ]
+    else:
+        strings = string
     #ip, port = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1334,9 +1345,11 @@ def socket_client(ip, port, string, **kwargs):
     #sock.setdefaulttimeout(timeout)
     #sock.setblocking(0)  # optional non-blocking
     try:
-        sock.connect((ip, int(port)))
-        sock.send(string)
-        reply = sock.recv(16384)  # limit reply to 16K
+        sock.connect((host, int(port)))
+        for string in strings:
+            sock.send(string)
+            reply = sock.recv(16384)  # limit reply to 16K
+            # print "1352 reply %s" % reply
         sock.close()
     except socket.error:
         sys.exit(1)
@@ -1811,6 +1824,8 @@ if not args.jsonfile:
 
             # configuration fetch and parse
             wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+            if args.printwholeconfig and args.nginx:
+                print(wholeconfig)
             nginx_config = nginx.parse_config(wholeconfig)
             
             if not "nginx" in globalconfig:
@@ -1856,6 +1871,9 @@ if not args.jsonfile:
         #     phpfpm_conf_file = ""
         if phpfpm_conf_file:
             wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
+            if args.printwholeconfig and args.phpfpm:
+                print(wholeconfig)
+
             phpfpm_config = phpfpm.parse_config(wholeconfig)
             
             if not "php-fpm" in globalconfig:
@@ -2142,7 +2160,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             skip = ["engine","disable_locking","compression_threshold",
                     "log_level","first_lifetime","bot_first_lifetime",
                     "bot_lifetime","compression_lib","break_after_adminhtml",
-                    "break_after_frontend","password","connect_retries"
+                    "break_after_frontend","connect_retries"
                     ]
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
                 print "Session Cache engine: %s" % value.get("local_xml",{}).get("session_cache",{}).get("engine","EMPTY")
@@ -2155,7 +2173,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             # object cache settings
             skip = ["engine","compress_tags","use_lua",
                     "automatic_cleaning_factor","force_standalone",
-                    "compress_data","compress_threshold","password",
+                    "compress_data","compress_threshold",
                     "compression_lib","connect_retries"
                     ]
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
@@ -2168,7 +2186,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 print
             # full page cache settings
             skip = ["engine","connect_retries","force_standalone",
-                    "compress_data","password"
+                    "compress_data"
                     ]
             if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
                 print "Full Page Cache engine: %s" % value.get("local_xml",{}).get("full_page_cache",{}).get("engine","EMPTY")
@@ -2246,11 +2264,14 @@ if globalconfig.get("redis"):
     for instance in globalconfig.get("redis"):
         print "Server: %s" % instance
 
+        # if this is ObjectRocket, it won't have Evicted Keys or Keyspace; it is less confusing to not display them
         print "Used memory peak: %s" % globalconfig.get("redis", {}).get(instance, {}).get("Memory",{}).get("used_memory_peak_human")
-        print "Evicted keys: %s" % globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys")
-        print "Keyspace:"
-        for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
-            print "%s: %s" % (key,value)
+        if globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys"):
+            print "Evicted keys: %s" % globalconfig.get("redis",{}).get(instance,{}).get("Stats",{}).get("evicted_keys")
+        if globalconfig.get("redis",{}).get(instance,{}).get("Keyspace"):
+            print "Keyspace:"
+            for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
+                print "%s: %s" % (key,value)
         print
     #pp.pprint(globalconfig.get("redis"))
 print
