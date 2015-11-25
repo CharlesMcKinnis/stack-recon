@@ -1094,10 +1094,10 @@ class RedisCtl(object):
     def get_status(self, ip, port, **kwargs):
         port = int(port)
         if kwargs.get("password") is not None:
-            print "1097 redis password found"
+            print "1097 redis password found" #rmme
             reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
-            print "1100 redis password skipped"
+            print "1100 redis password skipped" #rmme
             reply = socket_client(ip,port,"INFO\n")
         return(reply)
     def parse_status(self, reply):
@@ -1124,8 +1124,8 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        print "1127 get_all_statuses"
-        pp.pprint(instances)
+        print "1127 get_all_statuses" #rmme
+        pp.pprint(instances) #rmme
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
@@ -1329,7 +1329,7 @@ STAT evictions 0
 END
 
     """
-def socket_client(ip, port, string, **kwargs):
+def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
     else:
@@ -1345,10 +1345,11 @@ def socket_client(ip, port, string, **kwargs):
     #sock.setdefaulttimeout(timeout)
     #sock.setblocking(0)  # optional non-blocking
     try:
-        sock.connect((ip, int(port)))
+        sock.connect((host, int(port)))
         for string in strings:
             sock.send(string)
             reply = sock.recv(16384)  # limit reply to 16K
+            print "1352 reply %s" % reply
         sock.close()
     except socket.error:
         sys.exit(1)
