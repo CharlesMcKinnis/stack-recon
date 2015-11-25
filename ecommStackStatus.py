@@ -916,14 +916,20 @@ class MagentoCtl(object):
             #print "908 redis module xml: %s" % redis_module_xml
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
-            redis_tree = ET.ElementTree(file=redis_module_xml)
+            try:
+                redis_tree = ET.ElementTree(file=redis_module_xml)
+            except IOError:
+                error_collection.add("The file %s could not be opened." % redis_module_xml)
             #print "tree %r" % redis_tree
-            Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
-            if Cm_RedisSession is not None:
-                #print "opened Cm_RedisSession.xml"
-                if Cm_RedisSession.text is not None:
-                    #print "and found %s" % Cm_RedisSession.text
-                    local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
+            if redis_tree:
+                Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
+                if Cm_RedisSession is not None:
+                    #print "opened Cm_RedisSession.xml"
+                    if Cm_RedisSession.text is not None:
+                        #print "and found %s" % Cm_RedisSession.text
+                        local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
+            else:
+                local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
         else:
