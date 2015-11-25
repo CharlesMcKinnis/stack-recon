@@ -1824,6 +1824,8 @@ if not args.jsonfile:
 
             # configuration fetch and parse
             wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+            if args.printwholeconfig and args.nginx:
+                print(wholeconfig)
             nginx_config = nginx.parse_config(wholeconfig)
             
             if not "nginx" in globalconfig:
@@ -1869,6 +1871,9 @@ if not args.jsonfile:
         #     phpfpm_conf_file = ""
         if phpfpm_conf_file:
             wholeconfig = importfile(phpfpm_conf_file, '\s*include[\s=]+(\S+)')
+            if args.printwholeconfig and args.phpfpm:
+                print(wholeconfig)
+
             phpfpm_config = phpfpm.parse_config(wholeconfig)
             
             if not "php-fpm" in globalconfig:
