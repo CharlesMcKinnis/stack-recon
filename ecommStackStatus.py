@@ -918,17 +918,14 @@ class MagentoCtl(object):
             # xml config/modules/Cm_RedisSession/active
             try:
                 redis_tree = ET.ElementTree(file=redis_module_xml)
-            except IOError:
-                error_collection.append("The file %s could not be opened." % redis_module_xml)
-            #print "tree %r" % redis_tree
-            if redis_tree:
                 Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
                 if Cm_RedisSession is not None:
                     #print "opened Cm_RedisSession.xml"
                     if Cm_RedisSession.text is not None:
                         #print "and found %s" % Cm_RedisSession.text
                         local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
-            else:
+            except IOError:
+                error_collection.append("The file %s could not be opened." % redis_module_xml)
                 local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
         elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
