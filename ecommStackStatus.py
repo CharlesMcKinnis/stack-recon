@@ -2145,7 +2145,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             skip = ["engine","disable_locking","compression_threshold",
                     "log_level","first_lifetime","bot_first_lifetime",
                     "bot_lifetime","compression_lib","break_after_adminhtml",
-                    "break_after_frontend","password","connect_retries"
+                    "break_after_frontend","connect_retries"
                     ]
             if value.get("local_xml",{}).get("session_cache",{}).get("session_save"):
                 print "Session Cache engine: %s" % value.get("local_xml",{}).get("session_cache",{}).get("engine","EMPTY")
@@ -2158,7 +2158,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
             # object cache settings
             skip = ["engine","compress_tags","use_lua",
                     "automatic_cleaning_factor","force_standalone",
-                    "compress_data","compress_threshold","password",
+                    "compress_data","compress_threshold",
                     "compression_lib","connect_retries"
                     ]
             if value.get("local_xml",{}).get("object_cache",{}).get("backend"):
@@ -2171,7 +2171,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 print
             # full page cache settings
             skip = ["engine","connect_retries","force_standalone",
-                    "compress_data","password"
+                    "compress_data"
                     ]
             if value.get("local_xml",{}).get("full_page_cache",{}).get("backend"):
                 print "Full Page Cache engine: %s" % value.get("local_xml",{}).get("full_page_cache",{}).get("engine","EMPTY")
