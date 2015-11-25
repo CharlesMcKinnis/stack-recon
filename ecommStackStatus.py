@@ -49,7 +49,7 @@ value of <active> to true
 
 
 """
-STACK_STATUS_VERSION = 2015111202
+STACK_STATUS_VERSION = 2015112401
 error_collection = []
 
 import re
