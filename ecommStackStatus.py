@@ -1349,7 +1349,7 @@ def socket_client(host, port, string, **kwargs):
         for string in strings:
             sock.send(string)
             reply = sock.recv(16384)  # limit reply to 16K
-            print "1352 reply %s" % reply
+            # print "1352 reply %s" % reply
         sock.close()
     except socket.error:
         sys.exit(1)
@@ -2272,7 +2272,7 @@ if globalconfig.get("redis"):
             print "Keyspace:"
             for key,value in globalconfig.get("redis",{}).get(instance,{}).get("Keyspace",{}).iteritems():
                 print "%s: %s" % (key,value)
-            print
+        print
     #pp.pprint(globalconfig.get("redis"))
 print
 """
