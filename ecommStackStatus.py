@@ -1127,8 +1127,8 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        # print "1127 get_all_statuses" #rmme
-        # pp.pprint(instances) #rmme
+        # print "1130 get_all_statuses" #rmme
+        pp.pprint(instances) #rmme        
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
@@ -1140,11 +1140,18 @@ class RedisCtl(object):
             # need to check for a password
             # password will be None if there wasn't one in the local.xml
             # I could just pass the None value through without checking because it is check for None in get_status
-            if password is not None:
+            if password and host and port:
+                # print "1144 redis password, host and port"
                 reply = self.get_status(host, port, password = password)
-            else:
+            elif host and port:
+                # print "1147 redis host and port"
                 reply = self.get_status(host, port)
-            return_dict[i] = self.parse_status(reply)
+            else:
+                print "1150 redis instance"
+                pp.pprint(instances[i])
+                reply = None
+            if reply:
+                return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
         """
@@ -1159,20 +1166,25 @@ class RedisCtl(object):
         The return was changed to a dict, and the key is "host:port" so for i in instances() will still work,
         With the added benefit that you can now get to the values directly.
         """
-        redis_instances = set()
+        # redis_instances = set()
         redis_dict = {} # "host:port" : {host:"",port:"",password:""}
         for doc_root in doc_roots:
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # redis
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}):
+            # print "1175 globalconfig magento,doc_root, $doc_root,local_xml"
+            # pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
                 local_xml = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{})
+                # print "1179 local_xml"
+                # pp.pprint(local_xml)
             if local_xml.get("session_cache",{}).get("engine") == "redis":
+                # print "1182 session_cache is redis"
                 stanza = "%s:%s" % (
                     local_xml.get("session_cache",{}).get("host"),
                     local_xml.get("session_cache",{}).get("port")
                 )
-                redis_instances.add(stanza)
+                # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
                 #if local_xml.get("session_cache",{}).get("host"):
                 redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
@@ -1185,15 +1197,16 @@ class RedisCtl(object):
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
             if local_xml.get("object_cache",{}).get("engine") == "redis":
+                # print "1200 object_cace is redis"
                 stanza = "%s:%s" % (
                     local_xml.get("object_cache",{}).get("server"),
                     local_xml.get("object_cache",{}).get("port")
                 )
-                redis_instances.add(stanza)
+                # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
-                redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
-                redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
-                redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
+                redis_dict[stanza]["host"] = local_xml.get("object_cache",{}).get("server")
+                redis_dict[stanza]["port"] = local_xml.get("object_cache",{}).get("port")
+                redis_dict[stanza]["password"] = local_xml.get("object_cache",{}).get("password")
                 #print "1115 redis_dict %r" % redis_dict
 
             # FULL PAGE CACHE
@@ -1203,7 +1216,7 @@ class RedisCtl(object):
                     local_xml.get("full_page_cache",{}).get("server"),
                     local_xml.get("full_page_cache",{}).get("port")
                 )
-                redis_instances.add(stanza)
+                # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
                 #if local_xml.get("session_cache",{}).get("host"):
                 redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
@@ -1517,7 +1530,7 @@ def memory_estimate(process_name, **kwargs):
     free_mem 1092636
     line_sum 61348
     """
-    status = { "line_sum":0, "line_count":0, "biggest":0, "free_mem":0 }
+    status = { "line_sum":0, "line_count":0, "biggest":0, "free_mem":0, "buffer_cache":0, "php_vsz-rss_sum":0 }
 
     #freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
     conf = "free"
@@ -1526,10 +1539,20 @@ def memory_estimate(process_name, **kwargs):
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
-    for line in output.splitlines():
+    lines = output.splitlines()
+    # The calculation is using RSS, and free memory.
+    # There are buffers and cache used by the process, and that throws off the calculation
+    for line in lines:
         result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["free_mem"] = int(result.group(4))
+            continue
+        result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+        if result:
+            status["buffer_cache"] = int(result.group(4))
+            print "1552 buffer_cache"
+            print status["buffer_cache"]
+            break
 
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
@@ -1542,6 +1565,7 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+', line)
         if result:
             status["line_sum"] += int(result.group(6))
+            status["php_vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
             if int(result.group(6)) > status["biggest"]:
                 status["biggest"] = int(result.group(6))
     return(status)
@@ -1561,7 +1585,17 @@ def memory_print(result, proc_name, proc_max):
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"]),
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
         )
-
+    print
+    print "If we also allowed %s to use the memory currently used for buffers and cache by %s:" % (proc_name,proc_name)
+    print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
+    print "     %3d                %3d                %3d              %3d" % (
+        int(( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) )),
+        int(( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) ) * .8),
+        int( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / result["biggest"]),
+        int( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / result["biggest"] * .8)
+        )
+    
+    
 def print_sites(localconfig):
     for one in sorted(localconfig):
         if "domains" in one:
@@ -1974,7 +2008,7 @@ if not args.jsonfile:
     
     redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
     #pp.pprint(redis_instances)
-    # print "1930 redis_instances"
+    # print "1984 redis_instances"
     # pp.pprint(redis_instances)
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
