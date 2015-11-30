@@ -1530,7 +1530,7 @@ def memory_estimate(process_name, **kwargs):
     free_mem 1092636
     line_sum 61348
     """
-    status = { "line_sum":0, "line_count":0, "biggest":0, "free_mem":0 }
+    status = { "line_sum":0, "line_count":0, "biggest":0, "free_mem":0, "buffer_cache":0, "php_vsz-rss_sum":0_ }
 
     #freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
     conf = "free"
@@ -1539,11 +1539,18 @@ def memory_estimate(process_name, **kwargs):
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
-    for line in output.splitlines():
+    lines = output.splitlines()
+    # The calculation is using RSS, and free memory.
+    # There are buffers and cache used by the process, and that throws off the calculation
+    for line in lines:
         result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["free_mem"] = int(result.group(4))
-
+            line2 = lines.next()
+            result2 = re.match('(\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line2)
+            if result2:
+                status["buffer_cache"] = int(result2.group(4))
+            
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -1555,6 +1562,7 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+', line)
         if result:
             status["line_sum"] += int(result.group(6))
+            status["php_vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
             if int(result.group(6)) > status["biggest"]:
                 status["biggest"] = int(result.group(6))
     return(status)
@@ -1574,7 +1582,17 @@ def memory_print(result, proc_name, proc_max):
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"]),
         int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
         )
-
+    print
+    print "If we also allowed %s to use the memory currently used for buffers and cache by %s:" % (proc_name,proc_name)
+    print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
+    print "     %3d                %3d                %3d              %3d" % (
+        int(( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) )),
+        int(( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) ) * .8),
+        int( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / result["biggest"]),
+        int( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / result["biggest"] * .8)
+        )
+    
+    
 def print_sites(localconfig):
     for one in sorted(localconfig):
         if "domains" in one:
