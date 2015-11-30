@@ -1092,6 +1092,9 @@ class RedisCtl(object):
                      
 """
     def get_status(self, ip, port, **kwargs):
+        if not ip or not port:
+            sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" % (ip,port))
+            sys.exit(1)
         port = int(port)
         if kwargs.get("password") is not None:
             # print "1097 redis password found" #rmme
