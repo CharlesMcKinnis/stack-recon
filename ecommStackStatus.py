@@ -1204,7 +1204,7 @@ class RedisCtl(object):
                 )
                 # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
-                redis_dict[stanza]["host"] = local_xml.get("object_cache",{}).get("host")
+                redis_dict[stanza]["host"] = local_xml.get("object_cache",{}).get("server")
                 redis_dict[stanza]["port"] = local_xml.get("object_cache",{}).get("port")
                 redis_dict[stanza]["password"] = local_xml.get("object_cache",{}).get("password")
                 #print "1115 redis_dict %r" % redis_dict
