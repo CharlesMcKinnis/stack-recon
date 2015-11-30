@@ -1546,11 +1546,12 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["free_mem"] = int(result.group(4))
-            line2 = lines.next()
+            line2 = next(lines)
             result2 = re.match('(\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line2)
             if result2:
                 status["buffer_cache"] = int(result2.group(4))
-            
+            break
+
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
