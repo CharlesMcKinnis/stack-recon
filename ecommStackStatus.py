@@ -1547,7 +1547,7 @@ def memory_estimate(process_name, **kwargs):
         if result:
             status["free_mem"] = int(result.group(4))
             continue
-        result = re.match('(+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+        result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["buffer_cache"] = int(result.group(4))
             print "1552 buffer_cache"
