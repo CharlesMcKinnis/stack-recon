@@ -1127,8 +1127,8 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        # print "1127 get_all_statuses" #rmme
-        # pp.pprint(instances) #rmme
+        print "1130 get_all_statuses" #rmme
+        pp.pprint(instances) #rmme        
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
