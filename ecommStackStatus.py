@@ -1172,14 +1172,14 @@ class RedisCtl(object):
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # redis
-            print "1175 globalconfig magento,doc_root, $doc_root,local_xml"
-            pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
+            # print "1175 globalconfig magento,doc_root, $doc_root,local_xml"
+            # pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
                 local_xml = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{})
-                print "1179 local_xml"
-                pp.pprint(local_xml)
+                # print "1179 local_xml"
+                # pp.pprint(local_xml)
             if local_xml.get("session_cache",{}).get("engine") == "redis":
-                print "1182 session_cache is redis"
+                # print "1182 session_cache is redis"
                 stanza = "%s:%s" % (
                     local_xml.get("session_cache",{}).get("host"),
                     local_xml.get("session_cache",{}).get("port")
@@ -1197,7 +1197,7 @@ class RedisCtl(object):
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
             if local_xml.get("object_cache",{}).get("engine") == "redis":
-                print "1200 object_cace is redis"
+                # print "1200 object_cace is redis"
                 stanza = "%s:%s" % (
                     local_xml.get("object_cache",{}).get("server"),
                     local_xml.get("object_cache",{}).get("port")
@@ -2008,8 +2008,8 @@ if not args.jsonfile:
     
     redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
     #pp.pprint(redis_instances)
-    print "1984 redis_instances"
-    pp.pprint(redis_instances)
+    # print "1984 redis_instances"
+    # pp.pprint(redis_instances)
     if not globalconfig.get("redis") and redis_instances:
         globalconfig["redis"] = {}
     if redis_instances:
