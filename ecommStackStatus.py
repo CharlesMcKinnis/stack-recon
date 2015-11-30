@@ -26,7 +26,7 @@ The database (assumed to be MySQL) is queried for whether cache is enabled
 
 If either redis or memcache is configured, it is queried via tcp for status information, that is collected and displayed
 
-* things to add
+* TODO things to add
 We could get information similar to MySQL Buddy and display it, to name a few:
 long_query_time
 query_cache_size
@@ -40,6 +40,22 @@ query_cache_limit
 * name json file by hostname and date+time
 
 * I would like to load all xml in app/etc/ and overwrite values of local.xml so the config is complete
+
+* Parse this session_cache syntax for redis
+Session Cache engine: unknown
+Session Cache: redis
+session_save: redis
+session_save_path: tcp://192.168.100.200:6379?weight=2&timeout=2.5
+
+From local.xml:
+        <session_save><![CDATA[redis]]></session_save>
+        <session_save_path><![CDATA[tcp://192.168.100.200:6379?weight=2&timeout=2.5]]></session_save_path>
+
+* Varnish detection and cache health
+# ps -ef|grep [v]arnish
+root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+
 
 DONE
 * also need to check, if session cache is using redis - DONE 
