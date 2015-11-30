@@ -1589,10 +1589,10 @@ def memory_print(result, proc_name, proc_max):
     print "If we also allowed %s to use the memory currently used for buffers and cache by %s:" % (proc_name,proc_name)
     print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
     print "     %3d                %3d                %3d              %3d" % (
-        int(( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) )),
-        int(( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) ) * .8),
-        int( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / result["biggest"]),
-        int( (result["line_sum"]+result["free_mem"]+status["php_vsz-rss_sum"]) / result["biggest"] * .8)
+        int(( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) )),
+        int(( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) ) * .8),
+        int( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / result["biggest"]),
+        int( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / result["biggest"] * .8)
         )
     
     
