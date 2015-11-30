@@ -1166,7 +1166,7 @@ class RedisCtl(object):
         The return was changed to a dict, and the key is "host:port" so for i in instances() will still work,
         With the added benefit that you can now get to the values directly.
         """
-        redis_instances = set()
+        # redis_instances = set()
         redis_dict = {} # "host:port" : {host:"",port:"",password:""}
         for doc_root in doc_roots:
             # SESSION
@@ -1176,12 +1176,15 @@ class RedisCtl(object):
             pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
                 local_xml = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{})
+                print "1179 local_xml"
+                pp.pprint(local_xml)
             if local_xml.get("session_cache",{}).get("engine") == "redis":
+                print "1182 session_cache is redis"
                 stanza = "%s:%s" % (
                     local_xml.get("session_cache",{}).get("host"),
                     local_xml.get("session_cache",{}).get("port")
                 )
-                redis_instances.add(stanza)
+                # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
                 #if local_xml.get("session_cache",{}).get("host"):
                 redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
@@ -1194,15 +1197,16 @@ class RedisCtl(object):
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
             if local_xml.get("object_cache",{}).get("engine") == "redis":
+                print "1200 object_cace is redis"
                 stanza = "%s:%s" % (
                     local_xml.get("object_cache",{}).get("server"),
                     local_xml.get("object_cache",{}).get("port")
                 )
-                redis_instances.add(stanza)
+                # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
-                redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
-                redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
-                redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
+                redis_dict[stanza]["host"] = local_xml.get("object_cache",{}).get("host")
+                redis_dict[stanza]["port"] = local_xml.get("object_cache",{}).get("port")
+                redis_dict[stanza]["password"] = local_xml.get("object_cache",{}).get("password")
                 #print "1115 redis_dict %r" % redis_dict
 
             # FULL PAGE CACHE
@@ -1212,7 +1216,7 @@ class RedisCtl(object):
                     local_xml.get("full_page_cache",{}).get("server"),
                     local_xml.get("full_page_cache",{}).get("port")
                 )
-                redis_instances.add(stanza)
+                # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
                 #if local_xml.get("session_cache",{}).get("host"):
                 redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
