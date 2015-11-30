@@ -1145,8 +1145,9 @@ class RedisCtl(object):
             elif host is not None and port is not None:
                 reply = self.get_status(host, port)
             else:
-                reply = {}
-            return_dict[i] = self.parse_status(reply)
+                reply = None
+            if reply:
+                return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
         """
