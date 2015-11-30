@@ -940,6 +940,10 @@ class MagentoCtl(object):
                     if Cm_RedisSession.text is not None:
                         #print "and found %s" % Cm_RedisSession.text
                         local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
+                    else:
+                        local_xml[section]["Cm_RedisSession.xml active"] = None
+                else:
+                    local_xml[section]["Cm_RedisSession.xml active"] = None
             except IOError:
                 error_collection.append("The file %s could not be opened." % redis_module_xml)
                 local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
@@ -1144,7 +1148,7 @@ class RedisCtl(object):
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
         # print "1130 get_all_statuses" #rmme
-        pp.pprint(instances) #rmme        
+        #pp.pprint(instances) #rmme        
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
