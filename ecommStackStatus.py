@@ -1172,7 +1172,9 @@ class RedisCtl(object):
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # redis
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}):
+            print "1175 globalconfig magento,doc_root, $doc_root,local_xml"
+            pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
                 local_xml = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{})
             if local_xml.get("session_cache",{}).get("engine") == "redis":
                 stanza = "%s:%s" % (
