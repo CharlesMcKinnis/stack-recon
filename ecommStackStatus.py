@@ -1127,7 +1127,7 @@ class RedisCtl(object):
         return(return_dict)
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        print "1130 get_all_statuses" #rmme
+        # print "1130 get_all_statuses" #rmme
         pp.pprint(instances) #rmme        
         for i in instances:
             host = instances[i]["host"]
@@ -1141,10 +1141,10 @@ class RedisCtl(object):
             # password will be None if there wasn't one in the local.xml
             # I could just pass the None value through without checking because it is check for None in get_status
             if password and host and port:
-                print "1144 redis password, host and port"
+                # print "1144 redis password, host and port"
                 reply = self.get_status(host, port, password = password)
             elif host and port:
-                print "1147 redis host and port"
+                # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
                 print "1150 redis instance"
