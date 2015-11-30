@@ -1140,11 +1140,13 @@ class RedisCtl(object):
             # need to check for a password
             # password will be None if there wasn't one in the local.xml
             # I could just pass the None value through without checking because it is check for None in get_status
-            if password is not None and host is not None and port is not None:
+            if password and host and port:
                 reply = self.get_status(host, port, password = password)
-            elif host is not None and port is not None:
+            elif host and port:
                 reply = self.get_status(host, port)
             else:
+                print "1148 redis instance"
+                pp.pprint(instances[i])
                 reply = None
             if reply:
                 return_dict[i] = self.parse_status(reply)
