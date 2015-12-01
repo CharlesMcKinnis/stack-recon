@@ -1201,19 +1201,32 @@ class RedisCtl(object):
                 # print "1179 local_xml"
                 # pp.pprint(local_xml)
             if local_xml.get("session_cache",{}).get("engine") == "redis":
-                # print "1182 session_cache is redis"
-                stanza = "%s:%s" % (
-                    local_xml.get("session_cache",{}).get("host"),
-                    local_xml.get("session_cache",{}).get("port")
-                )
-                # redis_instances.add(stanza)
-                redis_dict[stanza] = {}
-                #if local_xml.get("session_cache",{}).get("host"):
-                redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
-                #if local_xml.get("session_cache",{}).get("port"):
-                redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
-                redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
-                #print "1098 redis_dict %r" % redis_dict
+                if local_xml.get("session_cache",{}).get("host") and local_xml.get("session_cache",{}).get("port"):
+                    # print "1182 session_cache is redis"
+                    stanza = "%s:%s" % (
+                        local_xml.get("session_cache",{}).get("host"),
+                        local_xml.get("session_cache",{}).get("port")
+                    )
+                    # redis_instances.add(stanza)
+                    redis_dict[stanza] = {}
+                    #if local_xml.get("session_cache",{}).get("host"):
+                    redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
+                    #if local_xml.get("session_cache",{}).get("port"):
+                    redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
+                    redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
+                    #print "1098 redis_dict %r" % redis_dict
+                elif "tcp://" in local_xml.get("session_cache",{}).get("session_save_path"):
+                    result = re.match('tcp://([^:]+):(\d+)',
+                    local_xml.get("session_cache",{}).get("session_save_path")
+                    )
+                if result:
+                    host = result.group(1)
+                    port = result.group(2)
+                    stanza = "%s:%s" % (host,port)
+                    redis_dict[stanza]["host"] = host
+                    redis_dict[stanza]["port"] = port
+
+
 
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
@@ -1288,34 +1301,37 @@ class MemcacheCtl(object):
             [ip, port] = instance.split(":")
             if not return_dict.get(instance):
                 return_dict[instance] = {}
-            print "1144 %r" % (instance)
+            # print "1144 %r" % (instance)
             # need to check for a password
             reply = self.get_status(ip, port)
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
+        memcache_dict = {}
         memcache_instances = set()
         for doc_root in doc_roots:
+            doc_root_dict = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{})
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # memcache
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
+            if doc_root_dict.get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
                 result = re.match('tcp://([^:]+):(\d+)',
-                    globalconfig["magento"]["doc_root"][doc_root]["local_xml"].get("session_cache",{}).get("session_save_path")
+                    doc_root_dict["local_xml"].get("session_cache",{}).get("session_save_path")
                     )
                 if result:
-                    ip = result.group(1)
+                    host = result.group(1)
                     port = result.group(2)
-                    stanza = "%s:%s" % (ip,port)
+                    stanza = "%s:%s" % (host,port)
+                    memcache_dict[stanza] = {"host": host, "port": port}
                     memcache_instances.add(stanza)
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # memcache
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
-                stanza = "%s:%s" % (
-                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("host"),
-                    globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("object_cache",{}).get("port")
-                )
+            if doc_root_dict.get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
+                host = doc_root_dict.get("local_xml",{}).get("object_cache",{}).get("host")
+                port = doc_root_dict.get("local_xml",{}).get("object_cache",{}).get("port")
+                stanza = "%s:%s" % (host,port)
+                memcache_dict[stanza] = {"host": host, "port": port}
                 memcache_instances.add(stanza)
         return(list(memcache_instances))
 
