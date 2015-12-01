@@ -897,6 +897,8 @@ class MagentoCtl(object):
         """
         provide the filename (absolute or relative) of local.xml
         
+        This function opens the file as an XML ElementTree
+        
         returns: dict with db and cache information
         """
         filename = os.path.join(doc_root,"app","etc","local.xml")
@@ -926,7 +928,7 @@ class MagentoCtl(object):
         update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
         # test for session cache redis
         resources = tree.find("global/redis_session")
-        if resources is not None:
+        if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis" and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
             local_xml[section]["engine"] = "redis"
             redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
             #print "908 redis module xml: %s" % redis_module_xml
