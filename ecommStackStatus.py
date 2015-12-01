@@ -2222,6 +2222,7 @@ if globalconfig.get("magento",{}).get("doc_root"):
         for key, value in globalconfig["magento"]["doc_root"].iteritems():
             print "-" * 60
             print "Magento path: %s" % key
+            print "local.xml: %s" % os.path.join(key,"app","etc","local.xml")
             print "Version: %s" % value["magento_version"]
             print
             # database settings
