@@ -1154,7 +1154,7 @@ class RedisCtl(object):
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
-            password = instances[i]["password"]
+            password = instances.get(i,{}).get("password")
             # [host, port] = i.split(":")
             if not return_dict.get(i):
                 return_dict[i] = {}
@@ -1226,6 +1226,7 @@ class RedisCtl(object):
                         redis_dict[stanza] = {}
                         redis_dict[stanza]["host"] = host
                         redis_dict[stanza]["port"] = port
+                        redis_dict[stanza]["password"] = None
 
 
 
