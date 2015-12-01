@@ -1219,12 +1219,13 @@ class RedisCtl(object):
                     result = re.match('tcp://([^:]+):(\d+)',
                     local_xml.get("session_cache",{}).get("session_save_path")
                     )
-                if result:
-                    host = result.group(1)
-                    port = result.group(2)
-                    stanza = "%s:%s" % (host,port)
-                    redis_dict[stanza]["host"] = host
-                    redis_dict[stanza]["port"] = port
+                    if result:
+                        host = result.group(1)
+                        port = result.group(2)
+                        stanza = "%s:%s" % (host,port)
+                        redis_dict[stanza] = {}
+                        redis_dict[stanza]["host"] = host
+                        redis_dict[stanza]["port"] = port
 
 
 
