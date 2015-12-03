@@ -47,8 +47,17 @@ root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/v
 varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
 
 * Add mysql branch to globalconfig, and parse "show variables;"
-
-*If it returns results, assuming Magento is in /var/www, it is vulnerable.
+proposed structure:
+mysql: {
+    HOSTNAME: {
+        port: "", # Do I need this? It is nearly always 3306
+        username: "",
+        password: "",
+        variables: {
+            `show variables` # parsed to key:value pairs
+        }        
+    }
+}
 
 * Check Magento for the Shoplift SUPEE-5344 vulnerability
 find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
