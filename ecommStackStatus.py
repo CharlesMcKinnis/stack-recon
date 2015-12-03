@@ -41,6 +41,16 @@ query_cache_limit
 
 * I would like to load all xml in app/etc/ and overwrite values of local.xml so the config is complete
 
+* Varnish detection and cache health
+# ps -ef|grep [v]arnish
+root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+
+DONE
+* also need to check, if session cache is using redis - DONE 
+app/etc/modules/Cm_RedisSessions.xml
+value of <active> to true
+* add hostname in globalconfig
 * Parse this session_cache syntax for redis
 Session Cache engine: unknown
 Session Cache: redis
@@ -50,18 +60,6 @@ session_save_path: tcp://192.168.100.200:6379?weight=2&timeout=2.5
 From local.xml:
         <session_save><![CDATA[redis]]></session_save>
         <session_save_path><![CDATA[tcp://192.168.100.200:6379?weight=2&timeout=2.5]]></session_save_path>
-
-* Varnish detection and cache health
-# ps -ef|grep [v]arnish
-root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
-varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
-
-
-DONE
-* also need to check, if session cache is using redis - DONE 
-app/etc/modules/Cm_RedisSessions.xml
-value of <active> to true
-* add hostname in globalconfig
 
 
 """
@@ -1710,6 +1708,8 @@ if ARGPARSE:
                         action="store_true")
     parser.add_argument("--printjson", help="Pretty print the globalconfig json",
                         action="store_true")    
+    parser.add_argument("--nomagento", help="Skip Magento detection; it will detect apache, nginx and php-fpm for normal L?MP stacks",
+                        action="store_true")    
     """
     parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
                         action="store_true")
@@ -1738,6 +1738,7 @@ else:
     args.phpfpm = None
     args.output = "./config_dump.json"
     args.printjson = None
+    args.nomagento = None
     # args.nopassword = None
     """
     defaults:
@@ -1972,100 +1973,101 @@ if not args.jsonfile:
             globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
             globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
     
-    def MAGENTO_DATA_GATHER():
-        pass
-    ################################################
-    # Magento
-    ################################################
-    # get a list of unique document roots
-    doc_roots = set()
-    if globalconfig.get("apache",{}).get("sites"):
-        for one in globalconfig["apache"]["sites"]:
-            if "doc_root" in one:
-                doc_roots.add(one["doc_root"])
-    if globalconfig.get("nginx",{}).get("sites"):
-        for one in globalconfig["nginx"]["sites"]:
-            if "doc_root" in one:
-                doc_roots.add(one["doc_root"])
-    #if not "doc_roots" in globalconfig:
-    #    globalconfig["doc_roots"] = set()
-    globalconfig["doc_roots"] = list(doc_roots)
-    
-    # magento = MagentoCtl()
-    if not "magento" in globalconfig:
-        globalconfig["magento"] = {}
-    # find mage.php files in document roots
-    # try:
-    if True:
-        mage_files = magento.find_mage_php(globalconfig["doc_roots"])
-    # except:
-    #     sys.stderr.write("No Magento found in the web document roots\n")
-    # get Magento information from those Mage.php
-    
-    mage_file_info = magento.mage_file_info(mage_files)
-    globalconfig["magento"]["doc_root"] = mage_file_info
-    
-    
-    # try:
-    if True:
-        # print "1265"
-        # print type(magento.mage_file_info(mage_files))
+    if not args.nomagento:
+        def MAGENTO_DATA_GATHER():
+            pass
+        ################################################
+        # Magento
+        ################################################
+        # get a list of unique document roots
+        doc_roots = set()
+        if globalconfig.get("apache",{}).get("sites"):
+            for one in globalconfig["apache"]["sites"]:
+                if "doc_root" in one:
+                    doc_roots.add(one["doc_root"])
+        if globalconfig.get("nginx",{}).get("sites"):
+            for one in globalconfig["nginx"]["sites"]:
+                if "doc_root" in one:
+                    doc_roots.add(one["doc_root"])
+        #if not "doc_roots" in globalconfig:
+        #    globalconfig["doc_roots"] = set()
+        globalconfig["doc_roots"] = list(doc_roots)
+        
+        # magento = MagentoCtl()
+        if not "magento" in globalconfig:
+            globalconfig["magento"] = {}
+        # find mage.php files in document roots
+        # try:
+        if True:
+            mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+        # except:
+        #     sys.stderr.write("No Magento found in the web document roots\n")
+        # get Magento information from those Mage.php
+        
         mage_file_info = magento.mage_file_info(mage_files)
         globalconfig["magento"]["doc_root"] = mage_file_info
-    # except:
-        # sys.stderr.write("Failed to get magento information\n")
-    
-    for doc_root in globalconfig["magento"]["doc_root"]:
-        if not doc_root in globalconfig["magento"]["doc_root"]:
-            globalconfig["magento"]["doc_root"][doc_root] = {}
-        # else:
-        #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
-        #     print type(globalconfig["magento"]["doc_root"][doc_root])
-        local_xml = os.path.join(doc_root,"app","etc","local.xml")
-        if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
-            globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
-        # else:
-        #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
-        #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
         
-        #testvar = magento.open_local_xml(local_xml)
-        # var_dict = magento.open_local_xml(local_xml)
-        update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
-        # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
-        # app/etc/modules/Cm_RedisSession.xml
-        # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
-
-        update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+        
+        # try:
+        if True:
+            # print "1265"
+            # print type(magento.mage_file_info(mage_files))
+            mage_file_info = magento.mage_file_info(mage_files)
+            globalconfig["magento"]["doc_root"] = mage_file_info
+        # except:
+            # sys.stderr.write("Failed to get magento information\n")
+        
+        for doc_root in globalconfig["magento"]["doc_root"]:
+            if not doc_root in globalconfig["magento"]["doc_root"]:
+                globalconfig["magento"]["doc_root"][doc_root] = {}
+            # else:
+            #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
+            #     print type(globalconfig["magento"]["doc_root"][doc_root])
+            local_xml = os.path.join(doc_root,"app","etc","local.xml")
+            if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
+                globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
+            # else:
+            #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
+            #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
+            
+            #testvar = magento.open_local_xml(local_xml)
+            # var_dict = magento.open_local_xml(local_xml)
+            update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
+            # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
+            # app/etc/modules/Cm_RedisSession.xml
+            # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
     
-        #if return_config:
-        #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-        #    globalconfig["magento"]["doc_root"].update(return_config)
-
-    def MEMCACHE_DATA_GATHER():
-        pass
-    # memcache = MemcacheCtl()
+            update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+        
+            #if return_config:
+            #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+            #    globalconfig["magento"]["doc_root"].update(return_config)
     
-    memcache_instances = memcache.instances(globalconfig.get("magento",{}).get("doc_root",{}))
-
-    if not globalconfig.get("memcache") and memcache_instances:
-        globalconfig["memcache"] = {}
-    if memcache_instances:
-        update(globalconfig["memcache"], memcache.get_all_statuses(memcache_instances))
-
-
-    def REDIS_DATA_GATHER():
-        pass
-    # redis = RedisCtl()
+        def MEMCACHE_DATA_GATHER():
+            pass
+        # memcache = MemcacheCtl()
+        
+        memcache_instances = memcache.instances(globalconfig.get("magento",{}).get("doc_root",{}))
     
-    redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
-    #pp.pprint(redis_instances)
-    # print "1984 redis_instances"
-    # pp.pprint(redis_instances)
-    if not globalconfig.get("redis") and redis_instances:
-        globalconfig["redis"] = {}
-    if redis_instances:
-        #fixme add redis password
-        update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
+        if not globalconfig.get("memcache") and memcache_instances:
+            globalconfig["memcache"] = {}
+        if memcache_instances:
+            update(globalconfig["memcache"], memcache.get_all_statuses(memcache_instances))
+    
+    
+        def REDIS_DATA_GATHER():
+            pass
+        # redis = RedisCtl()
+        
+        redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
+        #pp.pprint(redis_instances)
+        # print "1984 redis_instances"
+        # pp.pprint(redis_instances)
+        if not globalconfig.get("redis") and redis_instances:
+            globalconfig["redis"] = {}
+        if redis_instances:
+            #fixme add redis password
+            update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
 else:
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
