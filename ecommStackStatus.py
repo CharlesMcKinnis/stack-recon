@@ -46,6 +46,19 @@ query_cache_limit
 root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
 varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
 
+* Add mysql branch to globalconfig, and parse "show variables;"
+
+*If it returns results, assuming Magento is in /var/www, it is vulnerable.
+
+* Check Magento for the Shoplift SUPEE-5344 vulnerability
+find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
+If it returns results, assuming Magento is in /var/www, it is vulnerable.
+-L Suppress normal output; instead print the name of each input file from which no output would normally have been printed.  The scanning will stop on the first match.
+
+Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
+If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
+
+
 DONE
 * also need to check, if session cache is using redis - DONE 
 app/etc/modules/Cm_RedisSessions.xml
