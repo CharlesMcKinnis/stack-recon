@@ -39,7 +39,7 @@ query_cache_limit
 
 * name json file by hostname and date+time
 
-* I would like to load all xml in app/etc/ and overwrite values of local.xml so the config is complete
+* I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
 
 * Varnish detection and cache health
 # ps -ef|grep [v]arnish
