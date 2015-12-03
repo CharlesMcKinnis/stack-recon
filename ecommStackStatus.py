@@ -831,7 +831,18 @@ class MagentoCtl(object):
                 #break
         file_handle.close()
         # join them with periods, unless they are empty, then omit them
-        mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
+        #mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
+        mage["version"] = ".".join(filter(None,
+                                          [
+                                            mage.get("major"),
+                                            mage.get("minor"),
+                                            mage.get("revision"),
+                                            mage.get("patch"),
+                                            mage.get("stability"),
+                                            mage.get("number")
+                                           ]
+                                          )
+                                   )
 
         # This is to address 1.10.1.1 EE that has no $_currentEdition defined
         if not "edition" in mage:
