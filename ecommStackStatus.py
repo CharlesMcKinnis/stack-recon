@@ -2151,6 +2151,7 @@ print "FQDN: %s" % localfqdn
 #if not args.silent:
 def NGINX_PRINT():
     pass
+sys.stderr.write("nginx data print\n")
 ################################################
 # NGINX
 ################################################
@@ -2197,6 +2198,7 @@ if "nginx" in globalconfig:
 
 def APACHE_PRINT():
     pass
+sys.stderr.write("apache data print\n")
 ################################################
 # APACHE
 ################################################
@@ -2232,6 +2234,7 @@ if "apache" in  globalconfig:
 
 def PHP_FPM_PRINT():
     pass
+sys.stderr.write("php-fpm data print\n")
 ################################################
 # PHP-FPM
 ################################################
@@ -2264,6 +2267,7 @@ if "php-fpm" in globalconfig:
 
 def MAGENTO_PRINT():
     pass
+sys.stderr.write("magento data print\n")
 ################################################
 # Magento
 ################################################
@@ -2373,6 +2377,7 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
+sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
     memcache.figlet()
     #pp.pprint(globalconfig.get("memcache"))
@@ -2390,6 +2395,7 @@ if globalconfig.get("memcache"):
         print
 def REDIS_PRINT():
     pass
+sys.stderr.write("redis data print\n")
 if globalconfig.get("redis"):
     redis.figlet()
     for instance in globalconfig.get("redis"):
