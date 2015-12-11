@@ -1448,7 +1448,8 @@ def socket_client(host, port, string, **kwargs):
             # print "1352 reply %s" % reply
         sock.close()
     except socket.error:
-        sys.stderr.write("socket connect error host: %s port: %s" % (host,port)
+        sys.stderr.write("socket connect error host: %s port: %s" % (host,port))
+        error_collection.append("socket connect error host: %s port: %s" % (host,port))
         return(None)
     return reply
 
