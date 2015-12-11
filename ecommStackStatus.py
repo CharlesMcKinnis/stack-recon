@@ -2007,30 +2007,36 @@ if not args.jsonfile:
         ################################################
         # get a list of unique document roots
         doc_roots = set()
+        sys.stderr.write("2010\n")
         if globalconfig.get("apache",{}).get("sites"):
             for one in globalconfig["apache"]["sites"]:
                 if "doc_root" in one:
                     doc_roots.add(one["doc_root"])
+        sys.stderr.write("2015\n")
         if globalconfig.get("nginx",{}).get("sites"):
             for one in globalconfig["nginx"]["sites"]:
                 if "doc_root" in one:
                     doc_roots.add(one["doc_root"])
         #if not "doc_roots" in globalconfig:
         #    globalconfig["doc_roots"] = set()
+        sys.stderr.write("2033\n")
         globalconfig["doc_roots"] = list(doc_roots)
         
         # magento = MagentoCtl()
+        sys.stderr.write("2026\n")
         if not "magento" in globalconfig:
             globalconfig["magento"] = {}
         # find mage.php files in document roots
         # try:
+        sys.stderr.write("2031\n")
         if True:
             mage_files = magento.find_mage_php(globalconfig["doc_roots"])
         # except:
         #     sys.stderr.write("No Magento found in the web document roots\n")
         # get Magento information from those Mage.php
-        
+        sys.stderr.write("2037\n")
         mage_file_info = magento.mage_file_info(mage_files)
+        sys.stderr.write("2039\n")
         globalconfig["magento"]["doc_root"] = mage_file_info
         
         
@@ -2038,18 +2044,22 @@ if not args.jsonfile:
         if True:
             # print "1265"
             # print type(magento.mage_file_info(mage_files))
+            sys.stderr.write("2047\n")
             mage_file_info = magento.mage_file_info(mage_files)
             globalconfig["magento"]["doc_root"] = mage_file_info
         # except:
             # sys.stderr.write("Failed to get magento information\n")
         
         for doc_root in globalconfig["magento"]["doc_root"]:
+            sys.stderr.write("2054\n")
             if not doc_root in globalconfig["magento"]["doc_root"]:
                 globalconfig["magento"]["doc_root"][doc_root] = {}
             # else:
             #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
             #     print type(globalconfig["magento"]["doc_root"][doc_root])
+            sys.stderr.write("2060\n")
             local_xml = os.path.join(doc_root,"app","etc","local.xml")
+            sys.stderr.write("2062\n")
             if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
                 globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
             # else:
@@ -2058,11 +2068,12 @@ if not args.jsonfile:
             
             #testvar = magento.open_local_xml(local_xml)
             # var_dict = magento.open_local_xml(local_xml)
+            sys.stderr.write("2071\n")
             update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
             # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
-    
+            sys.stderr.write("2076\n")
             update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
         
             #if return_config:
