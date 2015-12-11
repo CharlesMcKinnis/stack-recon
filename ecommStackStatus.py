@@ -55,7 +55,7 @@ mysql: {
         password: "",
         variables: {
             `show variables` # parsed to key:value pairs
-        }        
+        }
     }
 }
 
