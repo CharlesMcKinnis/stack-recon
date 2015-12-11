@@ -1155,6 +1155,8 @@ class RedisCtl(object):
         else:
             print "1100 redis password skipped" #rmme
             reply = socket_client(ip,port,"INFO\n")
+            print "1158"
+        print "1159 reply %r" % reply
         if reply:
             return(reply)
         else:
