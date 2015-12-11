@@ -2098,17 +2098,20 @@ if not args.jsonfile:
             pass
         sys.stderr.write("redis data gather\n")
         # redis = RedisCtl()
-        
+        print "2101"
         redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
         #pp.pprint(redis_instances)
         # print "1984 redis_instances"
         # pp.pprint(redis_instances)
+        print "2106"
         if not globalconfig.get("redis") and redis_instances:
             globalconfig["redis"] = {}
+        print "2109"
         if redis_instances:
             #fixme add redis password
             update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
 else:
+    print "2114"
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
 """
