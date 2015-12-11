@@ -2108,8 +2108,10 @@ if not args.jsonfile:
             globalconfig["redis"] = {}
         print "2109"
         if redis_instances:
+            print "2111"
             #fixme add redis password
             update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
+            print "2114"
 else:
     print "2114"
     for i in globalconfig["errors"]:
