@@ -1448,8 +1448,8 @@ def socket_client(host, port, string, **kwargs):
             # print "1352 reply %s" % reply
         sock.close()
     except socket.error:
-        sys.exit(1)
-        return(0)
+        sys.stderr("socket connect error")
+        return(None)
     return reply
 
 def daemon_exe(match_exe):
