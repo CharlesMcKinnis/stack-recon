@@ -39,12 +39,34 @@ query_cache_limit
 
 * name json file by hostname and date+time
 
-* I would like to load all xml in app/etc/ and overwrite values of local.xml so the config is complete
+* I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
 
 * Varnish detection and cache health
 # ps -ef|grep [v]arnish
 root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
 varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+
+* Add mysql branch to globalconfig, and parse "show variables;"
+proposed structure:
+mysql: {
+    HOSTNAME: {
+        port: "", # Do I need this? It is nearly always 3306
+        username: "",
+        password: "",
+        variables: {
+            `show variables` # parsed to key:value pairs
+        }
+    }
+}
+
+* Check Magento for the Shoplift SUPEE-5344 vulnerability
+find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
+If it returns results, assuming Magento is in /var/www, it is vulnerable.
+-L Suppress normal output; instead print the name of each input file from which no output would normally have been printed.  The scanning will stop on the first match.
+
+Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
+If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
+
 
 DONE
 * also need to check, if session cache is using redis - DONE 
@@ -1133,7 +1155,12 @@ class RedisCtl(object):
         else:
             # print "1100 redis password skipped" #rmme
             reply = socket_client(ip,port,"INFO\n")
-        return(reply)
+            # print "1158"
+        # print "1159 reply %r" % reply
+        if reply:
+            return(reply)
+        else:
+            return(None)
     def parse_status(self, reply):
         return_dict = {}
         section = ""
@@ -1164,6 +1191,9 @@ class RedisCtl(object):
             host = instances[i]["host"]
             port = instances[i]["port"]
             password = instances.get(i,{}).get("password")
+            # print "host %s" % host
+            # print "port %s" % port
+            # print "password %s" % password
             # [host, port] = i.split(":")
             if not return_dict.get(i):
                 return_dict[i] = {}
@@ -1178,10 +1208,11 @@ class RedisCtl(object):
                 # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
-                print "1150 redis instance"
+                # print "1150 redis instance"
                 pp.pprint(instances[i])
                 reply = None
             if reply:
+                # print "1210"
                 return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
@@ -1417,8 +1448,9 @@ def socket_client(host, port, string, **kwargs):
             # print "1352 reply %s" % reply
         sock.close()
     except socket.error:
-        sys.exit(1)
-        return(0)
+        sys.stderr.write("socket connect error host: %s port: %s" % (host,port))
+        error_collection.append("socket connect error host: %s port: %s" % (host,port))
+        return(None)
     return reply
 
 def daemon_exe(match_exe):
@@ -1807,6 +1839,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def APACHE_DATA_GATHER():
         pass
+    sys.stderr.write("apache data gather\n")
     ################################################
     # APACHE
     ################################################
@@ -1892,6 +1925,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def NGINX_DATA_GATHER():
         pass
+    sys.stderr.write("nginx data gather\n")
     ################################################
     # NGINX
     ################################################
@@ -1943,6 +1977,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def PHP_FPM_DATA_GATHER():
         pass
+    sys.stderr.write("php-fpm data gather\n")
     ################################################
     # PHP-FPM
     ################################################
@@ -1976,35 +2011,42 @@ if not args.jsonfile:
     if not args.nomagento:
         def MAGENTO_DATA_GATHER():
             pass
+        sys.stderr.write("magento data gather\n")
         ################################################
         # Magento
         ################################################
         # get a list of unique document roots
         doc_roots = set()
+        # sys.stderr.write("2010\n")
         if globalconfig.get("apache",{}).get("sites"):
             for one in globalconfig["apache"]["sites"]:
                 if "doc_root" in one:
                     doc_roots.add(one["doc_root"])
+        # sys.stderr.write("2015\n")
         if globalconfig.get("nginx",{}).get("sites"):
             for one in globalconfig["nginx"]["sites"]:
                 if "doc_root" in one:
                     doc_roots.add(one["doc_root"])
         #if not "doc_roots" in globalconfig:
         #    globalconfig["doc_roots"] = set()
+        # sys.stderr.write("2033\n")
         globalconfig["doc_roots"] = list(doc_roots)
         
         # magento = MagentoCtl()
+        # sys.stderr.write("2026\n")
         if not "magento" in globalconfig:
             globalconfig["magento"] = {}
         # find mage.php files in document roots
         # try:
+        # sys.stderr.write("2031\n")
         if True:
             mage_files = magento.find_mage_php(globalconfig["doc_roots"])
         # except:
         #     sys.stderr.write("No Magento found in the web document roots\n")
         # get Magento information from those Mage.php
-        
+        # sys.stderr.write("2037\n")
         mage_file_info = magento.mage_file_info(mage_files)
+        # sys.stderr.write("2039\n")
         globalconfig["magento"]["doc_root"] = mage_file_info
         
         
@@ -2012,18 +2054,22 @@ if not args.jsonfile:
         if True:
             # print "1265"
             # print type(magento.mage_file_info(mage_files))
+            # sys.stderr.write("2047\n")
             mage_file_info = magento.mage_file_info(mage_files)
             globalconfig["magento"]["doc_root"] = mage_file_info
         # except:
             # sys.stderr.write("Failed to get magento information\n")
         
         for doc_root in globalconfig["magento"]["doc_root"]:
+            # sys.stderr.write("2054\n")
             if not doc_root in globalconfig["magento"]["doc_root"]:
                 globalconfig["magento"]["doc_root"][doc_root] = {}
             # else:
             #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
             #     print type(globalconfig["magento"]["doc_root"][doc_root])
+            # sys.stderr.write("2060\n")
             local_xml = os.path.join(doc_root,"app","etc","local.xml")
+            # sys.stderr.write("2062\n")
             if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
                 globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
             # else:
@@ -2032,19 +2078,22 @@ if not args.jsonfile:
             
             #testvar = magento.open_local_xml(local_xml)
             # var_dict = magento.open_local_xml(local_xml)
+            # sys.stderr.write("2071\n")
             update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
             # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
-    
+            # sys.stderr.write("2076\n")
             update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
-        
+            # print "2078 globalconfig"
+            # pp.pprint(globalconfig)
             #if return_config:
             #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
             #    globalconfig["magento"]["doc_root"].update(return_config)
     
         def MEMCACHE_DATA_GATHER():
             pass
+        sys.stderr.write("memcache data gather\n")
         # memcache = MemcacheCtl()
         
         memcache_instances = memcache.instances(globalconfig.get("magento",{}).get("doc_root",{}))
@@ -2057,18 +2106,24 @@ if not args.jsonfile:
     
         def REDIS_DATA_GATHER():
             pass
+        sys.stderr.write("redis data gather\n")
         # redis = RedisCtl()
-        
+        # print "2101"
         redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
         #pp.pprint(redis_instances)
         # print "1984 redis_instances"
         # pp.pprint(redis_instances)
+        # print "2106"
         if not globalconfig.get("redis") and redis_instances:
             globalconfig["redis"] = {}
+        # print "2109"
         if redis_instances:
+            # print "2111"
             #fixme add redis password
             update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
+            # print "2114"
 else:
+    # print "2114"
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
 """
@@ -2111,6 +2166,7 @@ print "FQDN: %s" % localfqdn
 #if not args.silent:
 def NGINX_PRINT():
     pass
+sys.stderr.write("nginx data print\n")
 ################################################
 # NGINX
 ################################################
@@ -2157,6 +2213,7 @@ if "nginx" in globalconfig:
 
 def APACHE_PRINT():
     pass
+sys.stderr.write("apache data print\n")
 ################################################
 # APACHE
 ################################################
@@ -2192,6 +2249,7 @@ if "apache" in  globalconfig:
 
 def PHP_FPM_PRINT():
     pass
+sys.stderr.write("php-fpm data print\n")
 ################################################
 # PHP-FPM
 ################################################
@@ -2224,6 +2282,7 @@ if "php-fpm" in globalconfig:
 
 def MAGENTO_PRINT():
     pass
+sys.stderr.write("magento data print\n")
 ################################################
 # Magento
 ################################################
@@ -2333,6 +2392,7 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
+sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
     memcache.figlet()
     #pp.pprint(globalconfig.get("memcache"))
@@ -2350,6 +2410,7 @@ if globalconfig.get("memcache"):
         print
 def REDIS_PRINT():
     pass
+sys.stderr.write("redis data print\n")
 if globalconfig.get("redis"):
     redis.figlet()
     for instance in globalconfig.get("redis"):
