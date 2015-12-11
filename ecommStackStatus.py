@@ -1150,12 +1150,15 @@ class RedisCtl(object):
             sys.exit(1)
         port = int(port)
         if kwargs.get("password") is not None:
-            # print "1097 redis password found" #rmme
+            print "1097 redis password found" #rmme
             reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
-            # print "1100 redis password skipped" #rmme
+            print "1100 redis password skipped" #rmme
             reply = socket_client(ip,port,"INFO\n")
-        return(reply)
+        if reply:
+            return(reply)
+        else:
+            return(None)
     def parse_status(self, reply):
         return_dict = {}
         section = ""
