@@ -1829,6 +1829,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def APACHE_DATA_GATHER():
         pass
+    sys.write.stderr("apache data gather")
     ################################################
     # APACHE
     ################################################
@@ -1914,6 +1915,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def NGINX_DATA_GATHER():
         pass
+    sys.write.stderr("nginx data gather")
     ################################################
     # NGINX
     ################################################
@@ -1965,6 +1967,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def PHP_FPM_DATA_GATHER():
         pass
+    sys.write.stderr("php-fpm data gather")
     ################################################
     # PHP-FPM
     ################################################
@@ -1998,6 +2001,7 @@ if not args.jsonfile:
     if not args.nomagento:
         def MAGENTO_DATA_GATHER():
             pass
+        sys.write.stderr("magento data gather")
         ################################################
         # Magento
         ################################################
@@ -2067,6 +2071,7 @@ if not args.jsonfile:
     
         def MEMCACHE_DATA_GATHER():
             pass
+        sys.write.stderr("memcache data gather")
         # memcache = MemcacheCtl()
         
         memcache_instances = memcache.instances(globalconfig.get("magento",{}).get("doc_root",{}))
@@ -2079,6 +2084,7 @@ if not args.jsonfile:
     
         def REDIS_DATA_GATHER():
             pass
+        sys.write.stderr("redis data gather")
         # redis = RedisCtl()
         
         redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
