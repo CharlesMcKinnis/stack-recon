@@ -1829,7 +1829,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def APACHE_DATA_GATHER():
         pass
-    sys.stderr.write("apache data gather")
+    sys.stderr.write("apache data gather\n")
     ################################################
     # APACHE
     ################################################
@@ -1915,7 +1915,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def NGINX_DATA_GATHER():
         pass
-    sys.stderr.write("nginx data gather")
+    sys.stderr.write("nginx data gather\n")
     ################################################
     # NGINX
     ################################################
@@ -1967,7 +1967,7 @@ if not args.jsonfile:
     # using this as a bookmark in the IDE
     def PHP_FPM_DATA_GATHER():
         pass
-    sys.stderr.write("php-fpm data gather")
+    sys.stderr.write("php-fpm data gather\n")
     ################################################
     # PHP-FPM
     ################################################
@@ -2001,7 +2001,7 @@ if not args.jsonfile:
     if not args.nomagento:
         def MAGENTO_DATA_GATHER():
             pass
-        sys.stderr.write("magento data gather")
+        sys.stderr.write("magento data gather\n")
         ################################################
         # Magento
         ################################################
@@ -2071,7 +2071,7 @@ if not args.jsonfile:
     
         def MEMCACHE_DATA_GATHER():
             pass
-        sys.stderr.write("memcache data gather")
+        sys.stderr.write("memcache data gather\n")
         # memcache = MemcacheCtl()
         
         memcache_instances = memcache.instances(globalconfig.get("magento",{}).get("doc_root",{}))
@@ -2084,7 +2084,7 @@ if not args.jsonfile:
     
         def REDIS_DATA_GATHER():
             pass
-        sys.stderr.write("redis data gather")
+        sys.stderr.write("redis data gather\n")
         # redis = RedisCtl()
         
         redis_instances = redis.instances(globalconfig.get("magento",{}).get("doc_root",{}))
