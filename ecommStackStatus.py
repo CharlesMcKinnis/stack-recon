@@ -2075,7 +2075,8 @@ if not args.jsonfile:
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
             sys.stderr.write("2076\n")
             update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
-        
+            print "2078 globalconfig"
+            pp.pprint(globalconfig)
             #if return_config:
             #    #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
             #    globalconfig["magento"]["doc_root"].update(return_config)
