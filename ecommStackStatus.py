@@ -1223,7 +1223,7 @@ class RedisCtl(object):
                 # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
-                # print "1150 redis instance"
+                print "1150 redis instance"
                 pp.pprint(instances[i])
                 reply = None
             if reply:
