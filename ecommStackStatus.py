@@ -1087,6 +1087,11 @@ class MagentoCtl(object):
 
     def db_cache_table(self, doc_root, value):
         mysql = MysqlCtl()
+        var_table_prefix = value.get("db/table_prefix","")
+        var_dbname = value.get("dbname","")
+        var_host = value.get("host","")
+        var_username = value.get("username","")
+        var_password = value.get("password","")
         output = mysql.db_query(value.get("local_xml",{}).get("db",{}), "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix))
         # doc_root isn't used locally anymore? 14 Jan 2016
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
@@ -2164,7 +2169,8 @@ if not args.jsonfile:
             
             # get the cache table information, and store it in ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
             update(globalconfig["magento"]["doc_root"][doc_root],
-                   magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]).get("local_xml",{}).get("db",{}))
+                magento.db_cache_table(doc_root,
+                        globalconfig["magento"]["doc_root"][doc_root]).get("local_xml",{}).get("db",{}))
             # print "2078 globalconfig"
             # pp.pprint(globalconfig)
             #if return_config:
