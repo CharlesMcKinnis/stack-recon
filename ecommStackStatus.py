@@ -1086,23 +1086,9 @@ class MagentoCtl(object):
         return local_xml
 
     def db_cache_table(self, doc_root, value):
-        mysql = MysqlCtl()
-        var_table_prefix = value.get("db/table_prefix","")
-        var_dbname = value.get("dbname","")
-        var_host = value.get("host","")
-        var_username = value.get("username","")
-        var_password = value.get("password","")
-        output = mysql.db_query(value.get("local_xml",{}).get("db",{}), "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix))
-        # doc_root isn't used locally anymore? 14 Jan 2016
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
-        if not return_config.get("cache",{}).get("cache_option_table"):
-            return_config = {"cache" : { "cache_option_table" : "" } } 
-        return_config["cache"]["cache_option_table"] = output
-        return(return_config)
-        
-        # I think we can end here.
         var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
         var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
         var_host = value.get("local_xml",{}).get("db",{}).get("host","")
@@ -1148,7 +1134,6 @@ class MagentoCtl(object):
             # print " password: %s" % var_password
         #print
         return(return_config)
-
 class RedisCtl(object):
     def figlet(self):
         print """
@@ -1438,8 +1423,9 @@ STAT curr_items 715
 STAT total_items 40465881
 STAT evictions 0
 END
-    """
 
+    """
+    
 class MysqlCtl(object):
     def figlet(self):
         print """
@@ -1506,6 +1492,7 @@ class MysqlCtl(object):
             # print " password: %s" % var_password
         #print
         return(output)
+
 
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
@@ -2166,11 +2153,7 @@ if not args.jsonfile:
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
             # sys.stderr.write("2076\n")
-            
-            # get the cache table information, and store it in ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-            update(globalconfig["magento"]["doc_root"][doc_root],
-                magento.db_cache_table(doc_root,
-                        globalconfig["magento"]["doc_root"][doc_root]).get("local_xml",{}).get("db",{}))
+            update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
             # print "2078 globalconfig"
             # pp.pprint(globalconfig)
             #if return_config:
@@ -2252,7 +2235,7 @@ print "FQDN: %s" % localfqdn
 #if not args.silent:
 def NGINX_PRINT():
     pass
-# sys.stderr.write("nginx data print\n")
+sys.stderr.write("nginx data print\n")
 ################################################
 # NGINX
 ################################################
@@ -2299,7 +2282,7 @@ if "nginx" in globalconfig:
 
 def APACHE_PRINT():
     pass
-# sys.stderr.write("apache data print\n")
+sys.stderr.write("apache data print\n")
 ################################################
 # APACHE
 ################################################
@@ -2335,7 +2318,7 @@ if "apache" in  globalconfig:
 
 def PHP_FPM_PRINT():
     pass
-# sys.stderr.write("php-fpm data print\n")
+sys.stderr.write("php-fpm data print\n")
 ################################################
 # PHP-FPM
 ################################################
@@ -2368,7 +2351,7 @@ if "php-fpm" in globalconfig:
 
 def MAGENTO_PRINT():
     pass
-# sys.stderr.write("magento data print\n")
+sys.stderr.write("magento data print\n")
 ################################################
 # Magento
 ################################################
@@ -2478,7 +2461,7 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
-# sys.stderr.write("memcache data print\n")
+sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
     memcache.figlet()
     #pp.pprint(globalconfig.get("memcache"))
@@ -2496,7 +2479,7 @@ if globalconfig.get("memcache"):
         print
 def REDIS_PRINT():
     pass
-# sys.stderr.write("redis data print\n")
+sys.stderr.write("redis data print\n")
 if globalconfig.get("redis"):
     redis.figlet()
     for instance in globalconfig.get("redis"):
