@@ -1086,9 +1086,18 @@ class MagentoCtl(object):
         return local_xml
 
     def db_cache_table(self, doc_root, value):
+        mysql = MysqlCtl()
+        output = mysql.db_query(value.get("local_xml",{}).get("db",{}), "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix))
+        # doc_root isn't used locally anymore? 14 Jan 2016
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
+        if not return_config.get("cache",{}).get("cache_option_table"):
+            return_config = {"cache" : { "cache_option_table" : "" } } 
+        return_config["cache"]["cache_option_table"] = output
+        return(return_config)
+        
+        # I think we can end here.
         var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
         var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
         var_host = value.get("local_xml",{}).get("db",{}).get("host","")
@@ -1134,6 +1143,7 @@ class MagentoCtl(object):
             # print " password: %s" % var_password
         #print
         return(return_config)
+
 class RedisCtl(object):
     def figlet(self):
         print """
@@ -1423,8 +1433,75 @@ STAT curr_items 715
 STAT total_items 40465881
 STAT evictions 0
 END
-
     """
+
+class MysqlCtl(object):
+    def figlet(self):
+        print """
+ __  __       ____   ___  _     
+|  \/  |_   _/ ___| / _ \| |    
+| |\/| | | | \___ \| | | | |    
+| |  | | |_| |___) | |_| | |___ 
+|_|  |_|\__, |____/ \__\_\_____|
+        |___/
+"""
+    def get_status(self, ip, port):
+        port = int(port)
+        reply = socket_client(ip,port,"stats\n")
+        return(reply)
+    def db_query(self, dbConnInfo, sqlquery):
+        # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
+
+        # doc_root isn't used locally anymore? 14 Jan 2016
+        #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+        #doc_roots = globalconfig["magento"]["doc_root"]
+        #return_config = { }
+        output = ""
+
+        # var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
+        # var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
+        # var_host = value.get("local_xml",{}).get("db",{}).get("host","")
+        # var_username = value.get("local_xml",{}).get("db",{}).get("username","")
+        # var_password = value.get("local_xml",{}).get("db",{}).get("password","")
+        var_table_prefix = dbConnInfo.get("db/table_prefix","")
+        var_dbname = dbConnInfo.get("dbname","")
+        var_host = dbConnInfo.get("host","")
+        var_username = dbConnInfo.get("username","")
+        var_password = dbConnInfo.get("password","")
+
+        if (var_dbname and var_host and var_username and var_password ):
+            #sqlquery = "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix)
+            conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
+                var_username,
+                var_password,
+                var_host,
+                sqlquery
+                )
+            sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
+            p = subprocess.Popen(
+                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            output, err = p.communicate()
+            if p.returncode > 0 or not output:
+                #return()
+                sys.stderr.write("MySQL cache table query failed\n")
+                error_collection.append("MySQL cache table query failed: %s\n" % conf)
+                if err:
+                    sys.stderr.write("err %s\n" % err)
+                    error_collection.append("err %s\n" % err)
+                sys.stderr.write("command: %s\n" % conf)
+                error_collection.append("command: %s\n" % conf)
+        # else:
+            # print "Skipping database because there isn't enough login information"
+            # print " Table prefix: %s" % var_table_prefix
+            # print " dbname: %s" % var_dbname
+            # print " host: %s" % var_host
+            # print " username: %s" % var_username
+            # if var_password:
+            #     print " password present but not displayed"
+            # print " password: %s" % var_password
+        #print
+        return(output)
+
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
@@ -2084,7 +2161,10 @@ if not args.jsonfile:
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
             # sys.stderr.write("2076\n")
-            update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+            
+            # get the cache table information, and store it in ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+            update(globalconfig["magento"]["doc_root"][doc_root],
+                   magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]).get("local_xml",{}).get("db",{}))
             # print "2078 globalconfig"
             # pp.pprint(globalconfig)
             #if return_config:
@@ -2166,7 +2246,7 @@ print "FQDN: %s" % localfqdn
 #if not args.silent:
 def NGINX_PRINT():
     pass
-sys.stderr.write("nginx data print\n")
+# sys.stderr.write("nginx data print\n")
 ################################################
 # NGINX
 ################################################
@@ -2213,7 +2293,7 @@ if "nginx" in globalconfig:
 
 def APACHE_PRINT():
     pass
-sys.stderr.write("apache data print\n")
+# sys.stderr.write("apache data print\n")
 ################################################
 # APACHE
 ################################################
@@ -2249,7 +2329,7 @@ if "apache" in  globalconfig:
 
 def PHP_FPM_PRINT():
     pass
-sys.stderr.write("php-fpm data print\n")
+# sys.stderr.write("php-fpm data print\n")
 ################################################
 # PHP-FPM
 ################################################
@@ -2282,7 +2362,7 @@ if "php-fpm" in globalconfig:
 
 def MAGENTO_PRINT():
     pass
-sys.stderr.write("magento data print\n")
+# sys.stderr.write("magento data print\n")
 ################################################
 # Magento
 ################################################
@@ -2392,7 +2472,7 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
-sys.stderr.write("memcache data print\n")
+# sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
     memcache.figlet()
     #pp.pprint(globalconfig.get("memcache"))
@@ -2410,7 +2490,7 @@ if globalconfig.get("memcache"):
         print
 def REDIS_PRINT():
     pass
-sys.stderr.write("redis data print\n")
+# sys.stderr.write("redis data print\n")
 if globalconfig.get("redis"):
     redis.figlet()
     for instance in globalconfig.get("redis"):
