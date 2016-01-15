@@ -2185,6 +2185,42 @@ if not args.jsonfile:
             #fixme add redis password
             update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
             # print "2114"
+
+    def MYSQL_DATA_GATHER():
+            pass
+    sys.stderr.write("mysql data gather\n")
+    ################################################
+    # MySQL
+    ################################################
+    
+    if not "mysql" in globalconfig:
+        globalconfig["mysql"] = {}
+    #globalconfig["mysql"] = mysql_config
+    
+    # find mysql from local_xml
+    """
+    globalconfig[
+        "magento": {
+            "doc_root": {
+                "/var/www/vhosts/www.example.com/html": {
+                    "local_xml": {
+                        "db": {
+                            "active": "1", 
+                            "dbname": "databasename", 
+                            "host": "172.24.16.2", 
+                            "initStatements": "SET NAMES utf8", 
+                            "model": "mysql4", 
+                            "password": "password", 
+                            "pdoType": null, 
+                            "type": "pdo_mysql", 
+                            "username": "someuser"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+    """
 else:
     # print "2114"
     for i in globalconfig["errors"]:
@@ -2208,6 +2244,7 @@ else:
     }
 }
 """
+
 
 
 # using this as a bookmark in the IDE
