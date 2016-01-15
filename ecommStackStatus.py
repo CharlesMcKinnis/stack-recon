@@ -966,6 +966,7 @@ class MagentoCtl(object):
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
             try:
+                print "969 Cm_RedisSession check"
                 redis_tree = ET.ElementTree(file=redis_module_xml)
                 Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
                 if Cm_RedisSession is not None:
@@ -974,9 +975,9 @@ class MagentoCtl(object):
                         #print "and found %s" % Cm_RedisSession.text
                         local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
                     else:
-                        local_xml[section]["Cm_RedisSession.xml active"] = None
+                        local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession present but empty"
                 else:
-                    local_xml[section]["Cm_RedisSession.xml active"] = None
+                    local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession is not present"
             except IOError:
                 error_collection.append("The file %s could not be opened." % redis_module_xml)
                 local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
