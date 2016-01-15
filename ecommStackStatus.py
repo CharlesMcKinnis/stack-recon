@@ -957,16 +957,19 @@ class MagentoCtl(object):
         xml_config_section = 'redis_session'
         xml_config_single = 'session_save_path'
         update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
+
+
+
         # test for session cache redis
         resources = tree.find("global/redis_session")
-        print "resources %r" % resources
-        print "xml_config_node %r" % local_xml.get(section,{}).get(xml_config_node,"").lower()
-        print "xml_config_insgle %r" % local_xml.get(section,{}).get(xml_config_single,"")
-        if resources is not None:
-            print "962 resources is not None"
-        if (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
-            and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
-            print "966 xml config node == redis and tcp in xml_config_single"
+        # print "resources %r" % resources
+        # print "xml_config_node %r" % local_xml.get(section,{}).get(xml_config_node,"").lower()
+        # print "xml_config_single %r" % local_xml.get(section,{}).get(xml_config_single,"")
+        # if resources is not None:
+        #     print "962 resources is not None"
+        # if (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
+        #     and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
+        #     print "966 xml config node == redis and tcp in xml_config_single"
         if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
                                      and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
             local_xml[section]["engine"] = "redis"
@@ -975,7 +978,7 @@ class MagentoCtl(object):
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
             try:
-                print "969 Cm_RedisSession check"
+                # print "969 Cm_RedisSession check"
                 redis_tree = ET.ElementTree(file=redis_module_xml)
                 Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
                 if Cm_RedisSession is not None:
@@ -984,7 +987,7 @@ class MagentoCtl(object):
                         #print "and found %s" % Cm_RedisSession.text
                         local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
                     else:
-                        local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession present but empty"
+                        local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession is present but the value is empty"
                 else:
                     local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession is not present"
             except IOError:
