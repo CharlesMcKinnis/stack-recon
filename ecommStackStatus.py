@@ -959,7 +959,16 @@ class MagentoCtl(object):
         update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
         # test for session cache redis
         resources = tree.find("global/redis_session")
-        if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis" and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
+        print "resources %r" % resources
+        print "xml_config_node %r" % local_xml.get(section,{}).get(xml_config_node,"").lower()
+        print "xml_config_insgle %r" % local_xml.get(section,{}).get(xml_config_single,"")
+        if resources is not None:
+            print "962 resources is not None"
+        if (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
+            and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
+            print "966 xml config node == redis and tcp in xml_config_single"
+        if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
+                                     and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
             local_xml[section]["engine"] = "redis"
             redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
             #print "908 redis module xml: %s" % redis_module_xml
