@@ -9,7 +9,11 @@ wget https://raw.githubusercontent.com/CharlesMcKinnis/ecommStackStatus/master/e
 
 git clone https://github.com/CharlesMcKinnis/ecommStackStatus.git
 #dev branch
+cd ecommStackStatus
 git checkout -b dev origin/dev
+
+To look at the json captured:
+cat config_dump.json |python -m json.tool|less
 """
 
 """
@@ -2199,20 +2203,19 @@ if not args.jsonfile:
     
     # find mysql from local_xml
     """
+    I want to add globalconfig["mysql"], and I'll need a list of them I guess?
+    Each one needs host and auth info
+    Then a dict for each query that contains a dict of key value pairs
+    
     globalconfig[
         "magento": {
             "doc_root": {
                 "/var/www/vhosts/www.example.com/html": {
                     "local_xml": {
                         "db": {
-                            "active": "1", 
                             "dbname": "databasename", 
                             "host": "172.24.16.2", 
-                            "initStatements": "SET NAMES utf8", 
-                            "model": "mysql4", 
                             "password": "password", 
-                            "pdoType": null, 
-                            "type": "pdo_mysql", 
                             "username": "someuser"
                         }
                     }
