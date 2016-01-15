@@ -1114,53 +1114,6 @@ class MagentoCtl(object):
             return_config = {"cache" : { "cache_option_table" : "" } } 
         return_config["cache"]["cache_option_table"] = output
         return(return_config)
-        
-        # I think we can end here.
-        var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
-        var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
-        var_host = value.get("local_xml",{}).get("db",{}).get("host","")
-        var_username = value.get("local_xml",{}).get("db",{}).get("username","")
-        var_password = value.get("local_xml",{}).get("db",{}).get("password","")
-        if (var_dbname and var_host and var_username and var_password ):
-            sqlquery = "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix)
-            conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
-                var_username,
-                var_password,
-                var_host,
-                sqlquery
-                )
-            sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
-            p = subprocess.Popen(
-                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            output, err = p.communicate()
-            if p.returncode > 0 or not output:
-                #return()
-                sys.stderr.write("MySQL cache table query failed\n")
-                error_collection.append("MySQL cache table query failed: %s\n" % conf)
-                if err:
-                    sys.stderr.write("err %s\n" % err)
-                    error_collection.append("err %s\n" % err)
-                sys.stderr.write("command: %s\n" % conf)
-                error_collection.append("command: %s\n" % conf)
-            else:
-                # print "Mysql cache table:"
-                # print "%s" % output
-                #return_config = { "cache" : { "cache_option_table" : "" } }
-                #globalconfig["magento"]["doc_root"][doc_root]    ["cache"]["cache_option_table"] = output
-                if not return_config.get("cache",{}).get("cache_option_table"):
-                    return_config = {"cache" : { "cache_option_table" : "" } } 
-                return_config["cache"]["cache_option_table"] = output
-        # else:
-            # print "Skipping database because there isn't enough login information"
-            # print " Table prefix: %s" % var_table_prefix
-            # print " dbname: %s" % var_dbname
-            # print " host: %s" % var_host
-            # print " username: %s" % var_username
-            # if var_password:
-            #     print " password present but not displayed"
-            # print " password: %s" % var_password
-        #print
-        return(return_config)
 
 class RedisCtl(object):
     def figlet(self):
@@ -1470,17 +1423,8 @@ class MysqlCtl(object):
     def db_query(self, dbConnInfo, sqlquery):
         # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
 
-        # doc_root isn't used locally anymore? 14 Jan 2016
-        #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-        #doc_roots = globalconfig["magento"]["doc_root"]
-        #return_config = { }
         output = ""
 
-        # var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
-        # var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
-        # var_host = value.get("local_xml",{}).get("db",{}).get("host","")
-        # var_username = value.get("local_xml",{}).get("db",{}).get("username","")
-        # var_password = value.get("local_xml",{}).get("db",{}).get("password","")
         var_table_prefix = dbConnInfo.get("db/table_prefix","")
         var_dbname = dbConnInfo.get("dbname","")
         var_host = dbConnInfo.get("host","")
@@ -1488,14 +1432,13 @@ class MysqlCtl(object):
         var_password = dbConnInfo.get("password","")
 
         if (var_dbname and var_host and var_username and var_password ):
-            #sqlquery = "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix)
             conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
                 var_username,
                 var_password,
                 var_host,
                 sqlquery
                 )
-            sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
+            #sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
             p = subprocess.Popen(
                 conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
@@ -1519,6 +1462,25 @@ class MysqlCtl(object):
             # print " password: %s" % var_password
         #print
         return(output)
+    def parse_key_value(self, queried_table):
+        lines = queried_table.splitlines()
+        # The calculation is using RSS, and free memory.
+        # There are buffers and cache used by the process, and that throws off the calculation
+        lines = input.splitlines()
+        counter = 0
+        for line in lines:
+            return_dict = {}
+            # skip X lines
+            if counter < 3:
+                counter += 1
+                continue
+            counter += 1
+            result = re.search('\|\s*([^\|]+)\|\s*([^\|]+)', line)
+            if not result:
+                print "done"
+                break
+            return_dict[result.group(1).strip()] = result.group(2).strip()
+        return(return_dict)
 
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
