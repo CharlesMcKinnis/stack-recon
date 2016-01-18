@@ -1485,6 +1485,48 @@ class MysqlCtl(object):
                 break
             return_dict[result.group(1).strip()] = result.group(2).strip()
         return(return_dict)
+    def instances(self, doc_roots):
+        """
+        With a list of doc_roots, examine the local xml we already parsed
+        Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password" 
+        
+        Returns a dict
+        Value is None if it is undefined
+        
+        Previously, a list of "host:port" was returned.
+        You could iterate for i in instances().
+        The return was changed to a dict, and the key is "host:port" so for i in instances() will still work,
+        With the added benefit that you can now get to the values directly.
+
+        globalconfig[
+            "magento": {
+                "doc_root": {
+                    "/var/www/vhosts/www.example.com/html": {
+                        "local_xml": {
+                            "db": {
+                                "dbname": "databasename", 
+                                "host": "172.24.16.2", 
+                                "password": "password", 
+                                "username": "someuser"
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+
+        """
+        # redis_instances = set()
+        # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
+        return_dict = {} # "host:port" : {host:"",port:"",password:""}
+        for doc_root in doc_roots:
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
+                xml_db = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("db",{})
+            return_dict[xml_db["host"]]["credentials"] = xml_db
+            pass
+        # globalconfig["mysql"]=return_dict
+        return(return_dict)
+
 
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
@@ -2206,6 +2248,10 @@ if not args.jsonfile:
     I want to add globalconfig["mysql"], and I'll need a list of them I guess?
     Each one needs host and auth info
     Then a dict for each query that contains a dict of key value pairs
+
+    dbConnInfo = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["db"]
+    output = db_query(dbConnInfo, sqlquery)
+    parse_key_value(output)
     
     globalconfig[
         "magento": {
