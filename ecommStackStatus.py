@@ -1522,7 +1522,7 @@ class MysqlCtl(object):
         for doc_root in doc_roots:
             if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
                 xml_db = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("db",{})
-            return_dict[xml_db["host"]]["credentials"] = xml_db
+            return_dict[xml_db["host"]]["credentials"].add(xml_db)
             pass
         # globalconfig["mysql"]=return_dict
         return(return_dict)
