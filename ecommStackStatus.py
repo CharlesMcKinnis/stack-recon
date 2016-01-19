@@ -1493,11 +1493,6 @@ class MysqlCtl(object):
         Returns a dict
         Value is None if it is undefined
         
-        Previously, a list of "host:port" was returned.
-        You could iterate for i in instances().
-        The return was changed to a dict, and the key is "host:port" so for i in instances() will still work,
-        With the added benefit that you can now get to the values directly.
-
         globalconfig[
             "magento": {
                 "doc_root": {
