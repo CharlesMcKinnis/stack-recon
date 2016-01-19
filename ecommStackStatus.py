@@ -2368,9 +2368,9 @@ if "apache" in  globalconfig:
     else:
         print "No apache version?"
     if globalconfig.get("apache",{}).get("daemon",{}).get("Server MPM"):
-        print "Apache server MPM: %s" % globalconfig.get("apache",{}).get("daemon",{}).get("Server MPM")
+        print "Apache server MPM: %s\n" % globalconfig.get("apache",{}).get("daemon",{}).get("Server MPM")
     else:
-        print "No apache server MPM?"
+        print "No apache server MPM?\n"
     if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
         """
