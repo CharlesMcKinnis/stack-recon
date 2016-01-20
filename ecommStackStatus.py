@@ -957,8 +957,9 @@ class MagentoCtl(object):
         returns: dict with db and cache information
         """
         # BROKEN
-        filename = os.path.join(doc_root,"app","etc","local.xml")
+#        filename = os.path.join(doc_root,"app","etc","local.xml")
         filename = config_node["local_xml"]["filename"]
+        print "962 %s" % filename
         try:
             #if True:
             tree = ET.ElementTree(file=filename)
@@ -2184,15 +2185,14 @@ if not args.jsonfile:
         globalconfig["magento"]["doc_root"] = mage_file_info
         
         
-        # try:
-        if True:
-            # print "1265"
-            # print type(magento.mage_file_info(mage_files))
-            # sys.stderr.write("2047\n")
-            mage_file_info = magento.mage_file_info(mage_files)
-            globalconfig["magento"]["doc_root"] = mage_file_info
-        # except:
-            # sys.stderr.write("Failed to get magento information\n")
+        # returns a dict
+        # return_dict[doc_root_path]["Mage.php"] = mage_php_match
+        # return_dict[doc_root_path]["magento_path"] = head
+        # return_dict[doc_root_path]["local_xml"] = { }
+        # return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
+        # return_dict[doc_root_path]["magento_version"] = "%s" % mage["version"]
+        mage_file_info = magento.mage_file_info(mage_files)
+        globalconfig["magento"]["doc_root"] = mage_file_info
         
         for doc_root in globalconfig["magento"]["doc_root"]:
             # sys.stderr.write("2054\n")
@@ -2202,19 +2202,19 @@ if not args.jsonfile:
             #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
             #     print type(globalconfig["magento"]["doc_root"][doc_root])
             # sys.stderr.write("2060\n")
-            local_xml = os.path.join(doc_root,"app","etc","local.xml")
-            # sys.stderr.write("2062\n")
+            
+            # 1-20-2016 this is not a safe assumption, fixed
+            #local_xml = os.path.join(doc_root,"app","etc","local.xml")
+            local_xml = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["filename"]
+            
+            # if local_xml doesn't exist, then mage_file_info above failed.
             if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
                 globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
             # else:
-            #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
-            #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
             
-            #testvar = magento.open_local_xml(local_xml)
-            # var_dict = magento.open_local_xml(local_xml)
-            # sys.stderr.write("2071\n")
-            # 1-20-2016 need to fix this #fixme
+            # 1-20-2016 fixed
             update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+
             # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
