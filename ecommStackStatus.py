@@ -902,7 +902,6 @@ class MagentoCtl(object):
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
-            print "905 %r" % mage_php_matches
         
             if len(mage_php_matches) > 1:
                 sys.stderr.write("There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
@@ -921,7 +920,6 @@ class MagentoCtl(object):
                         
             if mage_php_matches:
                 return_dict[doc_root_path] = mage_php_matches[0]
-        print "924 %r" % return_dict
         return(return_dict)
         # if return_dict:
         #     print "returning %r" % return_dict
@@ -932,12 +930,12 @@ class MagentoCtl(object):
     def mage_file_info(self,mage_files):
         return_dict = {}
         for doc_root_path, mage_php_match in mage_files.iteritems():
-            print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
+            #print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
-            print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
+            #print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
-            print "940 head %s tail %s" %(head,tail)
+            #print "940 head %s tail %s" %(head,tail)
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
             return_dict[doc_root_path]["magento_path"] = head
             return_dict[doc_root_path]["local_xml"] = { }
