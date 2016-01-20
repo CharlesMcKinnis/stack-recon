@@ -1681,9 +1681,9 @@ def importfile(filename, keyword_regex, **kwargs):
         if os.path.isfile(onefile):
             combined += "## END "+onefile+"\n"
         onefile_handle.close()
-        print "#combined#"
-        print combined
-        print "#end#"
+        #print "#combined#"
+        #print combined
+        #print "#end#"
     return(combined)
 
 def kwsearch(keywords,line, **kwargs):
