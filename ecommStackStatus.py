@@ -286,21 +286,19 @@ class apacheCtl(object):
             linecomp = line.strip().lower()
             # if the line opens < but doesn't close it with > there is probably a \ and newline
             # and it should be concat with the next line until it closes with >
-            if linecomp.endswith("\\"):
-                #<" in linecomp and not ">" in linecomp:
-                # removing the trailing \
+
+            # if a line ends in \, it is continued on the next line
+            while linecomp.endswith("\\"):
+                linecomp = linecomp.strip("\\").strip()
+                # read the next line
+                line = lines.next()
+                
+                linenum += 1
+                linecomp += " "
+                linecomp += line.strip().lower()
                 #linecomp = linecomp.strip("\\").strip()
-                while linecomp.endswith("\\"):
-                    linecomp = linecomp.strip("\\").strip()
-                    # read the next line
-                    line = lines.next()
-                    
-                    linenum += 1
-                    linecomp += " "
-                    linecomp += line.strip().lower()
-                    #linecomp = linecomp.strip("\\").strip()
-                    #print linenum
-            
+                #print linenum
+            linecomp = linecomp.strip()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
