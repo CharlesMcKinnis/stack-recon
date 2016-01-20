@@ -288,16 +288,15 @@ class apacheCtl(object):
             # and it should be concat with the next line until it closes with >
             if "<" in linecomp and not ">" in linecomp:
                 # removing the trailing \
+                linecomp = linecomp.strip("\\").strip()
                 while not ">" in linecomp:
-                    linecomp = linecomp.lstrip("\\")
                     # read the next line
                     line = lines.next()
                     
                     linenum += 1
                     linecomp += " "
                     linecomp += line.strip().lower()
-                    linecomp = linecomp.lstrip("\\")
-
+                    linecomp = linecomp.lstrip("\\").strip()
                     #print linenum
             
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
