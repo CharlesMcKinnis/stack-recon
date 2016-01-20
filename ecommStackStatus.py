@@ -1660,6 +1660,8 @@ def importfile(filename, keyword_regex, **kwargs):
             # onefile should always be a file
             if os.path.isfile(onefile):
                 combined += "## START "+onefile+"\n"
+            else:
+                print "1664 file isn't a file? " % onefile
         # except:
         #     return()
 
