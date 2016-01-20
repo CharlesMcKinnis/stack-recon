@@ -286,11 +286,11 @@ class apacheCtl(object):
             linecomp = line.strip().lower()
             # if the line opens < but doesn't close it with > there is probably a \ and newline
             # and it should be concat with the next line until it closes with >
-            if linecomp[-1].endswith('\\'):
+            if linecomp[-1].endswith("\\"):
                 #<" in linecomp and not ">" in linecomp:
                 # removing the trailing \
                 #linecomp = linecomp.strip("\\").strip()
-                while linecomp[-1].endswith('\\'):
+                while linecomp[-1].endswith("\\"):
                     linecomp = linecomp.strip("\\").strip()
                     # read the next line
                     line = lines.next()
