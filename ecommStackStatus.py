@@ -1571,7 +1571,7 @@ def daemon_exe(match_exe):
             pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except TypeError:
-            sys.write.stderr("TypeError %r - %s" % (e,os.path.join('/proc', pid, 'exe')))
+            sys.stderr.write("TypeError %r - %s" % (e,os.path.join('/proc', pid, 'exe')))
             sys.exit(1)
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
