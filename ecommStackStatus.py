@@ -288,11 +288,12 @@ class apacheCtl(object):
             # and it should be concat with the next line until it closes with >
             if "<" in linecomp and not ">" in linecomp:
                 # removing the trailing \
-                linecomp = linecomp.lstrip("\\")
-                # read the next line
-                line = lines.next()
-                linenum += 1
-                linecomp += line.strip().lower()
+                while not ">" in linecomp:
+                    linecomp = linecomp.lstrip("\\")
+                    # read the next line
+                    line = lines.next()
+                    linenum += 1
+                    linecomp += line.strip().lower()
                 
                 pass
             
