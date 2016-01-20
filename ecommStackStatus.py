@@ -296,8 +296,7 @@ class apacheCtl(object):
                     linenum += 1
                     linecomp += " "
                     linecomp += line.strip().lower()
-                
-                pass
+                    print linenum
             
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
