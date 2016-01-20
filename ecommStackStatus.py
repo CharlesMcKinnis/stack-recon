@@ -1655,13 +1655,14 @@ def importfile(filename, keyword_regex, **kwargs):
     for onefile in files:
         # for each file in the glob (may be just one file), open it
         # try:
-        if True:
-            onefile_handle = open(onefile, 'r')
-            # onefile should always be a file
-            if os.path.isfile(onefile):
-                combined += "## START "+onefile+"\n"
-            else:
-                print "1664 file isn't a file? " % onefile
+        onefile_handle = open(onefile, 'r')
+        print "1659 onefile_handle %r" % onefile_handle
+        # onefile should always be a file
+        if os.path.isfile(onefile):
+            combined += "## START "+onefile+"\n"
+        else:
+            print "1664 file isn't a file? " % onefile
+            combined += "#1664 file isn't a file? " % onefile
         # except:
         #     return()
 
