@@ -291,7 +291,8 @@ class apacheCtl(object):
                 while not ">" in linecomp:
                     linecomp = linecomp.lstrip("\\")
                     # read the next line
-                    line = lines.next()
+                    line = lines.next().lstrip("\\")
+                    
                     linenum += 1
                     linecomp += line.strip().lower()
                 
