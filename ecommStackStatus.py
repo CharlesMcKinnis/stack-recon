@@ -1634,7 +1634,7 @@ def importfile(filename, keyword_regex, **kwargs):
         # kwargs["recurse_count"] += 1 shouldn't be adding this twice
     else:
         kwargs["recurse_count"] = 0
-    if kwargs["recurse_count"] > 10:
+    if kwargs["recurse_count"] > 20:
         #arbitrary number
         sys.stderr.write("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         error_collection.append("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
