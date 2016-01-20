@@ -937,7 +937,7 @@ class MagentoCtl(object):
             mage = self.parse_version(mage_php_match)
             print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
-            print "938 head %s tail %s" %(head,tail)
+            print "940 head %s tail %s" %(head,tail)
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
             return_dict[doc_root_path]["magento_path"] = head
             return_dict[doc_root_path]["local_xml"] = { }
@@ -2476,7 +2476,9 @@ if globalconfig.get("magento",{}).get("doc_root"):
         for key, value in globalconfig["magento"]["doc_root"].iteritems():
             print "-" * 60
             print "Magento path: %s" % key
-            print "local.xml: %s" % os.path.join(key,"app","etc","local.xml")
+            # THIS WAS WRONG
+            # print "local.xml: %s" % os.path.join(key,"app","etc","local.xml")
+            print "local.xml: %s" % value["local_xml"]["filename"]
             print "Version: %s" % value["magento_version"]
             print
             # database settings
