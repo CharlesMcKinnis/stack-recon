@@ -948,7 +948,7 @@ class MagentoCtl(object):
             return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
-    def open_local_xml(self, doc_root):
+    def open_local_xml(self, doc_root, config_node):
         """
         provide the filename (absolute or relative) of local.xml
         
@@ -956,7 +956,9 @@ class MagentoCtl(object):
         
         returns: dict with db and cache information
         """
+        # BROKEN
         filename = os.path.join(doc_root,"app","etc","local.xml")
+        filename = config_node["local_xml"]["filename"]
         try:
             #if True:
             tree = ET.ElementTree(file=filename)
@@ -2211,7 +2213,8 @@ if not args.jsonfile:
             #testvar = magento.open_local_xml(local_xml)
             # var_dict = magento.open_local_xml(local_xml)
             # sys.stderr.write("2071\n")
-            update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
+            # 1-20-2016 need to fix this #fixme
+            update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
             # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
