@@ -935,6 +935,7 @@ class MagentoCtl(object):
             print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
+            print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
             print "938 head %s tail %s" %(head,tail)
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
