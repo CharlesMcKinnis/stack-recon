@@ -280,7 +280,7 @@ class apacheCtl(object):
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
         event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild", "minsparethreads", "maxsparethreads"]
-        lines = list(enumerate(wholeconfig.splitlines()))
+        lines = iter(wholeconfig.splitlines())
         for line in lines:
             linenum += 1
             linecomp = line.strip().lower()
