@@ -1578,25 +1578,26 @@ def daemon_exe(match_exe):
             continue
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-
-        # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
-        if psexe:
-            if re.search('\(deleted\)', psexe):
-                # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
-                pserror = psexe
-                result = re.match('([^\(]+)', psexe)
-                psexe = result.group(1).rstrip()
-                pass
-            if os.path.basename(psexe) in match_exe:
-                #if os.path.basename(psexe) == daemon_name:
-                if ppid == "1" or not os.path.basename(psexe) in daemons:
-                    daemons[os.path.basename(psexe)] = { "exe" : "", "cmd" : "", "basename" : "" }
-                    daemons[os.path.basename(psexe)]["exe"] = psexe
-                    daemons[os.path.basename(psexe)]["cmd"] = pscmd
-                    daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
-                    if pserror:
-                        daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
-                        pserror = ""
+        else:
+            # probably don't need the if psexe now 1-20-2016
+            # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+            if psexe:
+                if re.search('\(deleted\)', psexe):
+                    # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+                    pserror = psexe
+                    result = re.match('([^\(]+)', psexe)
+                    psexe = result.group(1).rstrip()
+                    pass
+                if os.path.basename(psexe) in match_exe:
+                    #if os.path.basename(psexe) == daemon_name:
+                    if ppid == "1" or not os.path.basename(psexe) in daemons:
+                        daemons[os.path.basename(psexe)] = { "exe" : "", "cmd" : "", "basename" : "" }
+                        daemons[os.path.basename(psexe)]["exe"] = psexe
+                        daemons[os.path.basename(psexe)]["cmd"] = pscmd
+                        daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
+                        if pserror:
+                            daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
+                            pserror = ""
     return(daemons)
 
 class AutoVivification(dict):
