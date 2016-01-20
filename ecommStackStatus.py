@@ -921,6 +921,7 @@ class MagentoCtl(object):
                         
             if mage_php_matches:
                 return_dict[doc_root_path] = mage_php_matches[0]
+        print "924 %r" % return_dict
         return(return_dict)
         # if return_dict:
         #     print "returning %r" % return_dict
