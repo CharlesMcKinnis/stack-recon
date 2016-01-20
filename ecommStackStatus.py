@@ -296,9 +296,6 @@ class apacheCtl(object):
                 linenum += 1
                 linecomp += " "
                 linecomp += line.strip().lower()
-                #linecomp = linecomp.strip("\\").strip()
-                #print linenum
-            linecomp = linecomp.strip()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
@@ -905,6 +902,7 @@ class MagentoCtl(object):
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
+            print "905 %r" % mage_php_matches
         
             if len(mage_php_matches) > 1:
                 sys.stderr.write("There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
@@ -1812,7 +1810,7 @@ def print_sites(localconfig):
         if "domains" in one:
             print "Domains: %s" % "  ".join(one["domains"])
         if "listening" in one:
-            print "listening: %r" % ", ".join(one["listening"])
+            print "listening: %s" % ", ".join(one["listening"])
         if "doc_root" in one:
             print "Doc root: %s" % one["doc_root"]
         if "config_file" in one:
