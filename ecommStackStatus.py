@@ -289,7 +289,7 @@ class apacheCtl(object):
             if "<" in linecomp and not ">" in linecomp:
                 # removing the trailing \
                 while not ">" in linecomp:
-                    linecomp = linecomp.strip("\\")
+                    linecomp = linecomp.lstrip("\\")
                     # read the next line
                     # line = lines.next().strip().strip("\\")
                     
