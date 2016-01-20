@@ -1572,6 +1572,8 @@ def daemon_exe(match_exe):
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
+        except TypeError as e:
+            sys.write.stderr("TypeError %r - %s" % (e,os.path.join('/proc', pid, 'exe')))
 
         # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
         if psexe:
