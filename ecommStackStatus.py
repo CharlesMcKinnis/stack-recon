@@ -1652,6 +1652,9 @@ def importfile(filename, keyword_regex, **kwargs):
     files = glob.glob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
     combined = ""
 
+    print "1655 %r" % full_file_path(filename, base_path)
+    print "1656 %r" % files
+
     for onefile in files:
         # for each file in the glob (may be just one file), open it
         # try:
