@@ -291,12 +291,14 @@ class apacheCtl(object):
                 while not ">" in linecomp:
                     linecomp = linecomp.lstrip("\\")
                     # read the next line
-                    # line = lines.next().strip().strip("\\")
+                    line = lines.next()
                     
                     linenum += 1
                     linecomp += " "
                     linecomp += line.strip().lower()
-                    print linenum
+                    linecomp = linecomp.lstrip("\\")
+
+                    #print linenum
             
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
