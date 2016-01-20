@@ -932,6 +932,7 @@ class MagentoCtl(object):
     def mage_file_info(self,mage_files):
         return_dict = {}
         for doc_root_path, mage_php_match in mage_files.iteritems():
+            print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
