@@ -280,9 +280,22 @@ class apacheCtl(object):
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
         event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild", "minsparethreads", "maxsparethreads"]
-        for line in wholeconfig.splitlines():
+        lines = wholeconfig.splitlines()
+        for line in lines:
             linenum += 1
             linecomp = line.strip().lower()
+            # if the line opens < but doesn't close it with > there is probably a \ and newline
+            # and it should be concat with the next line until it closes with >
+            if "<" in linecomp and not ">" in linecomp:
+                # removing the trailing \
+                linecomp = linecomp.lstrip("\\")
+                # read the next line
+                line = lines.next()
+                linenum += 1
+                linecomp += line.strip().lower()
+                
+                pass
+            
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
