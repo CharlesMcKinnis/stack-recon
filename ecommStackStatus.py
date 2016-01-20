@@ -112,6 +112,7 @@ try:
 except ImportError:
     try:
         import simplejson
+        JSON = True
     except ImportError:
         JSON = False
         sys.stderr.write("Data export omitted, module json and simplejson are not installed\n")
