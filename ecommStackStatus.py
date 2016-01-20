@@ -110,14 +110,15 @@ try:
     import json
     JSON = True
 except ImportError:
-    try:
-        import simplejson
-        JSON = True
-    except ImportError:
-        JSON = False
-        sys.stderr.write("Data export omitted, module json and simplejson are not installed\n")
-        sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: yum install python-simplejson")
-        error_collection.append("Data export omitted because the json module is not installed\n")
+    # try:
+    #     import simplejson
+    #     JSON = True
+    # except ImportError:
+    #     JSON = False
+    #     sys.stderr.write("Data export omitted, module json and simplejson are not installed\n")
+    #     sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: yum install python-simplejson")
+    #     error_collection.append("Data export omitted because the json module is not installed\n")
+    JSON = False
 try:
     import argparse
     ARGPARSE = True
