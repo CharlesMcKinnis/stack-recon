@@ -1986,7 +1986,7 @@ if not args.jsonfile:
             error_collection.append("Using config %s\n" % apache_conf_file)
             # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as a whole word,
             # and is a non-capturing group by virtue of the (?:)
-            wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+(\S+)', base_path = apache_root_path)
+            wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+[\'"]?(\S+)[\'"]?', base_path = apache_root_path)
             if args.printwholeconfig and args.apache:
                 print(wholeconfig)
             apache_config = apache.parse_config(wholeconfig)
@@ -1998,12 +1998,12 @@ if not args.jsonfile:
             """
             globalconfig[apache][sites]: [
                 {
-                'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+                'domains': ['domain.com', 'www.domain.com new.domain.com'],
                 'config_file': '/etc/httpd/conf.d/ssl.conf',
                 'doc_root': '/var/www/html',
                 'listening': ['192.168.100.248:443']
                 }, {
-                'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+                'domains': ['wilshirewigs.com', 'www.domain.com new.domain.com'],
                 'config_file': '/etc/httpd/conf/httpd.conf',
                 'doc_root': '/var/www/html',
                 'listening': ['*:80']
