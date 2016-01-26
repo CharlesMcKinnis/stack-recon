@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated with or endorsed by the Magento Project or its trademark owners.
 
@@ -9,7 +9,11 @@ wget https://raw.githubusercontent.com/CharlesMcKinnis/ecommStackStatus/master/e
 
 git clone https://github.com/CharlesMcKinnis/ecommStackStatus.git
 #dev branch
+cd ecommStackStatus
 git checkout -b dev origin/dev
+
+To look at the json captured:
+cat config_dump.json |python -m json.tool|less
 """
 
 """
@@ -106,13 +110,15 @@ try:
     import json
     JSON = True
 except ImportError:
-    try:
-        import simplejson
-    except ImportError:
-        JSON = False
-        sys.stderr.write("Data export omitted, module json and simplejson are not installed\n")
-        sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: yum install python-simplejson")
-        error_collection.append("Data export omitted because the json module is not installed\n")
+    # try:
+    #     import simplejson
+    #     JSON = True
+    # except ImportError:
+    #     JSON = False
+    #     sys.stderr.write("Data export omitted, module json and simplejson are not installed\n")
+    #     sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: yum install python-simplejson")
+    #     error_collection.append("Data export omitted because the json module is not installed\n")
+    JSON = False
 try:
     import argparse
     ARGPARSE = True
@@ -274,9 +280,22 @@ class apacheCtl(object):
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
         worker_keywords = ["startservers", "maxclients", "minsparethreads", "maxsparethreads", "threadsperchild", "maxrequestsperchild"]
         event_keywords = ["startservers", "minspareservers", "maxspareservers", "serverlimit", "threadsperchild", "maxrequestworkers", "maxconnectionsperchild", "minsparethreads", "maxsparethreads"]
-        for line in wholeconfig.splitlines():
+        lines = iter(wholeconfig.splitlines())
+        for line in lines:
             linenum += 1
             linecomp = line.strip().lower()
+            # if the line opens < but doesn't close it with > there is probably a \ and newline
+            # and it should be concat with the next line until it closes with >
+
+            # if a line ends in \, it is continued on the next line
+            while linecomp.endswith("\\"):
+                linecomp = linecomp.strip("\\").strip()
+                # read the next line
+                line = lines.next()
+                
+                linenum += 1
+                linecomp += " "
+                linecomp += line.strip().lower()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
@@ -911,9 +930,12 @@ class MagentoCtl(object):
     def mage_file_info(self,mage_files):
         return_dict = {}
         for doc_root_path, mage_php_match in mage_files.iteritems():
+            #print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
+            #print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
             head,tail = os.path.split(os.path.dirname(mage_php_match))
+            #print "940 head %s tail %s" %(head,tail)
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
             return_dict[doc_root_path]["magento_path"] = head
             return_dict[doc_root_path]["local_xml"] = { }
@@ -924,7 +946,7 @@ class MagentoCtl(object):
             return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
     
-    def open_local_xml(self, doc_root):
+    def open_local_xml(self, doc_root, config_node):
         """
         provide the filename (absolute or relative) of local.xml
         
@@ -932,7 +954,10 @@ class MagentoCtl(object):
         
         returns: dict with db and cache information
         """
-        filename = os.path.join(doc_root,"app","etc","local.xml")
+        # BROKEN
+#        filename = os.path.join(doc_root,"app","etc","local.xml")
+        filename = config_node["local_xml"]["filename"]
+        print "962 %s" % filename
         try:
             #if True:
             tree = ET.ElementTree(file=filename)
@@ -957,15 +982,28 @@ class MagentoCtl(object):
         xml_config_section = 'redis_session'
         xml_config_single = 'session_save_path'
         update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
+
+
+
         # test for session cache redis
         resources = tree.find("global/redis_session")
-        if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis" and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
+        # print "resources %r" % resources
+        # print "xml_config_node %r" % local_xml.get(section,{}).get(xml_config_node,"").lower()
+        # print "xml_config_single %r" % local_xml.get(section,{}).get(xml_config_single,"")
+        # if resources is not None:
+        #     print "962 resources is not None"
+        # if (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
+        #     and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
+        #     print "966 xml config node == redis and tcp in xml_config_single"
+        if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
+                                     and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
             local_xml[section]["engine"] = "redis"
             redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
             #print "908 redis module xml: %s" % redis_module_xml
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
             try:
+                # print "969 Cm_RedisSession check"
                 redis_tree = ET.ElementTree(file=redis_module_xml)
                 Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
                 if Cm_RedisSession is not None:
@@ -974,9 +1012,9 @@ class MagentoCtl(object):
                         #print "and found %s" % Cm_RedisSession.text
                         local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
                     else:
-                        local_xml[section]["Cm_RedisSession.xml active"] = None
+                        local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession is present but the value is empty"
                 else:
-                    local_xml[section]["Cm_RedisSession.xml active"] = None
+                    local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession is not present"
             except IOError:
                 error_collection.append("The file %s could not be opened." % redis_module_xml)
                 local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
@@ -1086,54 +1124,22 @@ class MagentoCtl(object):
         return local_xml
 
     def db_cache_table(self, doc_root, value):
+        mysql = MysqlCtl()
+        var_table_prefix = value.get("db/table_prefix","")
+        var_dbname = value.get("dbname","")
+        var_host = value.get("host","")
+        var_username = value.get("username","")
+        var_password = value.get("password","")
+        output = mysql.db_query(value, "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix))
+        # doc_root isn't used locally anymore? 14 Jan 2016
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
         return_config = { }
-        var_table_prefix = value.get("local_xml",{}).get("db",{}).get("db/table_prefix","")
-        var_dbname = value.get("local_xml",{}).get("db",{}).get("dbname","")
-        var_host = value.get("local_xml",{}).get("db",{}).get("host","")
-        var_username = value.get("local_xml",{}).get("db",{}).get("username","")
-        var_password = value.get("local_xml",{}).get("db",{}).get("password","")
-        if (var_dbname and var_host and var_username and var_password ):
-            sqlquery = "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix)
-            conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
-                var_username,
-                var_password,
-                var_host,
-                sqlquery
-                )
-            sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
-            p = subprocess.Popen(
-                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            output, err = p.communicate()
-            if p.returncode > 0 or not output:
-                #return()
-                sys.stderr.write("MySQL cache table query failed\n")
-                error_collection.append("MySQL cache table query failed: %s\n" % conf)
-                if err:
-                    sys.stderr.write("err %s\n" % err)
-                    error_collection.append("err %s\n" % err)
-                sys.stderr.write("command: %s\n" % conf)
-                error_collection.append("command: %s\n" % conf)
-            else:
-                # print "Mysql cache table:"
-                # print "%s" % output
-                #return_config = { "cache" : { "cache_option_table" : "" } }
-                #globalconfig["magento"]["doc_root"][doc_root]    ["cache"]["cache_option_table"] = output
-                if not return_config.get("cache",{}).get("cache_option_table"):
-                    return_config = {"cache" : { "cache_option_table" : "" } } 
-                return_config["cache"]["cache_option_table"] = output
-        # else:
-            # print "Skipping database because there isn't enough login information"
-            # print " Table prefix: %s" % var_table_prefix
-            # print " dbname: %s" % var_dbname
-            # print " host: %s" % var_host
-            # print " username: %s" % var_username
-            # if var_password:
-            #     print " password present but not displayed"
-            # print " password: %s" % var_password
-        #print
+        if not return_config.get("cache",{}).get("cache_option_table"):
+            return_config = {"cache" : { "cache_option_table" : "" } } 
+        return_config["cache"]["cache_option_table"] = output
         return(return_config)
+
 class RedisCtl(object):
     def figlet(self):
         print """
@@ -1208,7 +1214,7 @@ class RedisCtl(object):
                 # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
-                # print "1150 redis instance"
+                print "1150 redis instance"
                 pp.pprint(instances[i])
                 reply = None
             if reply:
@@ -1423,8 +1429,121 @@ STAT curr_items 715
 STAT total_items 40465881
 STAT evictions 0
 END
-
     """
+
+class MysqlCtl(object):
+    def figlet(self):
+        print """
+ __  __       ____   ___  _     
+|  \/  |_   _/ ___| / _ \| |    
+| |\/| | | | \___ \| | | | |    
+| |  | | |_| |___) | |_| | |___ 
+|_|  |_|\__, |____/ \__\_\_____|
+        |___/
+"""
+    def get_status(self, ip, port):
+        port = int(port)
+        reply = socket_client(ip,port,"stats\n")
+        return(reply)
+    def db_query(self, dbConnInfo, sqlquery):
+        # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
+
+        output = ""
+
+        var_table_prefix = dbConnInfo.get("db/table_prefix","")
+        var_dbname = dbConnInfo.get("dbname","")
+        var_host = dbConnInfo.get("host","")
+        var_username = dbConnInfo.get("username","")
+        var_password = dbConnInfo.get("password","")
+
+        if (var_dbname and var_host and var_username and var_password ):
+            conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
+                var_username,
+                var_password,
+                var_host,
+                sqlquery
+                )
+            #sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
+            p = subprocess.Popen(
+                conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            output, err = p.communicate()
+            if p.returncode > 0 or not output:
+                #return()
+                sys.stderr.write("MySQL cache table query failed\n")
+                error_collection.append("MySQL cache table query failed: %s\n" % conf)
+                if err:
+                    sys.stderr.write("err %s\n" % err)
+                    error_collection.append("err %s\n" % err)
+                sys.stderr.write("command: %s\n" % conf)
+                error_collection.append("command: %s\n" % conf)
+        # else:
+            # print "Skipping database because there isn't enough login information"
+            # print " Table prefix: %s" % var_table_prefix
+            # print " dbname: %s" % var_dbname
+            # print " host: %s" % var_host
+            # print " username: %s" % var_username
+            # if var_password:
+            #     print " password present but not displayed"
+            # print " password: %s" % var_password
+        #print
+        return(output)
+    def parse_key_value(self, queried_table):
+        lines = queried_table.splitlines()
+        # The calculation is using RSS, and free memory.
+        # There are buffers and cache used by the process, and that throws off the calculation
+        lines = input.splitlines()
+        counter = 0
+        for line in lines:
+            return_dict = {}
+            # skip X lines
+            if counter < 3:
+                counter += 1
+                continue
+            counter += 1
+            result = re.search('\|\s*([^\|]+)\|\s*([^\|]+)', line)
+            if not result:
+                print "done"
+                break
+            return_dict[result.group(1).strip()] = result.group(2).strip()
+        return(return_dict)
+    def instances(self, doc_roots):
+        """
+        With a list of doc_roots, examine the local xml we already parsed
+        Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password" 
+        
+        Returns a dict
+        Value is None if it is undefined
+        
+        globalconfig[
+            "magento": {
+                "doc_root": {
+                    "/var/www/vhosts/www.example.com/html": {
+                        "local_xml": {
+                            "db": {
+                                "dbname": "databasename", 
+                                "host": "172.24.16.2", 
+                                "password": "password", 
+                                "username": "someuser"
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+
+        """
+        # redis_instances = set()
+        # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
+        return_dict = {} # "host:port" : {host:"",port:"",password:""}
+        for doc_root in doc_roots:
+            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
+                xml_db = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("db",{})
+            return_dict[xml_db["host"]]["credentials"].add(xml_db)
+            pass
+        # globalconfig["mysql"]=return_dict
+        return(return_dict)
+
+
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
@@ -1472,27 +1591,32 @@ def daemon_exe(match_exe):
             ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
             pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
+        except TypeError:
+            e=""
+            sys.stderr.write("TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
+            continue
         except (IOError,OSError): # proc has already terminated, you may not be root
             continue
-
-        # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
-        if psexe:
-            if re.search('\(deleted\)', psexe):
-                # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
-                pserror = psexe
-                result = re.match('([^\(]+)', psexe)
-                psexe = result.group(1).rstrip()
-                pass
-            if os.path.basename(psexe) in match_exe:
-                #if os.path.basename(psexe) == daemon_name:
-                if ppid == "1" or not os.path.basename(psexe) in daemons:
-                    daemons[os.path.basename(psexe)] = { "exe" : "", "cmd" : "", "basename" : "" }
-                    daemons[os.path.basename(psexe)]["exe"] = psexe
-                    daemons[os.path.basename(psexe)]["cmd"] = pscmd
-                    daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
-                    if pserror:
-                        daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
-                        pserror = ""
+        else:
+            # probably don't need the if psexe now 1-20-2016
+            # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+            if psexe:
+                if re.search('\(deleted\)', psexe):
+                    # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+                    pserror = psexe
+                    result = re.match('([^\(]+)', psexe)
+                    psexe = result.group(1).rstrip()
+                    pass
+                if os.path.basename(psexe) in match_exe:
+                    #if os.path.basename(psexe) == daemon_name:
+                    if ppid == "1" or not os.path.basename(psexe) in daemons:
+                        daemons[os.path.basename(psexe)] = { "exe" : "", "cmd" : "", "basename" : "" }
+                        daemons[os.path.basename(psexe)]["exe"] = psexe
+                        daemons[os.path.basename(psexe)]["cmd"] = pscmd
+                        daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
+                        if pserror:
+                            daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
+                            pserror = ""
     return(daemons)
 
 class AutoVivification(dict):
@@ -1529,7 +1653,7 @@ def importfile(filename, keyword_regex, **kwargs):
         # kwargs["recurse_count"] += 1 shouldn't be adding this twice
     else:
         kwargs["recurse_count"] = 0
-    if kwargs["recurse_count"] > 10:
+    if kwargs["recurse_count"] > 20:
         #arbitrary number
         sys.stderr.write("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         error_collection.append("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
@@ -1547,14 +1671,20 @@ def importfile(filename, keyword_regex, **kwargs):
     files = glob.glob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
     combined = ""
 
+    # print "1655 %r" % full_file_path(filename, base_path)
+    # print "1656 %r" % files
+
     for onefile in files:
         # for each file in the glob (may be just one file), open it
         # try:
-        if True:
-            onefile_handle = open(onefile, 'r')
-            # onefile should always be a file
-            if os.path.isfile(onefile):
-                combined += "## START "+onefile+"\n"
+        onefile_handle = open(onefile, 'r')
+        # print "1659 onefile_handle %r" % onefile_handle
+        # onefile should always be a file
+        if os.path.isfile(onefile):
+            combined += "## START "+onefile+"\n"
+        # else:
+        #     print "1664 file isn't a file? " % onefile
+        #     combined += "#1664 file isn't a file? " % onefile
         # except:
         #     return()
 
@@ -1576,7 +1706,10 @@ def importfile(filename, keyword_regex, **kwargs):
         if os.path.isfile(onefile):
             combined += "## END "+onefile+"\n"
         onefile_handle.close()
-    return combined
+        #print "#combined#"
+        #print combined
+        #print "#end#"
+    return(combined)
 
 def kwsearch(keywords,line, **kwargs):
     """
@@ -1682,7 +1815,7 @@ def print_sites(localconfig):
         if "domains" in one:
             print "Domains: %s" % "  ".join(one["domains"])
         if "listening" in one:
-            print "listening: %r" % ", ".join(one["listening"])
+            print "listening: %s" % ", ".join(one["listening"])
         if "doc_root" in one:
             print "Doc root: %s" % one["doc_root"]
         if "config_file" in one:
@@ -1882,7 +2015,7 @@ if not args.jsonfile:
             error_collection.append("Using config %s\n" % apache_conf_file)
             # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as a whole word,
             # and is a non-capturing group by virtue of the (?:)
-            wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+(\S+)', base_path = apache_root_path)
+            wholeconfig = importfile(apache_conf_file, '\s*include(?:optional?)?\s+[\'"]?([^\s\'"]+)[\'"]?', base_path = apache_root_path)
             if args.printwholeconfig and args.apache:
                 print(wholeconfig)
             apache_config = apache.parse_config(wholeconfig)
@@ -1894,12 +2027,12 @@ if not args.jsonfile:
             """
             globalconfig[apache][sites]: [
                 {
-                'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+                'domains': ['domain.com', 'www.domain.com new.domain.com'],
                 'config_file': '/etc/httpd/conf.d/ssl.conf',
                 'doc_root': '/var/www/html',
                 'listening': ['192.168.100.248:443']
                 }, {
-                'domains': ['wilshirewigs.com', 'www.wilshirewigs.com new.wilshirewigs.com'],
+                'domains': ['wilshirewigs.com', 'www.domain.com new.domain.com'],
                 'config_file': '/etc/httpd/conf/httpd.conf',
                 'doc_root': '/var/www/html',
                 'listening': ['*:80']
@@ -2050,15 +2183,14 @@ if not args.jsonfile:
         globalconfig["magento"]["doc_root"] = mage_file_info
         
         
-        # try:
-        if True:
-            # print "1265"
-            # print type(magento.mage_file_info(mage_files))
-            # sys.stderr.write("2047\n")
-            mage_file_info = magento.mage_file_info(mage_files)
-            globalconfig["magento"]["doc_root"] = mage_file_info
-        # except:
-            # sys.stderr.write("Failed to get magento information\n")
+        # returns a dict
+        # return_dict[doc_root_path]["Mage.php"] = mage_php_match
+        # return_dict[doc_root_path]["magento_path"] = head
+        # return_dict[doc_root_path]["local_xml"] = { }
+        # return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
+        # return_dict[doc_root_path]["magento_version"] = "%s" % mage["version"]
+        mage_file_info = magento.mage_file_info(mage_files)
+        globalconfig["magento"]["doc_root"] = mage_file_info
         
         for doc_root in globalconfig["magento"]["doc_root"]:
             # sys.stderr.write("2054\n")
@@ -2068,23 +2200,30 @@ if not args.jsonfile:
             #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
             #     print type(globalconfig["magento"]["doc_root"][doc_root])
             # sys.stderr.write("2060\n")
-            local_xml = os.path.join(doc_root,"app","etc","local.xml")
-            # sys.stderr.write("2062\n")
+            
+            # 1-20-2016 this is not a safe assumption, fixed
+            #local_xml = os.path.join(doc_root,"app","etc","local.xml")
+            local_xml = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["filename"]
+            
+            # if local_xml doesn't exist, then mage_file_info above failed.
             if not "local_xml" in globalconfig["magento"]["doc_root"][doc_root]:
                 globalconfig["magento"]["doc_root"][doc_root]["local_xml"] = { }
             # else:
-            #     print 'DEFINED: "local_xml" in globalconfig["magento"]["doc_root"][%s]' % doc_root
-            #     print type(globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
             
-            #testvar = magento.open_local_xml(local_xml)
-            # var_dict = magento.open_local_xml(local_xml)
-            # sys.stderr.write("2071\n")
-            update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root))
+            # 1-20-2016 fixed
+            update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"], magento.open_local_xml(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+
             # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
             # app/etc/modules/Cm_RedisSession.xml
             # globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
             # sys.stderr.write("2076\n")
-            update(globalconfig["magento"]["doc_root"][doc_root], magento.db_cache_table(doc_root,globalconfig["magento"]["doc_root"][doc_root]))
+            
+            # get the cache table information, and store it in ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+            update(globalconfig["magento"]["doc_root"][doc_root],
+                magento.db_cache_table(doc_root,
+                    globalconfig["magento"]["doc_root"][doc_root].get("local_xml",{}).get("db",{})
+                )
+            )
             # print "2078 globalconfig"
             # pp.pprint(globalconfig)
             #if return_config:
@@ -2122,6 +2261,45 @@ if not args.jsonfile:
             #fixme add redis password
             update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
             # print "2114"
+
+    def MYSQL_DATA_GATHER():
+            pass
+    sys.stderr.write("mysql data gather\n")
+    ################################################
+    # MySQL
+    ################################################
+    
+    if not "mysql" in globalconfig:
+        globalconfig["mysql"] = {}
+    #globalconfig["mysql"] = mysql_config
+    
+    # find mysql from local_xml
+    """
+    I want to add globalconfig["mysql"], and I'll need a list of them I guess?
+    Each one needs host and auth info
+    Then a dict for each query that contains a dict of key value pairs
+
+    dbConnInfo = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["db"]
+    output = db_query(dbConnInfo, sqlquery)
+    parse_key_value(output)
+    
+    globalconfig[
+        "magento": {
+            "doc_root": {
+                "/var/www/vhosts/www.example.com/html": {
+                    "local_xml": {
+                        "db": {
+                            "dbname": "databasename", 
+                            "host": "172.24.16.2", 
+                            "password": "password", 
+                            "username": "someuser"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+    """
 else:
     # print "2114"
     for i in globalconfig["errors"]:
@@ -2147,6 +2325,7 @@ else:
 """
 
 
+
 # using this as a bookmark in the IDE
 class OUTPUT(object):
     pass
@@ -2166,7 +2345,7 @@ print "FQDN: %s" % localfqdn
 #if not args.silent:
 def NGINX_PRINT():
     pass
-sys.stderr.write("nginx data print\n")
+# sys.stderr.write("nginx data print\n")
 ################################################
 # NGINX
 ################################################
@@ -2213,7 +2392,7 @@ if "nginx" in globalconfig:
 
 def APACHE_PRINT():
     pass
-sys.stderr.write("apache data print\n")
+# sys.stderr.write("apache data print\n")
 ################################################
 # APACHE
 ################################################
@@ -2223,6 +2402,10 @@ if "apache" in  globalconfig:
         print "Apache version: %s" % globalconfig.get("apache",{}).get("version")
     else:
         print "No apache version?"
+    if globalconfig.get("apache",{}).get("daemon",{}).get("Server MPM"):
+        print "Apache server MPM: %s\n" % globalconfig.get("apache",{}).get("daemon",{}).get("Server MPM")
+    else:
+        print "No apache server MPM?\n"
     if globalconfig.get("apache",{}).get("sites"):
         print "Apache sites:"
         """
@@ -2249,7 +2432,7 @@ if "apache" in  globalconfig:
 
 def PHP_FPM_PRINT():
     pass
-sys.stderr.write("php-fpm data print\n")
+# sys.stderr.write("php-fpm data print\n")
 ################################################
 # PHP-FPM
 ################################################
@@ -2282,7 +2465,7 @@ if "php-fpm" in globalconfig:
 
 def MAGENTO_PRINT():
     pass
-sys.stderr.write("magento data print\n")
+# sys.stderr.write("magento data print\n")
 ################################################
 # Magento
 ################################################
@@ -2294,7 +2477,9 @@ if globalconfig.get("magento",{}).get("doc_root"):
         for key, value in globalconfig["magento"]["doc_root"].iteritems():
             print "-" * 60
             print "Magento path: %s" % key
-            print "local.xml: %s" % os.path.join(key,"app","etc","local.xml")
+            # THIS WAS WRONG
+            # print "local.xml: %s" % os.path.join(key,"app","etc","local.xml")
+            print "local.xml: %s" % value["local_xml"]["filename"]
             print "Version: %s" % value["magento_version"]
             print
             # database settings
@@ -2392,7 +2577,7 @@ This output is flawed because local.xml was not configured correctly
 
 def MEMCACHE_PRINT():
     pass
-sys.stderr.write("memcache data print\n")
+# sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
     memcache.figlet()
     #pp.pprint(globalconfig.get("memcache"))
@@ -2410,7 +2595,7 @@ if globalconfig.get("memcache"):
         print
 def REDIS_PRINT():
     pass
-sys.stderr.write("redis data print\n")
+# sys.stderr.write("redis data print\n")
 if globalconfig.get("redis"):
     redis.figlet()
     for instance in globalconfig.get("redis"):
