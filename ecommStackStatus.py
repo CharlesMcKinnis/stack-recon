@@ -63,6 +63,10 @@ mysql: {
     }
 }
 
+* MySQL max_connections, max_used_connections
+
+* MySQL query cache, example values: query_cache_type=1, query_cache_size=256M, query_cache_limit=16M
+
 * Check Magento for the Shoplift SUPEE-5344 vulnerability
 find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
 If it returns results, assuming Magento is in /var/www, it is vulnerable.
@@ -70,6 +74,39 @@ If it returns results, assuming Magento is in /var/www, it is vulnerable.
 
 Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
 If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
+
+* Check Magento for SUPEE-7405
+
+* Check for cron job, should be cron.sh NOT cron.php
+
+* check php opcache
+i.e.
+Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:
+opcache.enable=1
+Changed the "0" to a "1" on that line.
+Stop nginx, restart php-fpm, start nginx.
+
+* check mysql
+
+* magento_root/shell/indexer.php --status
+i.e.
+2560M
+2024M
+Category Flat Data:                 Pending
+Product Flat Data:                  Pending
+Stock Status:                       Pending
+Catalog product price:              Pending
+Category URL Rewrites:              Pending
+Product URL Rewrites:               Pending
+URL Redirects:                      Pending
+Catalog Category/Product Index:     Pending
+Catalog Search Index:               Pending
+Default Values (MANAdev):           Pending
+Dynamic Categories:                 Running
+Tag Aggregation Data:               Pending
+SEO Schemas (MANAdev):              Pending
+Product Attributes:                 Pending
+SEO URL Rewrites (MANAdev):         Pending
 
 
 DONE
@@ -957,7 +994,7 @@ class MagentoCtl(object):
         # BROKEN
 #        filename = os.path.join(doc_root,"app","etc","local.xml")
         filename = config_node["local_xml"]["filename"]
-        print "962 %s" % filename
+        #print "962 %s" % filename
         try:
             #if True:
             tree = ET.ElementTree(file=filename)
@@ -1214,8 +1251,8 @@ class RedisCtl(object):
                 # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
-                print "1150 redis instance"
-                pp.pprint(instances[i])
+                #print "1150 redis instance"
+                #pp.pprint(instances[i])
                 reply = None
             if reply:
                 # print "1210"
@@ -1764,8 +1801,8 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["buffer_cache"] = int(result.group(4))
-            print "1552 buffer_cache"
-            print status["buffer_cache"]
+            #print "1552 buffer_cache"
+            #print status["buffer_cache"]
             break
 
     conf = "ps aux | grep %s" % process_name
