@@ -957,7 +957,7 @@ class MagentoCtl(object):
         # BROKEN
 #        filename = os.path.join(doc_root,"app","etc","local.xml")
         filename = config_node["local_xml"]["filename"]
-        print "962 %s" % filename
+        #print "962 %s" % filename
         try:
             #if True:
             tree = ET.ElementTree(file=filename)
@@ -1214,8 +1214,8 @@ class RedisCtl(object):
                 # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
-                print "1150 redis instance"
-                pp.pprint(instances[i])
+                #print "1150 redis instance"
+                #pp.pprint(instances[i])
                 reply = None
             if reply:
                 # print "1210"
@@ -1764,8 +1764,8 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["buffer_cache"] = int(result.group(4))
-            print "1552 buffer_cache"
-            print status["buffer_cache"]
+            #print "1552 buffer_cache"
+            #print status["buffer_cache"]
             break
 
     conf = "ps aux | grep %s" % process_name
