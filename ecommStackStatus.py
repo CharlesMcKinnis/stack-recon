@@ -41,6 +41,8 @@ innodb_buffer_pool_instances
 innodb_log_buffer_size
 query_cache_limit
 
+* Magento report numbers for reports in the last 24-48 hours with date and time
+
 * name json file by hostname and date+time
 
 * I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
