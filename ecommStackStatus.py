@@ -738,6 +738,9 @@ class nginxCtl(object):
         
         # pressing the whole web daemon config in to a specific framework so it is easier to work with
         for i in stanzas.keys():
+            # fixes an error where i = 'error' and the contents are a string
+            if type(stanzas[i]) is not list and type(stanzas[i]) is not dict:
+                continue
             if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
                 # "access_log", "error_log"
                 configuration["sites"].append( { } )
