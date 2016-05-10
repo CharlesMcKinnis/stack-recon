@@ -1172,7 +1172,7 @@ class MagentoCtl(object):
         var_host = value.get("host","")
         var_username = value.get("username","")
         var_password = value.get("password","")
-        output = mysql.db_query(value, "select * FROM '%s'.'%score_cache_option';" % (var_dbname,var_table_prefix))
+        output = mysql.db_query(value, "select * FROM \'%s\'.\'%score_cache_option\';" % (var_dbname,var_table_prefix))
         # doc_root isn't used locally anymore? 14 Jan 2016
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
