@@ -1264,7 +1264,7 @@ class RedisCtl(object):
                 return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
-        print "redis.instances doc_roots: %r" % doc_roots
+        #print "redis.instances doc_roots: %r" % doc_roots
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of redis instances, return the IP or hostname, port and password (password as applicable)
@@ -1391,7 +1391,7 @@ class MemcacheCtl(object):
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
-        print "memcache.instances doc_roots: %r" % doc_roots
+        #print "memcache.instances doc_roots: %r" % doc_roots
         memcache_dict = {}
         memcache_instances = set()
         for key, doc_root_dict in doc_roots.iteritems():
