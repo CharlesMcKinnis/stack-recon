@@ -1264,6 +1264,7 @@ class RedisCtl(object):
                 return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
+        print "redis.instances doc_roots: %r" % doc_roots
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of redis instances, return the IP or hostname, port and password (password as applicable)
@@ -1278,14 +1279,10 @@ class RedisCtl(object):
         """
         # redis_instances = set()
         redis_dict = {} # "host:port" : {host:"",port:"",password:""}
-        for doc_root in doc_roots:
-            # SESSION
-            # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
-            # redis
-            # print "1175 globalconfig magento,doc_root, $doc_root,local_xml"
-            # pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
-                local_xml = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{})
+        for key, value in doc_roots.iteritems():
+            pass
+            if value.get("local_xml"):
+                local_xml = value.get("local_xml",{})
                 # print "1179 local_xml"
                 # pp.pprint(local_xml)
             if local_xml.get("session_cache",{}).get("engine") == "redis":
@@ -1315,9 +1312,6 @@ class RedisCtl(object):
                         redis_dict[stanza]["host"] = host
                         redis_dict[stanza]["port"] = port
                         redis_dict[stanza]["password"] = None
-
-
-
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
@@ -1397,10 +1391,13 @@ class MemcacheCtl(object):
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
+        print "memcache.instances doc_roots: %r" % doc_roots
         memcache_dict = {}
         memcache_instances = set()
-        for doc_root in doc_roots:
-            doc_root_dict = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{})
+        for key, doc_root_dict in doc_roots.iteritems():
+            # for doc_root in doc_roots:
+            #     doc_root_dict = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{})
+
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # memcache
@@ -1531,8 +1528,6 @@ class MysqlCtl(object):
         return(output)
     def parse_key_value(self, queried_table):
         lines = queried_table.splitlines()
-        # The calculation is using RSS, and free memory.
-        # There are buffers and cache used by the process, and that throws off the calculation
         lines = input.splitlines()
         counter = 0
         for line in lines:
@@ -1548,7 +1543,7 @@ class MysqlCtl(object):
                 break
             return_dict[result.group(1).strip()] = result.group(2).strip()
         return(return_dict)
-    def instances(self, doc_roots):
+    def not_used_instances(self, doc_roots):
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password" 
