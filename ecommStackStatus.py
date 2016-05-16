@@ -41,6 +41,8 @@ innodb_buffer_pool_instances
 innodb_log_buffer_size
 query_cache_limit
 
+* Magento report numbers for reports in the last 24-48 hours with date and time
+
 * name json file by hostname and date+time
 
 * I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
@@ -63,6 +65,10 @@ mysql: {
     }
 }
 
+* MySQL max_connections, max_used_connections
+
+* MySQL query cache, example values: query_cache_type=1, query_cache_size=256M, query_cache_limit=16M
+
 * Check Magento for the Shoplift SUPEE-5344 vulnerability
 find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
 If it returns results, assuming Magento is in /var/www, it is vulnerable.
@@ -70,6 +76,39 @@ If it returns results, assuming Magento is in /var/www, it is vulnerable.
 
 Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
 If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
+
+* Check Magento for SUPEE-7405
+
+* Check for cron job, should be cron.sh NOT cron.php
+
+* check php opcache
+i.e.
+Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:
+opcache.enable=1
+Changed the "0" to a "1" on that line.
+Stop nginx, restart php-fpm, start nginx.
+
+* check mysql
+
+* magento_root/shell/indexer.php --status
+i.e.
+2560M
+2024M
+Category Flat Data:                 Pending
+Product Flat Data:                  Pending
+Stock Status:                       Pending
+Catalog product price:              Pending
+Category URL Rewrites:              Pending
+Product URL Rewrites:               Pending
+URL Redirects:                      Pending
+Catalog Category/Product Index:     Pending
+Catalog Search Index:               Pending
+Default Values (MANAdev):           Pending
+Dynamic Categories:                 Running
+Tag Aggregation Data:               Pending
+SEO Schemas (MANAdev):              Pending
+Product Attributes:                 Pending
+SEO URL Rewrites (MANAdev):         Pending
 
 
 DONE
@@ -699,6 +738,9 @@ class nginxCtl(object):
         
         # pressing the whole web daemon config in to a specific framework so it is easier to work with
         for i in stanzas.keys():
+            # fixes an error where i = 'error' and the contents are a string
+            if type(stanzas[i]) is not list and type(stanzas[i]) is not dict:
+                continue
             if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
                 # "access_log", "error_log"
                 configuration["sites"].append( { } )
@@ -1130,7 +1172,7 @@ class MagentoCtl(object):
         var_host = value.get("host","")
         var_username = value.get("username","")
         var_password = value.get("password","")
-        output = mysql.db_query(value, "select * FROM %s.%score_cache_option;" % (var_dbname,var_table_prefix))
+        output = mysql.db_query(value, "select * FROM `%s`.`%score_cache_option`;" % (var_dbname,var_table_prefix))
         # doc_root isn't used locally anymore? 14 Jan 2016
         #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         #doc_roots = globalconfig["magento"]["doc_root"]
@@ -1222,6 +1264,7 @@ class RedisCtl(object):
                 return_dict[i] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
+        #print "redis.instances doc_roots: %r" % doc_roots
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of redis instances, return the IP or hostname, port and password (password as applicable)
@@ -1236,14 +1279,10 @@ class RedisCtl(object):
         """
         # redis_instances = set()
         redis_dict = {} # "host:port" : {host:"",port:"",password:""}
-        for doc_root in doc_roots:
-            # SESSION
-            # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
-            # redis
-            # print "1175 globalconfig magento,doc_root, $doc_root,local_xml"
-            # pp.pprint(globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"))
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
-                local_xml = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{})
+        for key, value in doc_roots.iteritems():
+            pass
+            if value.get("local_xml"):
+                local_xml = value.get("local_xml",{})
                 # print "1179 local_xml"
                 # pp.pprint(local_xml)
             if local_xml.get("session_cache",{}).get("engine") == "redis":
@@ -1273,9 +1312,6 @@ class RedisCtl(object):
                         redis_dict[stanza]["host"] = host
                         redis_dict[stanza]["port"] = port
                         redis_dict[stanza]["password"] = None
-
-
-
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
@@ -1355,10 +1391,13 @@ class MemcacheCtl(object):
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
     def instances(self, doc_roots):
+        #print "memcache.instances doc_roots: %r" % doc_roots
         memcache_dict = {}
         memcache_instances = set()
-        for doc_root in doc_roots:
-            doc_root_dict = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{})
+        for key, doc_root_dict in doc_roots.iteritems():
+            # for doc_root in doc_roots:
+            #     doc_root_dict = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{})
+
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # memcache
@@ -1489,8 +1528,6 @@ class MysqlCtl(object):
         return(output)
     def parse_key_value(self, queried_table):
         lines = queried_table.splitlines()
-        # The calculation is using RSS, and free memory.
-        # There are buffers and cache used by the process, and that throws off the calculation
         lines = input.splitlines()
         counter = 0
         for line in lines:
@@ -1506,7 +1543,7 @@ class MysqlCtl(object):
                 break
             return_dict[result.group(1).strip()] = result.group(2).strip()
         return(return_dict)
-    def instances(self, doc_roots):
+    def not_used_instances(self, doc_roots):
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password" 
