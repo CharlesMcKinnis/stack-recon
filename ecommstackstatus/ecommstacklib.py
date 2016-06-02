@@ -129,6 +129,7 @@ From local.xml:
 
 """
 STACK_LIB_VERSION = 2016051601
+error_collection = []
 
 import re
 import glob

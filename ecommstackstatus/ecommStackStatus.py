@@ -129,7 +129,6 @@ From local.xml:
 
 """
 STACK_STATUS_VERSION = 2016051601
-error_collection = []
 
 from ecommstacklib import *
 import re
