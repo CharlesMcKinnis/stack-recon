@@ -1338,10 +1338,10 @@ class RedisCtl(object):
                 # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
                 #if local_xml.get("session_cache",{}).get("host"):
-                redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
+                redis_dict[stanza]["host"] = local_xml.get("full_page_cache",{}).get("host")
                 #if local_xml.get("session_cache",{}).get("port"):
-                redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
-                redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
+                redis_dict[stanza]["port"] = local_xml.get("full_page_cache",{}).get("port")
+                redis_dict[stanza]["password"] = local_xml.get("full_page_cache",{}).get("password")
                 #print "1131 redis_dict %r" % redis_dict
             # if redis_dict:
             #     print "redis_dict:"
