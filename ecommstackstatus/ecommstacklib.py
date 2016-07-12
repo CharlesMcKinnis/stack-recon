@@ -762,7 +762,10 @@ class nginxCtl(object):
                     configuration["sites"][-1]["error_log"] = stanzas[i]["error_log"][0]
         update(stanzas, configuration)
         if "worker_processes" in stanzas:
-            stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
+            try:
+                stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
+            except ValueError:
+                stanzas["maxprocesses"] = -1
     
         return stanzas
 
