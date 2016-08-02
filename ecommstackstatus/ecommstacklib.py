@@ -661,6 +661,7 @@ class nginxCtl(object):
             # nginxvars[group(1)] = group(2)
             #nginxset = re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?",line)
             nginxset = re.search("\s*set\s+$([\S]+)\s+[\"']?(\S+)[\"']?",line)
+            nginxset = re.search("\s*set\s+[\S]+\s+[\"']?\S+[\"']?",line)
             if nginxset:
                 #configfile_vars[nginxset.group(1)] = nginxset.group(2)
                 print "set match: %s" % line
