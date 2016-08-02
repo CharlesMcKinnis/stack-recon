@@ -368,7 +368,7 @@ if not args.jsonfile:
                 'doc_root': '/var/www/html',
                 'listening': ['192.168.100.248:443']
                 }, {
-                'domains': ['wilshirewigs.com', 'www.domain.com new.domain.com'],
+                'domains': ['adomain.com', 'www.domain.com new.domain.com'],
                 'config_file': '/etc/httpd/conf/httpd.conf',
                 'doc_root': '/var/www/html',
                 'listening': ['*:80']

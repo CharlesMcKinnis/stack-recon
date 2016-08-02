@@ -642,6 +642,7 @@ class nginxCtl(object):
         { line : { listen: [ ], server_name : [ ], root : path } }
         """
         stanza_chain = []
+        configfile_vars = {}
         stanza_count = 0
         server_start = -1
         #server_line = -1
@@ -655,6 +656,13 @@ class nginxCtl(object):
         for line in wholeconfig.splitlines():
             linenum += 1
             linecomp = line.strip().lower()
+            # this is where I need to add variable parsing
+            # if re \s*set\s+$(varname)\s+["']?(\S+)["']?;
+            # nginxvars[group(1)] = group(2)
+            nginxset = re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?")
+            configfile_vars[nginxset.group(1)] = nginxset.group(2)
+            # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
+            
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
@@ -730,7 +738,7 @@ class nginxCtl(object):
             # pass the keywords to the function and it will extract the keyword and value
             keywords = ["worker_processes"]
             update(stanzas, kwsearch(keywords,line))
-    
+        print "configfile_vars: %r" % configfile_vars
         # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
         # think magento location
         configuration = {}
