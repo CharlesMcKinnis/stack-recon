@@ -662,6 +662,8 @@ class nginxCtl(object):
             nginxset = re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?",line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
+            if re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?",line):
+                print "set match: %s" % line
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
