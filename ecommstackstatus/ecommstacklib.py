@@ -657,14 +657,10 @@ class nginxCtl(object):
             linenum += 1
             linecomp = line.strip().lower()
             # this is where I need to add variable parsing
-            # if re \s*set\s+$(varname)\s+["']?(\S+)["']?;
-            # nginxvars[group(1)] = group(2)
-            #nginxset = re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?",line)
-            #nginxset = re.search("\s*set\s+$([\S]+)\s+[\"']?(\S+)[\"']?",line)
             nginxset = re.search("\s*set\s+([\S]+)\s+[\"']?([^\"'\s]*)[\"']?",line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
-                print "set match: %s, group1: %s, group2: %s" % (line,nginxset.group(1),nginxset.group(2))
+                #print "set match: %s, group1: %s, group2: %s" % (line,nginxset.group(1),nginxset.group(2))
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
@@ -742,7 +738,7 @@ class nginxCtl(object):
             # pass the keywords to the function and it will extract the keyword and value
             keywords = ["worker_processes"]
             update(stanzas, kwsearch(keywords,line))
-        print "configfile_vars: %r" % configfile_vars
+        #print "configfile_vars: %r" % configfile_vars
         # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
         # think magento location
         configuration = {}
