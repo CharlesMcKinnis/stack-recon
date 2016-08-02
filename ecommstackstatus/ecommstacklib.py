@@ -659,9 +659,10 @@ class nginxCtl(object):
             # this is where I need to add variable parsing
             # if re \s*set\s+$(varname)\s+["']?(\S+)["']?;
             # nginxvars[group(1)] = group(2)
-            nginxset = re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?",line)
+            #nginxset = re.search("\s*set\s+$(varname)\s+[\"']?(\S+)[\"']?",line)
+            nginxset = re.search("\s*set\s+$([\S]+)\s+[\"']?(\S+)[\"']?",line)
             if nginxset:
-                configfile_vars[nginxset.group(1)] = nginxset.group(2)
+                #configfile_vars[nginxset.group(1)] = nginxset.group(2)
                 print "set match: %s" % line
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             
