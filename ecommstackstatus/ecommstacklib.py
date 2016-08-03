@@ -659,7 +659,7 @@ class nginxCtl(object):
             nginxset = re.match("\s*set\s+(\$[a-zA-Z0-9_]+)\s+[\"']?([^\"\s';]*)[\"']?;",line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
-                print "set match: %s  ---  group1: %s  ---  group2: %s" % (line)
+                print "set match: %s" % (line)
                 print "group1: %s" % (nginxset.group(1))
                 print "group1: %s" % (nginxset.group(2))
 
