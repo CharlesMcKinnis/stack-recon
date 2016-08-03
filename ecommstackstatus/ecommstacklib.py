@@ -659,7 +659,9 @@ class nginxCtl(object):
             nginxset = re.match("\s*set\s+(\$[a-zA-Z0-9_]+)\s+[\"']?([^\"\s';]*)[\"']?;",line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
-                print "set match: %s  ---  group1: %s  ---  group2: %s" % (line,nginxset.group(1),nginxset.group(2))
+                print "set match: %s  ---  group1: %s  ---  group2: %s" % (line)
+                print "group1: %s % (line,nginxset.group(1))
+                print "group1: %s % (line,nginxset.group(2))
 
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set
@@ -673,9 +675,9 @@ class nginxCtl(object):
             nginx_var_match = re.match(restring,line)
             # while there is a match
             while nginx_var_match:
-                print "1: %s" % (nginx_var_match.group(1))
-                print "2: %s" % (nginx_var_match.group(2))
-                print "3: %s" % (nginx_var_match.group(3))
+                # print "1: %s" % (nginx_var_match.group(1))
+                # print "2: %s" % (nginx_var_match.group(2))
+                # print "3: %s" % (nginx_var_match.group(3))
                 # if there is a match, run a sub with the varname and the varvalue
                 print "before line %r" % line
                 line = re.sub(r"%s" % restring,r"\1%s\4" % configfile_vars.get(nginx_var_match.group(3),""),line)
