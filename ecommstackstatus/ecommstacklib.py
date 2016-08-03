@@ -660,8 +660,8 @@ class nginxCtl(object):
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
                 print "set match: %s  ---  group1: %s  ---  group2: %s" % (line)
-                print "group1: %s % (line,nginxset.group(1))
-                print "group1: %s % (line,nginxset.group(2))
+                print "group1: %s" % (nginxset.group(1))
+                print "group1: %s" % (nginxset.group(2))
 
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set
