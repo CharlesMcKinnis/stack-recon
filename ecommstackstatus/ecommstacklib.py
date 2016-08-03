@@ -655,7 +655,6 @@ class nginxCtl(object):
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
-            linecomp = line.strip().lower()
             # this is where I need to add variable parsing
             nginxset = re.match("\s*set\s+(\$[a-zA-Z0-9_]+)\s+[\"']?([^\"\s';]*)[\"']?;",line)
             if nginxset:
@@ -686,6 +685,7 @@ class nginxCtl(object):
                 # look in the line for another variable
                 nginx_var_match = re.match(restring,line)
 
+            linecomp = line.strip().lower()
 
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
