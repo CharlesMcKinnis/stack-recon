@@ -674,7 +674,7 @@ class nginxCtl(object):
             # while there is a match
             while nginx_var_match:
                 # if there is a match, run a sub with the varname and the varvalue
-                reline = re.sub(r"(\s*(?server|location|if)\s+[^$]*)(\$[a-zA-Z0-9_]+)",r"\1%s" % configfile_vars[nginx_var_match],line)
+                reline = re.sub(r"(\s*(?server|location|if)\s+[^$]*)(\$[a-zA-Z0-9_]+)",r"\1%s" % configfile_vars[nginx_var_match.group(1)],line)
                 print "reline %r" % reline
                 print "line %r" % line
                 # nginx_var_match = re.sub("\s*[^$]*($\S+)",line,configfile_vars[nginx_var_match])
