@@ -762,7 +762,7 @@ class nginxCtl(object):
             # pass the keywords to the function and it will extract the keyword and value
             keywords = ["worker_processes"]
             update(stanzas, kwsearch(keywords,line))
-        #print "configfile_vars: %r" % configfile_vars
+        print "configfile_vars: %r" % configfile_vars
         # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
         # think magento location
         configuration = {}
