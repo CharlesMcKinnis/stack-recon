@@ -669,7 +669,7 @@ class nginxCtl(object):
             # "\s*(server|location|if)\s+[^$]*($[\S]+)" # find a the first variable occurrence
 
             # look in the line for a variable
-            restring="(\s*(server|location|if)\s+[^$]*)(\$[a-zA-Z0-9_]+)"
+            restring="(\s*(server|location|if|root)\s+[^$]*)(\$[a-zA-Z0-9_]+)(.*)"
             nginx_var_match = re.match(restring,line)
             # while there is a match
             while nginx_var_match:
@@ -678,7 +678,7 @@ class nginxCtl(object):
                 print "3: %s" % (nginx_var_match.group(3))
                 # if there is a match, run a sub with the varname and the varvalue
                 print "before line %r" % line
-                line = re.sub(r"(\s*(server|location|if|root)\s+[^$]*)(\$[a-zA-Z0-9_]+)(.*)",r"\1%s\4" % configfile_vars.get(nginx_var_match.group(3),""),line)
+                line = re.sub(r"%s" % restring,r"\1%s\4" % configfile_vars.get(nginx_var_match.group(3),""),line)
                 #print "reline %r" % reline
                 print " after line %r" % line
                 # nginx_var_match = re.sub("\s*[^$]*($\S+)",line,configfile_vars[nginx_var_match])
