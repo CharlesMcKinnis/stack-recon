@@ -825,7 +825,10 @@ if globalconfig.get("magento",{}).get("doc_root"):
                 for k2,v2 in value["local_xml"]["db"].iteritems():
                     if k2 in skip:
                         continue
-                    print "%s: %s" % (k2,v2)
+                    try:
+                        print "%s: %s" % (k2,v2)
+                    except UnicodeEncodeError:
+                        pass
                 print
             # session cache settings
             skip = ["engine","disable_locking","compression_threshold",

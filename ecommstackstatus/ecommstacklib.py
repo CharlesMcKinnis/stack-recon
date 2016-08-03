@@ -1550,8 +1550,11 @@ class MysqlCtl(object):
                 if err:
                     sys.stderr.write("err %s\n" % err)
                     error_collection.append("err %s\n" % err)
-                sys.stderr.write("command: %s\n" % conf)
-                error_collection.append("command: %s\n" % conf)
+                try:
+                    sys.stderr.write("command: %s\n" % conf)
+                    error_collection.append("command: %s\n" % conf)
+                except UnicodeEncodeError:
+                    pass
         # else:
             # print "Skipping database because there isn't enough login information"
             # print " Table prefix: %s" % var_table_prefix
