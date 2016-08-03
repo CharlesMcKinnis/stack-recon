@@ -661,8 +661,25 @@ class nginxCtl(object):
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
                 #print "set match: %s, group1: %s, group2: %s" % (line,nginxset.group(1),nginxset.group(2))
+
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
-            
+            # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set
+            # Syntax: 	set $variable value;
+            # Default: 	
+            # Context: 	server, location, if
+            # "\s*(server|location|if)\s+[^$]*($[\S]+)" # find a the first variable occurrence
+
+            # look in the line for a variable
+            nginx_var_match = re.match("\s*(server|location|if)\s+[^$]*($\S+)",line)
+            # while there is a match
+            while nginx_var_match:
+                # if there is a match, run a sub with the varname and the varvalue
+                line = re.sub(r"(\s*(?server|location|if)\s+[^$]*)($[\S]+)",r/"\1%s" % onfigfile_vars[nginx_var_match],line)
+                # nginx_var_match = re.sub("\s*[^$]*($\S+)",line,configfile_vars[nginx_var_match])
+                # look in the line for another variable
+                nginx_var_match = re.match("\s*(server|location|if)\s+[^$]*($[\S]+)",line)
+
+
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
