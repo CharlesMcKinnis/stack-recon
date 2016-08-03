@@ -657,10 +657,10 @@ class nginxCtl(object):
             linenum += 1
             linecomp = line.strip().lower()
             # this is where I need to add variable parsing
-            nginxset = re.search("\s*set\s+([\S]+)\s+[\"']?([^\"'\s]*)[\"']?",line)
+            nginxset = re.search("\s*set\s+($[a-zA-Z0-9_]+)\s+[\"']?([^\"'\s]*)[\"']?",line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
-                #print "set match: %s, group1: %s, group2: %s" % (line,nginxset.group(1),nginxset.group(2))
+                print "set match: %s, group1: %s, group2: %s" % (line,nginxset.group(1),nginxset.group(2))
 
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set
@@ -670,14 +670,14 @@ class nginxCtl(object):
             # "\s*(server|location|if)\s+[^$]*($[\S]+)" # find a the first variable occurrence
 
             # look in the line for a variable
-            nginx_var_match = re.match("\s*(server|location|if)\s+[^$]*($\S+)",line)
+            nginx_var_match = re.match("\s*(server|location|if)\s+[^$]*($[a-zA-Z0-9_]+)",line)
             # while there is a match
             while nginx_var_match:
                 # if there is a match, run a sub with the varname and the varvalue
-                line = re.sub(r"(\s*(?server|location|if)\s+[^$]*)($[\S]+)",r/"\1%s" % onfigfile_vars[nginx_var_match],line)
+                line = re.sub(r"(\s*(?server|location|if)\s+[^$]*)($[a-zA-Z0-9_]+)",r/"\1%s" % onfigfile_vars[nginx_var_match],line)
                 # nginx_var_match = re.sub("\s*[^$]*($\S+)",line,configfile_vars[nginx_var_match])
                 # look in the line for another variable
-                nginx_var_match = re.match("\s*(server|location|if)\s+[^$]*($[\S]+)",line)
+                nginx_var_match = re.match("\s*(server|location|if)\s+[^$]*($[a-zA-Z0-9_]+)",line)
 
 
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
