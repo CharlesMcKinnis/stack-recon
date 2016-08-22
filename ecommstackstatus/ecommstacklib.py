@@ -136,6 +136,7 @@ import glob
 import subprocess
 import sys
 import os
+import platform
 #import yaml
 import fnmatch
 try:
@@ -226,7 +227,11 @@ class apacheCtl(object):
         """
         Discovers installed apache version
         """
-        version = self.kwargs["exe"]+" -v"
+        if self.kwargs["exe"].endswith("apache2"):
+            version = 'apache2ctl -v'
+        else:
+            version = self.kwargs["exe"]+" -v"
+
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
@@ -237,7 +242,11 @@ class apacheCtl(object):
             return(output)
 
     def get_conf_parameters(self):
-        conf = self.kwargs["exe"]+" -V 2>&1"
+        if self.kwargs["exe"].endswith("apache2"):
+            conf = 'apache2ctl -V 2>&1'
+        else:
+            conf = self.kwargs["exe"]+" -V 2>&1"
+
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
@@ -822,7 +831,12 @@ class phpfpmCtl(object):
         """
         Discovers installed nginx version
         """
-        version = self.kwargs["exe"]+" -v"
+        distro = platform.linux_distribution()[0].lower()
+        if distro == 'debian' or distro == 'ubuntu':
+            version = "php5-fpm -v"
+        else:
+            version = self.kwargs["exe"]+" -v"
+
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
@@ -833,7 +847,12 @@ class phpfpmCtl(object):
             return(output)
 
     def get_conf_parameters(self):
-        conf = self.kwargs["exe"]+" -V 2>&1"
+        distro = platform.linux_distribution()[0].lower()
+        if distro == 'debian' or distro == 'ubuntu':
+            conf = "php5-fpm -V 2>&1"
+        else:
+            conf = self.kwargs["exe"]+" -V 2>&1"
+
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
@@ -860,10 +879,16 @@ class phpfpmCtl(object):
         :returns: configuration path location
         HTTPD_ROOT/SERVER_CONFIG_FILE
         """
-        phpfpm_process = daemon_exe(["php-fpm"]) # phpfpm_process["cmd"][0]
+        distro = platform.linux_distribution()[0].lower()
+        if distro == 'debian' or distro == 'ubuntu':
+            phpfpm_name = "php5-fpm"
+        else:
+            phpfpm_name = "php-fpm"
+
+        phpfpm_process = daemon_exe([phpfpm_name]) # phpfpm_process["cmd"][0]
         if phpfpm_process:
             # the cmd line looks like: php-fpm: master process (/etc/php-fpm.conf)
-            result = re.search('\((\S+)\)',phpfpm_process["php-fpm"]["cmd"])
+            result = re.search('\((\S+)\)',phpfpm_process[phpfpm_name]["cmd"])
             if result:
                 return(result.group(1))
         sys.exit(1)
