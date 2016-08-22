@@ -287,7 +287,7 @@ redis = RedisCtl()
 memcache = MemcacheCtl()
 if not args.jsonfile:
     # these are the daemon executable names we are looking for
-    daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "mysql", "mysqld"])
+    daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event", "httpd.worker", "php-fpm", "php5-fpm", "mysql", "mysqld"])
     for i in daemons:
         if daemons.get(i,{}).get("error"):
             sys.stderr.write(daemons[i]["error"] + "\n")
@@ -451,11 +451,17 @@ if not args.jsonfile:
     # PHP-FPM
     ################################################
     #phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
-    if not "php-fpm" in daemons:
+    distro = platform.linux_distribution()[0].lower()
+    if distro == 'debian' or distro == 'ubuntu':
+        phpfpm_name = "php5-fpm"
+    else:
+        phpfpm_name = "php-fpm"
+
+    if not phpfpm_name in daemons:
         sys.stderr.write("php-fpm is not running\n")
         error_collection.append("php-fpm is not running\n")
     else:
-        phpfpm = phpfpmCtl(exe = daemons["php-fpm"]["exe"])
+        phpfpm = phpfpmCtl(exe = daemons[phpfpm_name]["exe"])
         # try:
         if True:
             phpfpm_conf_file = phpfpm.get_conf()
@@ -469,13 +475,13 @@ if not args.jsonfile:
 
             phpfpm_config = phpfpm.parse_config(wholeconfig)
             
-            if not "php-fpm" in globalconfig:
-                globalconfig["php-fpm"] = {}
-            globalconfig["php-fpm"] = phpfpm_config
-            globalconfig["php-fpm"]["version"] = phpfpm.get_version()
-            globalconfig["php-fpm"]["basename"] = "php-fpm"
-            globalconfig["php-fpm"]["exe"] = daemons["php-fpm"]["exe"]
-            globalconfig["php-fpm"]["cmd"] = daemons["php-fpm"]["cmd"]
+            if not phpfpm_name in globalconfig:
+                globalconfig[phpfpm_name] = {}
+            globalconfig[phpfpm_name] = phpfpm_config
+            globalconfig[phpfpm_name]["version"] = phpfpm.get_version()
+            globalconfig[phpfpm_name]["basename"] = phpfpm_name
+            globalconfig[phpfpm_name]["exe"] = daemons[phpfpm_name]["exe"]
+            globalconfig[phpfpm_name]["cmd"] = daemons[phpfpm_name]["cmd"]
     
     if not args.nomagento:
         def MAGENTO_DATA_GATHER():
@@ -774,25 +780,31 @@ def PHP_FPM_PRINT():
 ################################################
 # maxclients is per stanza, and is pm.max_children
 # for real numbers for calculation, I'll need to sum them all
-if "php-fpm" in globalconfig:
+distro = platform.linux_distribution()[0].lower()
+if distro == 'debian' or distro == 'ubuntu':
+    phpfpm_name = "php5-fpm"
+else:
+    phpfpm_name = "php-fpm"
+
+if phpfpm_name in globalconfig:
     phpfpm.figlet()
-    if globalconfig.get("php-fpm",{}).get("version"):
-        print "php-fpm version: %s" % globalconfig.get("php-fpm",{}).get("version")
+    if globalconfig.get(phpfpm_name,{}).get("version"):
+        print "php-fpm version: %s" % globalconfig.get(phpfpm_name,{}).get("version")
     else:
         print "No php version?"
     print "php-fpm pools:"
-    for one in globalconfig["php-fpm"]:
-        if type(globalconfig["php-fpm"][one]) is dict:
+    for one in globalconfig[phpfpm_name]:
+        if type(globalconfig[phpfpm_name][one]) is dict:
             print "%s" % (one,)
-    #for one in sorted(globalconfig["php-fpm"]):
-    #    print "%s %r\n" % (one,globalconfig["php-fpm"][one])
+    #for one in sorted(globalconfig[phpfpm_name]):
+    #    print "%s %r\n" % (one,globalconfig[phpfpm_name][one])
 
     print
     # memory profile
     print "php-fpm memory profile:"
-    if globalconfig.get("php-fpm",{}).get("basename") and globalconfig.get("php-fpm",{}).get("maxprocesses"):
-        proc_name = globalconfig["php-fpm"]["basename"]
-        proc_max = int(globalconfig["php-fpm"]["maxprocesses"])
+    if globalconfig.get(phpfpm_name,{}).get("basename") and globalconfig.get(phpfpm_name,{}).get("maxprocesses"):
+        proc_name = globalconfig[phpfpm_name]["basename"]
+        proc_max = int(globalconfig[phpfpm_name]["maxprocesses"])
         result = memory_estimate(proc_name)
         if result:
             memory_print(result, proc_name, proc_max)
