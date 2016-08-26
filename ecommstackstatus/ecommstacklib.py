@@ -1,143 +1,11 @@
 #!/usr/bin/env python
-"""
-Magento is a trademark of Varien. Neither I nor these scripts are affiliated with or endorsed by the Magento Project or its trademark owners.
-
-"""
-
-"""
-wget https://raw.githubusercontent.com/CharlesMcKinnis/ecommStackStatus/master/ecommStackStatus.py
-
-git clone https://github.com/CharlesMcKinnis/ecommStackStatus.git
-#dev branch
-cd ecommStackStatus
-git checkout -b dev origin/dev
-
-To look at the json captured:
-cat config_dump.json |python -m json.tool|less
-"""
-
-"""
-The script will look for apache, nginx and php-fpm binaries in memory, and identify their configuration source.
-Using the web server config, the document root and domain information is collected and displayed
-php-fpm configuration is collected and displayed
-
-Using the document roots, it searches for Mage.php to identify Magento installations.
-
-For each Magento installation, version and edition is collected from Mage.php
-Configuration for database, and session, object and full page caches
-
-The database (assumed to be MySQL) is queried for whether cache is enabled
-
-If either redis or memcache is configured, it is queried via tcp for status information, that is collected and displayed
-
-* TODO things to add
-We could get information similar to MySQL Buddy and display it, to name a few:
-long_query_time
-query_cache_size
-join_buffer_size
-table_open_cache
-innodb_buffer_pool_size
-innodb_buffer_pool_instances
-innodb_log_buffer_size
-query_cache_limit
-
-* Magento report numbers for reports in the last 24-48 hours with date and time
-
-* name json file by hostname and date+time
-
-* I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
-
-* Varnish detection and cache health
-# ps -ef|grep [v]arnish
-root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
-varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
-
-* Add mysql branch to globalconfig, and parse "show variables;"
-proposed structure:
-mysql: {
-    HOSTNAME: {
-        port: "", # Do I need this? It is nearly always 3306
-        username: "",
-        password: "",
-        variables: {
-            `show variables` # parsed to key:value pairs
-        }
-    }
-}
-
-* MySQL max_connections, max_used_connections
-
-* MySQL query cache, example values: query_cache_type=1, query_cache_size=256M, query_cache_limit=16M
-
-* Check Magento for the Shoplift SUPEE-5344 vulnerability
-find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
-If it returns results, assuming Magento is in /var/www, it is vulnerable.
--L Suppress normal output; instead print the name of each input file from which no output would normally have been printed.  The scanning will stop on the first match.
-
-Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
-If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
-
-* Check Magento for SUPEE-7405
-
-* Check for cron job, should be cron.sh NOT cron.php
-
-* check php opcache
-i.e.
-Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:
-opcache.enable=1
-Changed the "0" to a "1" on that line.
-Stop nginx, restart php-fpm, start nginx.
-
-* check mysql
-
-* magento_root/shell/indexer.php --status
-i.e.
-2560M
-2024M
-Category Flat Data:                 Pending
-Product Flat Data:                  Pending
-Stock Status:                       Pending
-Catalog product price:              Pending
-Category URL Rewrites:              Pending
-Product URL Rewrites:               Pending
-URL Redirects:                      Pending
-Catalog Category/Product Index:     Pending
-Catalog Search Index:               Pending
-Default Values (MANAdev):           Pending
-Dynamic Categories:                 Running
-Tag Aggregation Data:               Pending
-SEO Schemas (MANAdev):              Pending
-Product Attributes:                 Pending
-SEO URL Rewrites (MANAdev):         Pending
-
-
-DONE
-* also need to check, if session cache is using redis - DONE 
-app/etc/modules/Cm_RedisSessions.xml
-value of <active> to true
-* add hostname in globalconfig
-* Parse this session_cache syntax for redis
-Session Cache engine: unknown
-Session Cache: redis
-session_save: redis
-session_save_path: tcp://192.168.100.200:6379?weight=2&timeout=2.5
-
-From local.xml:
-        <session_save><![CDATA[redis]]></session_save>
-        <session_save_path><![CDATA[tcp://192.168.100.200:6379?weight=2&timeout=2.5]]></session_save_path>
-
-
-"""
-STACK_LIB_VERSION = 2016051601
-error_collection = []
-
 import re
 import glob
 import subprocess
 import sys
 import os
 import platform
-#import yaml
+# import yaml
 import fnmatch
 try:
     import xml.etree.ElementTree as ET
@@ -165,22 +33,126 @@ try:
 except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse installed.\n")
-    #error_collection.append("This program is more robust if python argparse installed.\n")
+    # error_collection.append("This program is more robust if python argparse installed.\n")
 try:
     import mysql.connector
     MYSQL = True
 except ImportError:
     MYSQL = False
-    #sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
-    #error_collection.append("This program will be more robust if mysql.connector installed.\n")
-    
+    # sys.stderr.write("This program will be more robust if mysql.connector installed.\n")
+    # error_collection.append("This program will be more robust if mysql.connector installed.\n")
+"""
+Magento is a trademark of Varien. Neither I nor these scripts are affiliated with or endorsed by the Magento Project or its trademark owners.
+"""
+"""
+wget https://raw.githubusercontent.com/CharlesMcKinnis/ecommStackStatus/master/ecommStackStatus.py
+git clone https://github.com/CharlesMcKinnis/ecommStackStatus.git
+#dev branch
+cd ecommStackStatus
+git checkout -b dev origin/dev
+To look at the json captured:
+cat config_dump.json |python -m json.tool|less
+"""
+"""
+The script will look for apache, nginx and php-fpm binaries in memory, and identify their configuration source.
+Using the web server config, the document root and domain information is collected and displayed
+php-fpm configuration is collected and displayed
+Using the document roots, it searches for Mage.php to identify Magento installations.
+For each Magento installation, version and edition is collected from Mage.php
+Configuration for database, and session, object and full page caches
+The database (assumed to be MySQL) is queried for whether cache is enabled
+If either redis or memcache is configured, it is queried via tcp for status information, that is collected and displayed
+* TODO things to add
+We could get information similar to MySQL Buddy and display it, to name a few:
+long_query_time
+query_cache_size
+join_buffer_size
+table_open_cache
+innodb_buffer_pool_size
+innodb_buffer_pool_instances
+innodb_log_buffer_size
+query_cache_limit
+* Magento report numbers for reports in the last 24-48 hours with date and time
+* name json file by hostname and date+time
+* I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
+* Varnish detection and cache health
+# ps -ef|grep [v]arnish
+root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+* Add mysql branch to globalconfig, and parse "show variables;"
+proposed structure:
+mysql: {
+    HOSTNAME: {
+        port: "", # Do I need this? It is nearly always 3306
+        username: "",
+        password: "",
+        variables: {
+            `show variables` # parsed to key:value pairs
+        }
+    }
+}
+* MySQL max_connections, max_used_connections
+* MySQL query cache, example values: query_cache_type=1, query_cache_size=256M, query_cache_limit=16M
+* Check Magento for the Shoplift SUPEE-5344 vulnerability
+find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
+If it returns results, assuming Magento is in /var/www, it is vulnerable.
+-L Suppress normal output; instead print the name of each input file from which no output would normally have been printed.  The scanning will stop on the first match.
+Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
+If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
+* Check Magento for SUPEE-7405
+* Check for cron job, should be cron.sh NOT cron.php
+* check php opcache
+i.e.
+Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:
+opcache.enable=1
+Changed the "0" to a "1" on that line.
+Stop nginx, restart php-fpm, start nginx.
+* check mysql
+* magento_root/shell/indexer.php --status
+i.e.
+2560M
+2024M
+Category Flat Data:                 Pending
+Product Flat Data:                  Pending
+Stock Status:                       Pending
+Catalog product price:              Pending
+Category URL Rewrites:              Pending
+Product URL Rewrites:               Pending
+URL Redirects:                      Pending
+Catalog Category/Product Index:     Pending
+Catalog Search Index:               Pending
+Default Values (MANAdev):           Pending
+Dynamic Categories:                 Running
+Tag Aggregation Data:               Pending
+SEO Schemas (MANAdev):              Pending
+Product Attributes:                 Pending
+SEO URL Rewrites (MANAdev):         Pending
+DONE
+* also need to check, if session cache is using redis - DONE
+app/etc/modules/Cm_RedisSessions.xml
+value of <active> to true
+* add hostname in globalconfig
+* Parse this session_cache syntax for redis
+Session Cache engine: unknown
+Session Cache: redis
+session_save: redis
+session_save_path: tcp://192.168.100.200:6379?weight=2&timeout=2.5
+From local.xml:
+        <session_save><![CDATA[redis]]></session_save>
+        <session_save_path><![CDATA[tcp://192.168.100.200:6379?weight=2&timeout=2.5]]></session_save_path>
+"""
+STACK_LIB_VERSION = 2016051601
+error_collection = []
+
+
 class argsAlt(object):
     pass
 
+
 class apacheCtl(object):
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
-        if not "exe" in self.kwargs:
+        if "exe" not in self.kwargs:
             self.kwargs["exe"] = "httpd"
     """
     [root@527387-db1 26594]# httpd -V
@@ -216,13 +188,14 @@ class apacheCtl(object):
     """
     def figlet(self):
         print """
-    _                     _          
-   / \   _ __   __ _  ___| |__   ___ 
+    _                     _
+   / \   _ __   __ _  ___| |__   ___
   / _ \ | '_ \ / _` |/ __| '_ \ / _ \\
  / ___ \| |_) | (_| | (__| | | |  __/
 /_/   \_\ .__/ \__,_|\___|_| |_|\___|
-        |_|         
+        |_|
 """
+
     def get_version(self):
         """
         Discovers installed apache version
@@ -231,7 +204,6 @@ class apacheCtl(object):
             version = 'apache2ctl -v'
         else:
             version = self.kwargs["exe"]+" -v"
-
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
@@ -246,26 +218,25 @@ class apacheCtl(object):
             conf = 'apache2ctl -V 2>&1'
         else:
             conf = self.kwargs["exe"]+" -V 2>&1"
-
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
         if p.returncode > 0:
             return()
         dict = {}
-        compiled=0
+        compiled = 0
         for i in output.splitlines():
-            if i.strip()=="Server compiled with....":
-                compiled=1
+            if i.strip() == "Server compiled with....":
+                compiled = 1
                 continue
             if compiled == 0:
                 result = re.match('\s*([^:]+):\s*(.+)', i.strip())
                 if result:
-                    dict[result.group(1)]=result.group(2)
+                    dict[result.group(1)] = result.group(2)
             else:
-                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
+                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip())
                 if result:
-                    dict[result.group(1)]=result.group(2)
+                    dict[result.group(1)] = result.group(2)
         return dict
 
     def get_root(self):
@@ -280,7 +251,7 @@ class apacheCtl(object):
         HTTPD_ROOT/SERVER_CONFIG_FILE
         """
         try:
-            return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'],self.get_conf_parameters()['SERVER_CONFIG_FILE'])
+            return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'], self.get_conf_parameters()['SERVER_CONFIG_FILE'])
         except KeyError:
             sys.exit(1)
 
@@ -290,11 +261,10 @@ class apacheCtl(object):
         except KeyError:
             sys.exit(1)
 
-    def parse_config(self,wholeconfig):
+    def parse_config(self, wholeconfig):
         """
         list structure
-        { line : { listen: [ ], server_name : [ ], root : path } }
-    
+        { line: { listen: [ ], server_name: [ ], root: path } }
         <VirtualHost *:80>
         DocumentRoot /var/www/vhosts/example.com/httpdocs
         ServerName example.com
@@ -322,7 +292,7 @@ class apacheCtl(object):
         linenum = 0
         filechain = []
         stanza_flags = []
-        stanzas = {} #AutoVivification()
+        stanzas = {}  # AutoVivification()
         base_keywords = ["serverroot", "startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen"]
         vhost_keywords = ["documentroot", "servername", "serveralias", "customlog", "errorlog", "transferlog", "loglevel", "sslengine", "sslprotocol", "sslciphersuite", "sslcertificatefile", "sslcertificatekeyfile", "sslcacertificatefile", "sslcertificatechainfile"]
         prefork_keywords = ["startservers", "minspareservers", "maxspareservers", "maxclients", "maxrequestsperchild", "listen", "serverlimit"]
@@ -334,57 +304,52 @@ class apacheCtl(object):
             linecomp = line.strip().lower()
             # if the line opens < but doesn't close it with > there is probably a \ and newline
             # and it should be concat with the next line until it closes with >
-
             # if a line ends in \, it is continued on the next line
             while linecomp.endswith("\\"):
                 linecomp = linecomp.strip("\\").strip()
                 # read the next line
                 line = lines.next()
-                
                 linenum += 1
                 linecomp += " "
                 linecomp += line.strip().lower()
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
-            filechange = re.match("## START (.*)",line)
+            filechange = re.match("## START (.*)", line)
             if filechange:
                 filechain.append(filechange.group(1))
                 if vhost_start == -1:
-                    if not "config_file" in stanzas:
+                    if "config_file" not in stanzas:
                         stanzas["config_file"] = []
-                    stanzas["config_file"].append(filechange.group(1)) 
+                    stanzas["config_file"].append(filechange.group(1))
                 continue
-            filechange = re.match("## END (.*)",line)
+            filechange = re.match("## END (.*)", line)
             if filechange:
                 filechain.pop()
                 continue
             # listen, documentroot
             # opening VirtualHost
-            result = re.match('<[^/]\s*(\S+)', linecomp )
+            result = re.match('<[^/]\s*(\S+)', linecomp)
             if result:
                 stanza_count += 1
-                stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-            result = re.match('</', linecomp )
+                stanza_chain.append({"linenum": linenum, "title": result.group(1)})
+            result = re.match('</', linecomp)
             if result:
                 stanza_count -= 1
                 stanza_chain.pop()
-    
-    
             # base configuration
             if stanza_count == 0:
                 keywords = base_keywords + vhost_keywords
-                if not "config" in stanzas:
-                    stanzas["config"] = { }
-                update(stanzas["config"], kwsearch(keywords,linecomp))
-    
+                if "config" not in stanzas:
+                    stanzas["config"] = {}
+                update(stanzas["config"], kwsearch(keywords, linecomp))
             # prefork matching
-            result = re.match('<ifmodule\s+prefork.c', linecomp, re.IGNORECASE )
+            result = re.match('<ifmodule\s+prefork.c', linecomp, re.IGNORECASE)
             if result:
-                stanza_flags.append({"type" : "prefork", "linenum" : linenum, "stanza_count" : stanza_count})
+                stanza_flags.append({"type": "prefork", "linenum": linenum, "stanza_count": stanza_count})
                 continue
             # prefork ending
-            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE)
             if result:
                 # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
                 if len(stanza_flags) > 0:
@@ -394,16 +359,15 @@ class apacheCtl(object):
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                    if not "prefork" in stanzas:
+                    if "prefork" not in stanzas:
                         stanzas["prefork"] = {}
-                    update(stanzas["prefork"], kwsearch(prefork_keywords,line,single_value=True))
+                    update(stanzas["prefork"], kwsearch(prefork_keywords, line, single_value=True))
                     continue
-    
             # worker matching
-            result = re.match('<ifmodule\s+worker.c', linecomp, re.IGNORECASE )
+            result = re.match('<ifmodule\s+worker.c', linecomp, re.IGNORECASE)
             if result:
-                stanza_flags.append({"type" : "worker", "linenum" : linenum, "stanza_count" : stanza_count})
-            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
+                stanza_flags.append({"type": "worker", "linenum": linenum, "stanza_count": stanza_count})
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE)
             if result:
                 # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
                 if len(stanza_flags) > 0:
@@ -412,16 +376,15 @@ class apacheCtl(object):
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "worker" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                    if not "worker" in stanzas:
+                    if "worker" not in stanzas:
                         stanzas["worker"] = {}
-                    update(stanzas["worker"], kwsearch(worker_keywords,linecomp,single_value=True))
+                    update(stanzas["worker"], kwsearch(worker_keywords, linecomp, single_value=True))
                     continue
-
             # event matching
-            result = re.match('<ifmodule\s+mpm_event', linecomp, re.IGNORECASE )
+            result = re.match('<ifmodule\s+mpm_event', linecomp, re.IGNORECASE)
             if result:
-                stanza_flags.append({"type" : "event", "linenum" : linenum, "stanza_count" : stanza_count})
-            result = re.match('</ifmodule>', linecomp, re.IGNORECASE )
+                stanza_flags.append({"type": "event", "linenum": linenum, "stanza_count": stanza_count})
+            result = re.match('</ifmodule>', linecomp, re.IGNORECASE)
             if result:
                 # you may encounter ending modules, but not have anything in flags, and if so, there is nothing in it to test
                 if len(stanza_flags) > 0:
@@ -430,9 +393,9 @@ class apacheCtl(object):
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
                 if stanza_flags[-1]["type"] == "event" and stanza_flags[-1]["stanza_count"] == stanza_count:
-                    if not "event" in stanzas:
+                    if "event" not in stanzas:
                         stanzas["event"] = {}
-                    update(stanzas["event"], kwsearch(event_keywords,linecomp,single_value=True))
+                    update(stanzas["event"], kwsearch(event_keywords, linecomp, single_value=True))
                     continue
             """
 <IfModule mpm_event_module>
@@ -445,50 +408,47 @@ class apacheCtl(object):
     MaxConnectionsPerChild   0
 </IfModule>
 """
-
             # virtual host matching
-            result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE )
+            result = re.match('<virtualhost\s+([^>]+)', linecomp, re.IGNORECASE)
             if result:
                 server_line = str(linenum)
                 vhost_start = stanza_count
-                
-                if not server_line in stanzas:
-                    stanzas[server_line] = { }
+                if server_line not in stanzas:
+                    stanzas[server_line] = {}
                 stanzas[server_line]["virtualhost"] = result.group(1)
-                if not "config_file" in stanzas[server_line]:
+                if "config_file" not in stanzas[server_line]:
                     stanzas[server_line]["config_file"] = []
                 # there should only be one config file, but just in case, we will append it
-                if not filechain[-1] in stanzas[server_line]["config_file"]:
+                if filechain[-1] not in stanzas[server_line]["config_file"]:
                     stanzas[server_line]["config_file"].append(filechain[-1])
-                continue # if this is a server { start, there shouldn't be anything else on the line
+                continue  # if this is a server { start, there shouldn't be anything else on the line
             # only match these in a virtual host
             if vhost_start == stanza_count:
                 keywords = vhost_keywords
-                update(stanzas[server_line], kwsearch(keywords,line.strip() ) )
+                update(stanzas[server_line], kwsearch(keywords, line.strip()))
             # closing VirtualHost
-            result = re.match('</virtualhost', linecomp, re.IGNORECASE )
+            result = re.match('</virtualhost', linecomp, re.IGNORECASE)
             if result:
                 vhost_start = -1
                 continue
             # end virtual host matching
-    
         # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
         # think magento location
         configuration = {}
-        configuration["sites"] =  []
+        configuration["sites"] = []
         for i in stanzas.keys():
             if ("documentroot" in stanzas[i]) or ("servername" in stanzas[i]) or ("serveralias" in stanzas[i]) or ("virtualhost" in stanzas[i]):
-                configuration["sites"].append( { } )
+                configuration["sites"].append({})
                 if "servername" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]:
+                    if "domains" not in configuration["sites"][-1]:
                         configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["servername"]
                 if "serveralias" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]:
+                    if "domains" not in configuration["sites"][-1]:
                         configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["serveralias"]
                 if "virtualhost" in stanzas[i]:
-                    if not "listening" in configuration["sites"][-1]:
+                    if "listening" not in configuration["sites"][-1]:
                         configuration["sites"][-1]["listening"] = []
                     configuration["sites"][-1]["listening"] += [stanzas[i]["virtualhost"]]
                 if "documentroot" in stanzas[i]:
@@ -499,12 +459,11 @@ class apacheCtl(object):
                     configuration["sites"][-1]["access_log"] = stanzas[i]["customlog"][0]
                 if "errorlog" in stanzas[i]:
                     configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
-
         update(stanzas, configuration)
-        if not "maxprocesses" in stanzas: # there was a stanzas["config"] but that isn't what is referenced later
+        if "maxprocesses" not in stanzas:  # there was a stanzas["config"] but that isn't what is referenced later
             mpm = self.get_mpm().lower()
             if mpm == "prefork":
-                if stanzas.get("prefork",{}).get("maxclients"):
+                if stanzas.get("prefork", {}).get("maxclients"):
                         stanzas["maxprocesses"] = int(stanzas["prefork"]["maxclients"])
             elif mpm == "event":
                 if "event" in stanzas:
@@ -520,11 +479,11 @@ class apacheCtl(object):
                     threads, and must be greater than or equal to the
                     ThreadsPerChild directive.
                     """
-                    if stanzas.get("event",{}).get("serverlimit"):
+                    if stanzas.get("event", {}).get("serverlimit"):
                         event_limit_one = int(stanzas["event"]["serverlimit"])
                     else:
                         event_limit_one = None
-                    if stanzas.get("event",{}).get("maxrequestworkers") and stanzas.get("event",{}).get("threadsperchild"):
+                    if stanzas.get("event", {}).get("maxrequestworkers") and stanzas.get("event", {}).get("threadsperchild"):
                         event_limit_two = int(stanzas["event"]["maxrequestworkers"]) / int(stanzas["event"]["threadsperchild"])
                     else:
                         event_limit_two = None
@@ -539,43 +498,41 @@ class apacheCtl(object):
                         stanzas["maxprocesses"] = event_limit_two
             elif mpm == "worker":
                 if "worker" in stanzas:
-                    if stanzas.get("worker",{}).get("maxclients"):
+                    if stanzas.get("worker", {}).get("maxclients"):
                         stanzas["maxprocesses"] = int(stanzas["worker"]["maxclients"])
             else:
                 sys.stderr.write("Could not identify mpm in use.\n")
                 error_collection.append("apache error: Could not identify mpm in use.\n")
                 sys.exit(1)
             pass
-
         return stanzas
 
+
 class nginxCtl(object):
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
-        if not "exe" in self.kwargs:
+        if "exe" not in self.kwargs:
             self.kwargs["exe"] = "nginx"
     """
     A class for nginxCtl functionalities
-    
     """
-
     """
     # nginx -V
     nginx version: nginx/1.0.15
-    built by gcc 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC) 
+    built by gcc 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC)
     TLS SNI support enabled
     configure arguments: --prefix=/usr/share/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --http-client-body-temp-path=/var/lib/nginx/tmp/client_body --http-proxy-temp-path=/var/lib/nginx/tmp/proxy --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi --http-scgi-temp-path=/var/lib/nginx/tmp/scgi --pid-path=/var/run/nginx.pid --lock-path=/var/lock/subsys/nginx --user=nginx --group=nginx --with-file-aio --with-ipv6 --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_xslt_module --with-http_image_filter_module --with-http_geoip_module --with-http_sub_module --with-http_dav_module --with-http_flv_module --with-http_mp4_module --with-http_gzip_static_module --with-http_random_index_module --with-http_secure_link_module --with-http_degradation_module --with-http_stub_status_module --with-http_perl_module --with-mail --with-mail_ssl_module --with-debug --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' --with-ld-opt=-Wl,-E
     """
     def figlet(self):
         print """
-             _            
+             _
  _ __   __ _(_)_ __ __  __
 | '_ \ / _` | | '_ \\\ \/ /
-| | | | (_| | | | | |>  < 
+| | | | (_| | | | | |>  <
 |_| |_|\__, |_|_| |_/_/\_\\
-       |___/      
-
+       |___/
 """
+
     def get_version(self):
         """
         Discovers installed nginx version
@@ -593,7 +550,6 @@ class nginxCtl(object):
     def get_conf_parameters(self):
         """
         Finds nginx configuration parameters
-
         :returns: list of nginx configuration parameters
         """
         conf = self.kwargs["exe"]+" -V 2>&1 | grep 'configure arguments:'"
@@ -602,7 +558,6 @@ class nginxCtl(object):
         output, err = p.communicate()
         if p.returncode > 0:
             return()
-
         output = re.sub('configure arguments:', '', output)
         dict = {}
         for item in output.split(" "):
@@ -631,7 +586,6 @@ class nginxCtl(object):
         """
         :returns: nginx pid location which is required by nginx services
         """
-
         # try:
         if True:
             return self.get_conf_parameters()['--pid-path']
@@ -640,119 +594,113 @@ class nginxCtl(object):
         """
         :returns: nginx lock file location which is required for nginx services
         """
-
         # try:
         if True:
             return self.get_conf_parameters()['--lock-path']
 
-    def parse_config(self,wholeconfig):
+    def parse_config(self, wholeconfig):
         """
         list structure
-        { line : { listen: [ ], server_name : [ ], root : path } }
+        { line: { listen: [ ], server_name: [ ], root: path } }
         """
         stanza_chain = []
         configfile_vars = {}
         stanza_count = 0
         server_start = -1
-        #server_line = -1
+        # server_line = -1
         location_start = 0
         linenum = 0
         filechain = []
-        stanzas = {} #AutoVivification()
+        stanzas = {}  # AutoVivification()
         # keywords
         server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers", "access_log", "error_log"]
         server_keywords_split = ["server_name"]
         for line in wholeconfig.splitlines():
             linenum += 1
             # this is where I need to add variable parsing
-            nginxset = re.match("\s*set\s+(\$[a-zA-Z0-9_]+)\s+[\"']?([^\"\s';]*)[\"']?;",line)
+            nginxset = re.match("\s*set\s+(\$[a-zA-Z0-9_]+)\s+[\"']?([^\"\s';]*)[\"']?;", line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
                 print "set match: %s" % (line)
                 print "group1: %s" % (nginxset.group(1))
                 print "group1: %s" % (nginxset.group(2))
-
             # if line contains \s$(varname)\s replace varname with nginxvars[group(1)]
             # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set
             # Syntax: 	set $variable value;
-            # Default: 	
+            # Default:
             # Context: 	server, location, if
             # "\s*(server|location|if)\s+[^$]*($[\S]+)" # find a the first variable occurrence
-
             # look in the line for a variable
-            restring="(\s*(server|location|if|root)\s+[^$]*)(\$[a-zA-Z0-9_]+)(.*)"
-            nginx_var_match = re.match(restring,line)
+            restring = "(\s*(server|location|if|root)\s+[^$]*)(\$[a-zA-Z0-9_]+)(.*)"
+            nginx_var_match = re.match(restring, line)
             # while there is a match
             while nginx_var_match:
                 # print "1: %s" % (nginx_var_match.group(1))
                 # print "2: %s" % (nginx_var_match.group(2))
                 # print "3: %s" % (nginx_var_match.group(3))
                 # if there is a match, run a sub with the varname and the varvalue
-                #print "before line %r" % line
-                line = re.sub(r"%s" % restring,r"\1%s\4" % configfile_vars.get(nginx_var_match.group(3),""),line)
-                #print "reline %r" % reline
-                #print " after line %r" % line
+                # print "before line %r" % line
+                line = re.sub(r"%s" % restring, r"\1%s\4" % configfile_vars.get(nginx_var_match.group(3), ""), line)
+                # print "reline %r" % reline
+                # print " after line %r" % line
                 # nginx_var_match = re.sub("\s*[^$]*($\S+)",line,configfile_vars[nginx_var_match])
                 # look in the line for another variable
-                nginx_var_match = re.match(restring,line)
-
+                nginx_var_match = re.match(restring, line)
             linecomp = line.strip().lower()
-
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
-            filechange = re.match("## START (.*)",line)
+            filechange = re.match("## START (.*)", line)
             if filechange:
                 filechain.append(filechange.group(1))
-            filechange = re.match("## END (.*)",line)
+            filechange = re.match("## END (.*)", line)
             if filechange:
                 filechain.pop()
             # filechain[-1] for the most recent element
             # this doesn't do well if you open and close a stanza on the same line
-            if len(re.findall('{',line)) > 0 and len(re.findall('}',line)) > 0:
-                if not "error" in stanzas:
+            if len(re.findall('{', line)) > 0 and len(re.findall('}', line)) > 0:
+                if "error" not in stanzas:
                     stanzas["error"] = "nginx config file: This script does not consistently support opening { and closing } stanzas on the same line.\n"
                     error_collection.append("nginx config file: This script does not consistently support opening { and closing } stanzas on the same line.\n")
-                stanzas["error"] += "line %d: %s\n" % (linenum,line.strip())
-                error_collection.append("line %d: %s\n" % (linenum,line.strip()))
-            stanza_count+=len(re.findall('{',line))
-            stanza_count-=len(re.findall('}',line))
-            result = re.match("(\S+)\s*{",linecomp)
+                stanzas["error"] += "line %d: %s\n" % (linenum, line.strip())
+                error_collection.append("line %d: %s\n" % (linenum, line.strip()))
+            stanza_count += len(re.findall('{', line))
+            stanza_count -= len(re.findall('}', line))
+            result = re.match("(\S+)\s*{", linecomp)
             if result:
-                stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
-            if len(re.findall('}',line)) and len(stanza_chain) > 0:
+                stanza_chain.append({"linenum": linenum, "title": result.group(1)})
+            if len(re.findall('}', line)) and len(stanza_chain) > 0:
                 stanza_chain.pop()
-    
             # start server { section
             # is this a "server {" line?
-            result = re.match('^\s*server\s', linecomp, re.IGNORECASE )
+            result = re.match('^\s*server\s', linecomp, re.IGNORECASE)
             if result:
                 server_start = stanza_count
                 server_line = str(linenum)
-                if not server_line in stanzas:
-                    stanzas[server_line] = { }
-                if not "config_file" in stanzas[server_line]:
+                if server_line not in stanzas:
+                    stanzas[server_line] = {}
+                if "config_file" not in stanzas[server_line]:
                     stanzas[server_line]["config_file"] = []
                 # there should only be one config file, but just in case, we will append it
                 if not filechain[-1] in stanzas[server_line]["config_file"]:
                     stanzas[server_line]["config_file"].append(filechain[-1])
-                #continue # if this is a server { start, there shouldn't be anything else on the line
+                # continue # if this is a server { start, there shouldn't be anything else on the line
             # are we in a server block, and not a child stanza of the server block? is so, look for keywords
             # this is so we don't print the root directive for location as an example. That might be useful, but isn't implemented at this time.
             if server_start == stanza_count:
                 # we are in a server block
-                #result = re.match('\s*(listen|server|root)', line.strip())
+                # result = re.match('\s*(listen|server|root)', line.strip())
                 keywords = server_keywords
-                if not server_line in stanzas:
-                    stanzas[server_line] = { }
-                update(stanzas[server_line], kwsearch(keywords,line))
+                if server_line not in stanzas:
+                    stanzas[server_line] = {}
+                update(stanzas[server_line], kwsearch(keywords, line))
                 keywords = server_keywords_split
-                if not server_line in stanzas:
-                    stanzas[server_line] = { }
-                if not "server_name" in stanzas[server_line]:
+                if server_line not in stanzas:
+                    stanzas[server_line] = {}
+                if "server_name" not in stanzas[server_line]:
                     stanzas[server_line]["server_name"] = []
-                if kwsearch(["server_name"],line):
-                    stanzas[server_line]["server_name"] += kwsearch(["server_name"],line)["server_name"][0].split()
+                if kwsearch(["server_name"], line):
+                    stanzas[server_line]["server_name"] += kwsearch(["server_name"], line)["server_name"][0].split()
                 """
                 for word in keywords:
                     result = re.match("\s*(%s)\s*(.*)" % word, line.strip("\s\t;"), re.IGNORECASE)
@@ -767,18 +715,16 @@ class nginxCtl(object):
                 # we are no longer in the server { block
                 server_start = -1
             # end server { section
-            
             # keywords is a list of keywords to search for
             # look for keywords in the line
             # pass the keywords to the function and it will extract the keyword and value
             keywords = ["worker_processes"]
-            update(stanzas, kwsearch(keywords,line))
+            update(stanzas, kwsearch(keywords, line))
         print "configfile_vars: %r" % configfile_vars
         # this section is so the same information shows up in nginx and apache, to make it easier to make other calls against the info
         # think magento location
         configuration = {}
-        configuration["sites"] =  []
-        
+        configuration["sites"] = []
         # pressing the whole web daemon config in to a specific framework so it is easier to work with
         for i in stanzas.keys():
             # fixes an error where i = 'error' and the contents are a string
@@ -786,13 +732,13 @@ class nginxCtl(object):
                 continue
             if ("root" in stanzas[i]) or ("server_name" in stanzas[i]) or ("listen" in stanzas[i]):
                 # "access_log", "error_log"
-                configuration["sites"].append( { } )
+                configuration["sites"].append({})
                 if "server_name" in stanzas[i]:
-                    if not "domains" in configuration["sites"][-1]:
+                    if "domains" not in configuration["sites"][-1]:
                         configuration["sites"][-1]["domains"] = []
                     configuration["sites"][-1]["domains"] += stanzas[i]["server_name"]
                 if "listen" in stanzas[i]:
-                    if not "listening" in configuration["sites"][-1]:
+                    if "listening" not in configuration["sites"][-1]:
                         configuration["sites"][-1]["listening"] = []
                     configuration["sites"][-1]["listening"] += stanzas[i]["listen"]
                 if "root" in stanzas[i]:
@@ -809,19 +755,20 @@ class nginxCtl(object):
                 stanzas["maxprocesses"] = int(stanzas["worker_processes"][0])
             except ValueError:
                 stanzas["maxprocesses"] = -1
-    
         return stanzas
 
+
 class phpfpmCtl(object):
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
-        if not "exe" in self.kwargs:
+        if "exe" not in self.kwargs:
             self.kwargs["exe"] = "php-fpm"
+
     def figlet(self):
         print """
-       _                  __                 
- _ __ | |__  _ __        / _|_ __  _ __ ___  
-| '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \ 
+       _                  __
+ _ __ | |__  _ __        / _|_ __  _ __ ___
+| '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \
 | |_) | | | | |_) |_____|  _| |_) | | | | | |
 | .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
 |_|         |_|             |_|
@@ -836,7 +783,6 @@ class phpfpmCtl(object):
             version = "php5-fpm -v"
         else:
             version = self.kwargs["exe"]+" -v"
-
         p = subprocess.Popen(
             version, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
             )
@@ -852,26 +798,25 @@ class phpfpmCtl(object):
             conf = "php5-fpm -V 2>&1"
         else:
             conf = self.kwargs["exe"]+" -V 2>&1"
-
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
         if p.returncode > 0:
             return()
         dict = {}
-        compiled=0
+        compiled = 0
         for i in output.splitlines():
-            if i.strip()=="Server compiled with....":
-                compiled=1
+            if i.strip() == "Server compiled with....":
+                compiled = 1
                 continue
             if compiled == 0:
                 result = re.match('\s*([^:]+):\s*(.+)', i.strip())
                 if result:
-                    dict[result.group(1)]=result.group(2)
+                    dict[result.group(1)] = result.group(2)
             else:
-                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip() )
+                result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip())
                 if result:
-                    dict[result.group(1)]=result.group(2)
+                    dict[result.group(1)] = result.group(2)
         return dict
 
     def get_conf(self):
@@ -884,20 +829,19 @@ class phpfpmCtl(object):
             phpfpm_name = "php5-fpm"
         else:
             phpfpm_name = "php-fpm"
-
-        phpfpm_process = daemon_exe([phpfpm_name]) # phpfpm_process["cmd"][0]
+        phpfpm_process = daemon_exe([phpfpm_name])  # phpfpm_process["cmd"][0]
         if phpfpm_process:
             # the cmd line looks like: php-fpm: master process (/etc/php-fpm.conf)
-            result = re.search('\((\S+)\)',phpfpm_process[phpfpm_name]["cmd"])
+            result = re.search('\((\S+)\)', phpfpm_process[phpfpm_name]["cmd"])
             if result:
                 return(result.group(1))
         sys.exit(1)
 
-    def parse_config(self,wholeconfig):
+    def parse_config(self, wholeconfig):
         stanza_chain = []
         linenum = 0
         filechain = []
-        stanzas = {} #AutoVivification()
+        stanzas = {}  # AutoVivification()
         server_keywords = ["listen", "root", "ssl_prefer_server_ciphers", "ssl_protocols", "ssl_ciphers"
                            "pm", "pm.max_children", "pm.start_servers", "pm.min_spare_servers", "pm.max_spare_servers"
                            ]
@@ -908,30 +852,29 @@ class phpfpmCtl(object):
             # when we start or end a file, we inserted ## START or END so we could identify the file in the whole config
             # as they are opened, we add them to a list, and remove them as they close.
             # then we can use their name to identify where it is configured
-            filechange = re.match("## START (.*)",line)
+            filechange = re.match("## START (.*)", line)
             if filechange:
                 filechain.append(filechange.group(1))
-                #continue
-            filechange = re.match("## END (.*)",line)
+                # continue
+            filechange = re.match("## END (.*)", line)
             if filechange:
                 filechain.pop()
-                #continue
-            
+                # continue
             # stanza change
-            result = re.match('[;#]', linecomp )
+            result = re.match('[;#]', linecomp)
             if result:
                 continue
-            result = re.match('\[(\S+)\]', linecomp )
+            result = re.match('\[(\S+)\]', linecomp)
             if result:
                 # the previous one ends when the new one starts
                 # end
                 if len(stanza_chain) > 0:
                     stanza_chain.pop()
                 # start
-                stanza_chain.append({ "linenum" : linenum, "title" : result.group(1) })
+                stanza_chain.append({"linenum": linenum, "title": result.group(1)})
             else:
-                #match not spaces or =, then match = and spaces, then not spaces
-                result = re.match('([^=\s]+)\s*=\s*(\S+)', linecomp )
+                # match not spaces or =, then match = and spaces, then not spaces
+                result = re.match('([^=\s]+)\s*=\s*(\S+)', linecomp)
                 if result:
                     key = result.group(1)
                     value = result.group(2)
@@ -941,18 +884,19 @@ class phpfpmCtl(object):
         stanzas["maxprocesses"] = 0
         for one in stanzas:
             if type(stanzas[one]) is dict:
-                if stanzas.get(one,{}).get("pm.max_children"):
+                if stanzas.get(one, {}).get("pm.max_children"):
                     stanzas["maxprocesses"] += int(stanzas[one]["pm.max_children"])
         return(stanzas)
+
 
 class MagentoCtl(object):
     def figlet(self):
         print """
- __  __                        _        
-|  \/  | __ _  __ _  ___ _ __ | |_ ___  
-| |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \ 
+ __  __                        _
+|  \/  | __ _  __ _  ___ _ __ | |_ ___
+| |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \
 | |  | | (_| | (_| |  __/ | | | || (_) |
-|_|  |_|\__,_|\__, |\___|_| |_|\__\___/ 
+|_|  |_|\__,_|\__, |\___|_| |_|\__\___/
               |___/
 """
 
@@ -960,21 +904,21 @@ class MagentoCtl(object):
         mage = {}
         file_handle = open(mage_php_file, 'r')
         for line in file_handle:
-            result = re.match("static\s+private\s+\$_currentEdition\s*=\s*self::([^\s;]+);", line.strip(), re.IGNORECASE )
+            result = re.match("static\s+private\s+\$_currentEdition\s*=\s*self::([^\s;]+);", line.strip(), re.IGNORECASE)
             if result:
                 mage["edition"] = result.group(1)
             if "public static function getVersionInfo()" in line:
-                line = file_handle.next() # {
-                line = file_handle.next() # return array(
-                while not ");" in line:
+                line = file_handle.next()  # {
+                line = file_handle.next()  # return array(
+                while ");" not in line:
                     line = file_handle.next()
                     result = re.match("'([^']+)'\s*=>\s*'([^']*)'", line.strip())
                     if result:
                         mage[result.group(1)] = result.group(2)
-                #break
+                # break
         file_handle.close()
         # join them with periods, unless they are empty, then omit them
-        #mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
+        # mage["version"] = ".".join(filter(None,[mage["major"],mage["minor"],mage["revision"],mage["patch"],mage["stability"],mage["number"]]))
         mage["version"] = ".".join(filter(None,
                                           [
                                             mage.get("major"),
@@ -986,27 +930,25 @@ class MagentoCtl(object):
                                            ]
                                           )
                                    )
-
         # This is to address 1.10.1.1 EE that has no $_currentEdition defined
-        if not "edition" in mage:
+        if "edition" not in mage:
             mage["edition"] = ""
         return(mage)
-    
+
     def localxml(self, local_xml_file):
         pass
-    def find_mage_php(self,doc_roots):
+
+    def find_mage_php(self, doc_roots):
         return_dict = {}
         for doc_root_path in doc_roots:
             # with nginx and apache, we have docroot for web paths
             # we need to search those for Mage.php and local.xml
-            #magento = MagentoCtl()
-            
-            #search_path = one # docroot
+            # magento = MagentoCtl()
+            # search_path = one # docroot
             mage_php_matches = []
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
-        
             if len(mage_php_matches) > 1:
                 sys.stderr.write("There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
                 error_collection.append("Magento error: There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
@@ -1021,7 +963,6 @@ class MagentoCtl(object):
                         smallest_size = num_slashes
                         smallest_line = i
                 mage_php_matches[0] = smallest_line
-                        
             if mage_php_matches:
                 return_dict[doc_root_path] = mage_php_matches[0]
         return(return_dict)
@@ -1031,64 +972,59 @@ class MagentoCtl(object):
         # else:
         #     sys.exit(1)
 
-    def mage_file_info(self,mage_files):
+    def mage_file_info(self, mage_files):
         return_dict = {}
         for doc_root_path, mage_php_match in mage_files.iteritems():
-            #print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
+            # print "935 doc_root_path %s mage_php_match %s" % (doc_root_path, mage_php_match)
             return_dict[doc_root_path] = {}
             mage = self.parse_version(mage_php_match)
-            #print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
-            head,tail = os.path.split(os.path.dirname(mage_php_match))
-            #print "940 head %s tail %s" %(head,tail)
+            # print "938 os.path.dirname(mage_php_match) %r" % os.path.dirname(mage_php_match)
+            head, tail = os.path.split(os.path.dirname(mage_php_match))
+            # print "940 head %s tail %s" %(head, tail)
             return_dict[doc_root_path]["Mage.php"] = mage_php_match
             return_dict[doc_root_path]["magento_path"] = head
-            return_dict[doc_root_path]["local_xml"] = { }
+            return_dict[doc_root_path]["local_xml"] = {}
             return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
             return_dict[doc_root_path]["magento_version"] = "%s" % mage["version"]
             if mage["edition"]:
                 return_dict[doc_root_path]["magento_version"] += " %s" % mage["edition"]
             return_dict[doc_root_path]["mage_version"] = mage
         return(return_dict)
-    
+
     def open_local_xml(self, doc_root, config_node):
         """
         provide the filename (absolute or relative) of local.xml
-        
         This function opens the file as an XML ElementTree
-        
         returns: dict with db and cache information
         """
         # BROKEN
 #        filename = os.path.join(doc_root,"app","etc","local.xml")
         filename = config_node["local_xml"]["filename"]
-        #print "962 %s" % filename
+        # print "962 %s" % filename
         try:
-            #if True:
+            # if True:
             tree = ET.ElementTree(file=filename)
         except IOError:
             sys.stderr.write("Could not open file %s\n" % filename)
             return()
-            #sys.exit(1)
-
-        #tree = ET.ElementTree(file='local.xml')
-        #tree = ET.ElementTree(file='local-memcache.xml')
+            # sys.exit(1)
+        # tree = ET.ElementTree(file='local.xml')
+        # tree = ET.ElementTree(file='local-memcache.xml')
         local_xml = {}
-        
         section = "db"
         xml_parent_path = 'global/resources'
         xml_config_node = 'db/table_prefix'
         xml_config_section = 'default_setup/connection'
         update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
-        
         section = "session_cache"
         xml_parent_path = 'global'
         xml_config_node = 'session_save'
         xml_config_section = 'redis_session'
         xml_config_single = 'session_save_path'
-        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'session_save_path'))
-
-
-
+        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path,
+                                               xml_config_node,
+                                               xml_config_section,
+                                               xml_config_single='session_save_path'))
         # test for session cache redis
         resources = tree.find("global/redis_session")
         # print "resources %r" % resources
@@ -1099,11 +1035,11 @@ class MagentoCtl(object):
         # if (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
         #     and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
         #     print "966 xml config node == redis and tcp in xml_config_single"
-        if resources is not None or (local_xml.get(section,{}).get(xml_config_node,"").lower() == "redis"
-                                     and "tcp://" in local_xml.get(section,{}).get(xml_config_single,"")):
+        if resources is not None or (local_xml.get(section, {}).get(xml_config_node, "").lower() == "redis" and
+                                     "tcp://" in local_xml.get(section, {}).get(xml_config_single, "")):
             local_xml[section]["engine"] = "redis"
-            redis_module_xml = os.path.join(doc_root,"app","etc","modules","Cm_RedisSession.xml")
-            #print "908 redis module xml: %s" % redis_module_xml
+            redis_module_xml = os.path.join(doc_root, "app", "etc", "modules", "Cm_RedisSession.xml")
+            # print "908 redis module xml: %s" % redis_module_xml
             # app/etc/modules/Cm_RedisSession.xml
             # xml config/modules/Cm_RedisSession/active
             try:
@@ -1111,9 +1047,9 @@ class MagentoCtl(object):
                 redis_tree = ET.ElementTree(file=redis_module_xml)
                 Cm_RedisSession = redis_tree.find("modules/Cm_RedisSession/active")
                 if Cm_RedisSession is not None:
-                    #print "opened Cm_RedisSession.xml"
+                    # print "opened Cm_RedisSession.xml"
                     if Cm_RedisSession.text is not None:
-                        #print "and found %s" % Cm_RedisSession.text
+                        # print "and found %s" % Cm_RedisSession.text
                         local_xml[section]["Cm_RedisSession.xml active"] = Cm_RedisSession.text
                     else:
                         local_xml[section]["Cm_RedisSession.xml active"] = "Cm_RedisSession is present but the value is empty"
@@ -1122,21 +1058,20 @@ class MagentoCtl(object):
             except IOError:
                 error_collection.append("The file %s could not be opened." % redis_module_xml)
                 local_xml[section]["Cm_RedisSession.xml active"] = "File not found"
-        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcache":
+        elif local_xml.get(section, {}).get(xml_config_node, "").lower() == "memcache":
             local_xml[section]["engine"] = "memcache"
         else:
             local_xml[section]["engine"] = "unknown"
-        
         section = "object_cache"
         xml_parent_path = 'global/cache'
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section))
-        if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
-            local_xml[section]["engine"] = "redis" # Magento's redis module
-        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
-            local_xml[section]["engine"] = "redis" # Colin M's redis module
-        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcached":
+        if local_xml.get(section, {}).get(xml_config_node, "").lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "redis"  # Magento's redis module
+        elif local_xml.get(section, {}).get(xml_config_node, "").lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "redis"  # Colin M's redis module
+        elif local_xml.get(section, {}).get(xml_config_node, "").lower() == "memcached":
             xml_parent_path = 'global/cache'
             xml_config_node = 'backend'
             xml_config_section = 'memcached/servers/server'
@@ -1159,24 +1094,25 @@ class MagentoCtl(object):
             """
         else:
             local_xml[section]["engine"] = "unknown"
-        
         section = "full_page_cache"
         xml_parent_path = 'global/full_page_cache'
         xml_config_node = 'backend'
         xml_config_section = 'backend_options'
         xml_config_single = 'slow_backend'
-        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path, xml_config_node, xml_config_section, xml_config_single = 'slow_backend'))
-        if local_xml.get(section,{}).get(xml_config_node,"").lower() == "mage_cache_backend_redis":
-            local_xml[section]["engine"] = "redis" # Magento's redis module
-        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "cm_cache_backend_redis":
-            local_xml[section]["engine"] = "redis" # Colin M's redis module
-        elif local_xml.get(section,{}).get(xml_config_node,"").lower() == "memcached":
-            local_xml[section]["engine"] = "memcache" # Colin M's redis module
+        update(local_xml, self.parse_local_xml(tree, section, xml_parent_path,
+                                               xml_config_node,
+                                               xml_config_section,
+                                               xml_config_single='slow_backend'))
+        if local_xml.get(section, {}).get(xml_config_node, "").lower() == "mage_cache_backend_redis":
+            local_xml[section]["engine"] = "redis"  # Magento's redis module
+        elif local_xml.get(section, {}).get(xml_config_node, "").lower() == "cm_cache_backend_redis":
+            local_xml[section]["engine"] = "redis"  # Colin M's redis module
+        elif local_xml.get(section, {}).get(xml_config_node, "").lower() == "memcached":
+            local_xml[section]["engine"] = "memcache"  # Colin M's redis module
         else:
             local_xml[section]["engine"] = "unknown"
-        
         return(local_xml)
-    
+
     def parse_local_xml(self, tree, section, xml_parent_path, xml_config_node, xml_config_section, **kwargs):
         """
         provide:
@@ -1186,91 +1122,86 @@ class MagentoCtl(object):
             xml_config_node, string, node name that describes the type
             xml_config_section, section of additional nodes and text contents
             xml_config_single, string of a single additional node under parent
-    
         returns a dict with key named "section"
         """
         local_xml = {}
         # full page cache (FPC) - redis
-        #section = "full_page_cache"
-        #xml_parent_path = 'global/full_page_cache'
-        #xml_config_node = 'backend'
-        #xml_config_section = 'backend_options'
+        # section = "full_page_cache"
+        # xml_parent_path = 'global/full_page_cache'
+        # xml_config_node = 'backend'
+        # xml_config_section = 'backend_options'
         if "xml_config_single" in kwargs:
             xml_config_single = kwargs["xml_config_single"]
         else:
             xml_config_single = ""
-            
-        if not section in local_xml:
+        if section not in local_xml:
             local_xml[section] = {}
-
         resources = tree.find(xml_parent_path)
         if resources is not None:
             i = resources.find(xml_config_node)
             if i is not None:
                 if i.text is not None:
                     local_xml[section][xml_config_node] = i.text
-
             if resources.find(xml_config_section) is not None:
                 for i in resources.find(xml_config_section):
                     local_xml[section][i.tag] = i.text
             # else:
             #     sys.stderr.write("Did not find the XML config %s in %s\n" % (xml_config_section,section))
-                    
             if xml_config_single:
                 if resources.find(xml_config_single) is not None:
                     i = resources.find(xml_config_single)
                     local_xml[section][i.tag] = i.text
                 # else:
                 #     sys.stderr.write("Did not find the XML config single %s in %s\n" % (xml_config_single,section))
-
-
         # configuration
         return local_xml
 
     def db_cache_table(self, doc_root, value):
         mysql = MysqlCtl()
-        var_table_prefix = value.get("db/table_prefix","")
-        var_dbname = value.get("dbname","")
-        var_host = value.get("host","")
-        var_username = value.get("username","")
-        var_password = value.get("password","")
-        output = mysql.db_query(value, "select * FROM `%s`.`%score_cache_option`;" % (var_dbname,var_table_prefix))
+        var_table_prefix = value.get("db/table_prefix", "")
+        var_dbname = value.get("dbname", "")
+        var_host = value.get("host", "")
+        var_username = value.get("username", "")
+        var_password = value.get("password", "")
+        output = mysql.db_query(value, "select * FROM `%s`.`%score_cache_option`;" % (var_dbname, var_table_prefix))
         # doc_root isn't used locally anymore? 14 Jan 2016
-        #globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
-        #doc_roots = globalconfig["magento"]["doc_root"]
-        return_config = { }
-        if not return_config.get("cache",{}).get("cache_option_table"):
-            return_config = {"cache" : { "cache_option_table" : "" } } 
+        # globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+        # doc_roots = globalconfig["magento"]["doc_root"]
+        return_config = {}
+        if not return_config.get("cache", {}).get("cache_option_table"):
+            return_config = {"cache": {"cache_option_table": ""}}
         return_config["cache"]["cache_option_table"] = output
         return(return_config)
+
 
 class RedisCtl(object):
     def figlet(self):
         print """
-              _ _     
- _ __ ___  __| (_)___ 
+              _ _
+ _ __ ___  __| (_)___
 | '__/ _ \/ _` | / __|
 | | |  __/ (_| | \__ \\
 |_|  \___|\__,_|_|___/
-                     
 """
+
     def get_status(self, ip, port, **kwargs):
         if not ip or not port:
-            sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" % (ip,port))
+            sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" % (ip, port))
             sys.exit(1)
         port = int(port)
         if kwargs.get("password") is not None:
-            # print "1097 redis password found" #rmme
-            reply = socket_client(ip,port,["AUTH %s\n" % kwargs["password"], "INFO\n"])
+            # print "1097 redis password found" # rmme
+            reply = socket_client(ip, port, ["AUTH %s\n" % kwargs["password"], "INFO\n"])
         else:
-            # print "1100 redis password skipped" #rmme
-            reply = socket_client(ip,port,"INFO\n")
+            # print "1100 redis password skipped" # rmme
+            reply = socket_client(ip, port, "INFO\n")
             # print "1158"
         # print "1159 reply %r" % reply
         if reply:
             return(reply)
         else:
             return(None)
+
     def parse_status(self, reply):
         return_dict = {}
         section = ""
@@ -1280,7 +1211,7 @@ class RedisCtl(object):
             if i.lstrip()[0] == "#":   # IndexError: string index out of range
                 # new section
                 section = i.lstrip(' #').rstrip()
-                if not section in return_dict:
+                if section not in return_dict:
                     return_dict[section] = {}
                 continue
             try:
@@ -1293,14 +1224,15 @@ class RedisCtl(object):
                 value = value.strip()
                 return_dict[section][key] = value
         return(return_dict)
+
     def get_all_statuses(self, instances, **kwargs):
         return_dict = {}
-        # print "1130 get_all_statuses" #rmme
-        #pp.pprint(instances) #rmme        
+        # print "1130 get_all_statuses" # rmme
+        # pp.pprint(instances) # rmme
         for i in instances:
             host = instances[i]["host"]
             port = instances[i]["port"]
-            password = instances.get(i,{}).get("password")
+            password = instances.get(i, {}).get("password")
             # print "host %s" % host
             # print "port %s" % port
             # print "password %s" % password
@@ -1313,63 +1245,62 @@ class RedisCtl(object):
             # I could just pass the None value through without checking because it is check for None in get_status
             if password and host and port:
                 # print "1144 redis password, host and port"
-                reply = self.get_status(host, port, password = password)
+                reply = self.get_status(host, port, password=password)
             elif host and port:
                 # print "1147 redis host and port"
                 reply = self.get_status(host, port)
             else:
-                #print "1150 redis instance"
-                #pp.pprint(instances[i])
+                # print "1150 redis instance"
+                # pp.pprint(instances[i])
                 reply = None
             if reply:
                 # print "1210"
                 return_dict[i] = self.parse_status(reply)
         return(return_dict)
+
     def instances(self, doc_roots):
-        #print "redis.instances doc_roots: %r" % doc_roots
+        # print "redis.instances doc_roots: %r" % doc_roots
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of redis instances, return the IP or hostname, port and password (password as applicable)
-        
-        Returns a dict of "host:port" : {"host": "", "port": "", "password":""}
+        Returns a dict of "host:port": {"host": "", "port": "", "password":""}
         Value is None if it is undefined
-        
         Previously, a list of "host:port" was returned.
         You could iterate for i in instances().
         The return was changed to a dict, and the key is "host:port" so for i in instances() will still work,
         With the added benefit that you can now get to the values directly.
         """
         # redis_instances = set()
-        redis_dict = {} # "host:port" : {host:"",port:"",password:""}
+        redis_dict = {}  # "host:port": {host:"", port:"", password:""}
         for key, value in doc_roots.iteritems():
             pass
             if value.get("local_xml"):
-                local_xml = value.get("local_xml",{})
+                local_xml = value.get("local_xml", {})
                 # print "1179 local_xml"
                 # pp.pprint(local_xml)
-            if local_xml.get("session_cache",{}).get("engine") == "redis":
-                if local_xml.get("session_cache",{}).get("host") and local_xml.get("session_cache",{}).get("port"):
+            if local_xml.get("session_cache", {}).get("engine") == "redis":
+                if local_xml.get("session_cache", {}).get("host") and local_xml.get("session_cache", {}).get("port"):
                     # print "1182 session_cache is redis"
                     stanza = "%s:%s" % (
-                        local_xml.get("session_cache",{}).get("host"),
-                        local_xml.get("session_cache",{}).get("port")
+                        local_xml.get("session_cache", {}).get("host"),
+                        local_xml.get("session_cache", {}).get("port")
                     )
                     # redis_instances.add(stanza)
                     redis_dict[stanza] = {}
-                    #if local_xml.get("session_cache",{}).get("host"):
-                    redis_dict[stanza]["host"] = local_xml.get("session_cache",{}).get("host")
-                    #if local_xml.get("session_cache",{}).get("port"):
-                    redis_dict[stanza]["port"] = local_xml.get("session_cache",{}).get("port")
-                    redis_dict[stanza]["password"] = local_xml.get("session_cache",{}).get("password")
-                    #print "1098 redis_dict %r" % redis_dict
-                elif "tcp://" in local_xml.get("session_cache",{}).get("session_save_path"):
+                    # if local_xml.get("session_cache", {}).get("host"):
+                    redis_dict[stanza]["host"] = local_xml.get("session_cache", {}).get("host")
+                    # if local_xml.get("session_cache", {}).get("port"):
+                    redis_dict[stanza]["port"] = local_xml.get("session_cache", {}).get("port")
+                    redis_dict[stanza]["password"] = local_xml.get("session_cache", {}).get("password")
+                    # print "1098 redis_dict %r" % redis_dict
+                elif "tcp://" in local_xml.get("session_cache", {}).get("session_save_path"):
                     result = re.match('tcp://([^:]+):(\d+)',
-                    local_xml.get("session_cache",{}).get("session_save_path")
-                    )
+                                      local_xml.get("session_cache", {}).get("session_save_path")
+                                      )
                     if result:
                         host = result.group(1)
                         port = result.group(2)
-                        stanza = "%s:%s" % (host,port)
+                        stanza = "%s:%s" % (host, port)
                         redis_dict[stanza] = {}
                         redis_dict[stanza]["host"] = host
                         redis_dict[stanza]["port"] = port
@@ -1377,53 +1308,55 @@ class RedisCtl(object):
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # redis
-            if local_xml.get("object_cache",{}).get("engine") == "redis":
+            if local_xml.get("object_cache", {}).get("engine") == "redis":
                 # print "1200 object_cace is redis"
                 stanza = "%s:%s" % (
-                    local_xml.get("object_cache",{}).get("server"),
-                    local_xml.get("object_cache",{}).get("port")
+                    local_xml.get("object_cache", {}).get("server"),
+                    local_xml.get("object_cache", {}).get("port")
                 )
                 # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
-                redis_dict[stanza]["host"] = local_xml.get("object_cache",{}).get("server")
-                redis_dict[stanza]["port"] = local_xml.get("object_cache",{}).get("port")
-                redis_dict[stanza]["password"] = local_xml.get("object_cache",{}).get("password")
-                #print "1115 redis_dict %r" % redis_dict
-
+                redis_dict[stanza]["host"] = local_xml.get("object_cache", {}).get("server")
+                redis_dict[stanza]["port"] = local_xml.get("object_cache", {}).get("port")
+                redis_dict[stanza]["password"] = local_xml.get("object_cache", {}).get("password")
+                # print "1115 redis_dict %r" % redis_dict
             # FULL PAGE CACHE
             # redis
-            if local_xml.get("full_page_cache",{}).get("engine") == "redis":
+            if local_xml.get("full_page_cache", {}).get("engine") == "redis":
                 stanza = "%s:%s" % (
-                    local_xml.get("full_page_cache",{}).get("server"),
-                    local_xml.get("full_page_cache",{}).get("port")
+                    local_xml.get("full_page_cache", {}).get("server"),
+                    local_xml.get("full_page_cache", {}).get("port")
                 )
                 # redis_instances.add(stanza)
                 redis_dict[stanza] = {}
-                #if local_xml.get("session_cache",{}).get("host"):
-                redis_dict[stanza]["host"] = local_xml.get("full_page_cache",{}).get("server")
-                #if local_xml.get("session_cache",{}).get("port"):
-                redis_dict[stanza]["port"] = local_xml.get("full_page_cache",{}).get("port")
-                redis_dict[stanza]["password"] = local_xml.get("full_page_cache",{}).get("password")
-                #print "1131 redis_dict %r" % redis_dict
+                # if local_xml.get("session_cache", {}).get("host"):
+                redis_dict[stanza]["host"] = local_xml.get("full_page_cache", {}).get("server")
+                # if local_xml.get("session_cache", {}).get("port"):
+                redis_dict[stanza]["port"] = local_xml.get("full_page_cache", {}).get("port")
+                redis_dict[stanza]["password"] = local_xml.get("full_page_cache", {}).get("password")
+                # print "1131 redis_dict %r" % redis_dict
             # if redis_dict:
             #     print "redis_dict:"
             #     pp.pprint(redis_dict)
-        #return(list(redis_instances))
+        # return(list(redis_instances))
         return(redis_dict)
+
 
 class MemcacheCtl(object):
     def figlet(self):
         print """
-                                         _          
- _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___ 
+                                         _
+ _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___
 | '_ ` _ \ / _ \ '_ ` _ \ / __/ _` |/ __| '_ \ / _ \\
 | | | | | |  __/ | | | | | (_| (_| | (__| | | |  __/
 |_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
 """
+
     def get_status(self, ip, port):
         port = int(port)
-        reply = socket_client(ip,port,"stats\n")
+        reply = socket_client(ip, port, "stats\n")
         return(reply)
+
     def parse_status(self, reply):
         return_dict = {}
         section = ""
@@ -1441,6 +1374,7 @@ class MemcacheCtl(object):
                 value = value.strip()
                 return_dict[key] = value
         return(return_dict)
+
     def get_all_statuses(self, instances):
         return_dict = {}
         for instance in instances:
@@ -1452,45 +1386,42 @@ class MemcacheCtl(object):
             reply = self.get_status(ip, port)
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
+
     def instances(self, doc_roots):
-        #print "memcache.instances doc_roots: %r" % doc_roots
+        # print "memcache.instances doc_roots: %r" % doc_roots
         memcache_dict = {}
         memcache_instances = set()
         for key, doc_root_dict in doc_roots.iteritems():
             # for doc_root in doc_roots:
-            #     doc_root_dict = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{})
-
+            #     doc_root_dict = globalconfig.get("magento", {}).get("doc_root", {}).get(doc_root, {})
             # SESSION
             # for this doc_root, if the session cache is memcache, get the ip and port, and add it to the set
             # memcache
-            if doc_root_dict.get("local_xml",{}).get("session_cache",{}).get("engine") == "memcache":
+            if doc_root_dict.get("local_xml", {}).get("session_cache", {}).get("engine") == "memcache":
                 result = re.match('tcp://([^:]+):(\d+)',
-                    doc_root_dict["local_xml"].get("session_cache",{}).get("session_save_path")
-                    )
+                                  doc_root_dict["local_xml"].get("session_cache", {}).get("session_save_path")
+                                  )
                 if result:
                     host = result.group(1)
                     port = result.group(2)
-                    stanza = "%s:%s" % (host,port)
+                    stanza = "%s:%s" % (host, port)
                     memcache_dict[stanza] = {"host": host, "port": port}
                     memcache_instances.add(stanza)
             # OBJECT
             # for this doc_root, if the object cache is memcache, get the ip and port, and add it to the set
             # memcache
-            if doc_root_dict.get("local_xml",{}).get("object_cache",{}).get("engine") == "memcache":
-                host = doc_root_dict.get("local_xml",{}).get("object_cache",{}).get("host")
-                port = doc_root_dict.get("local_xml",{}).get("object_cache",{}).get("port")
-                stanza = "%s:%s" % (host,port)
+            if doc_root_dict.get("local_xml", {}).get("object_cache", {}).get("engine") == "memcache":
+                host = doc_root_dict.get("local_xml", {}).get("object_cache", {}).get("host")
+                port = doc_root_dict.get("local_xml", {}).get("object_cache", {}).get("port")
+                stanza = "%s:%s" % (host, port)
                 memcache_dict[stanza] = {"host": host, "port": port}
                 memcache_instances.add(stanza)
         return(list(memcache_instances))
-
     """
 Session Cache: memcache
 session_save: memcache
 session_save_path: tcp://172.24.16.131:11211?persistent=0&weight=2&timeout=10&retry_interval=10
-
 [root@web2 EcommStatusTuning]# nc 172.24.16.131 11211
-
 stats
 STAT pid 27111
 STAT uptime 37578201
@@ -1532,44 +1463,44 @@ STAT evictions 0
 END
     """
 
+
 class MysqlCtl(object):
     def figlet(self):
         print """
- __  __       ____   ___  _     
-|  \/  |_   _/ ___| / _ \| |    
-| |\/| | | | \___ \| | | | |    
-| |  | | |_| |___) | |_| | |___ 
+ __  __       ____   ___  _
+|  \/  |_   _/ ___| / _ \| |
+| |\/| | | | \___ \| | | | |
+| |  | | |_| |___) | |_| | |___
 |_|  |_|\__, |____/ \__\_\_____|
         |___/
 """
+
     def get_status(self, ip, port):
         port = int(port)
-        reply = socket_client(ip,port,"stats\n")
+        reply = socket_client(ip, port, "stats\n")
         return(reply)
+
     def db_query(self, dbConnInfo, sqlquery):
         # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
-
         output = ""
-
-        var_table_prefix = dbConnInfo.get("db/table_prefix","")
-        var_dbname = dbConnInfo.get("dbname","")
-        var_host = dbConnInfo.get("host","")
-        var_username = dbConnInfo.get("username","")
-        var_password = dbConnInfo.get("password","")
-
-        if (var_dbname and var_host and var_username and var_password ):
+        var_table_prefix = dbConnInfo.get("db/table_prefix", "")
+        var_dbname = dbConnInfo.get("dbname", "")
+        var_host = dbConnInfo.get("host", "")
+        var_username = dbConnInfo.get("username", "")
+        var_password = dbConnInfo.get("password", "")
+        if (var_dbname and var_host and var_username and var_password):
             conf = "mysql --table --user='%s' --password='%s' --host='%s' --execute='%s' 2>&1 " % (
                 var_username,
                 var_password,
                 var_host,
                 sqlquery
                 )
-            #sys.stderr.write("Querying MySQL...\n") #fixme --verbose?
+            # sys.stderr.write("Querying MySQL...\n") # fixme --verbose?
             p = subprocess.Popen(
                 conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             output, err = p.communicate()
             if p.returncode > 0 or not output:
-                #return()
+                # return()
                 sys.stderr.write("MySQL cache table query failed\n")
                 error_collection.append("MySQL cache table query failed: %s\n" % conf)
                 if err:
@@ -1589,8 +1520,9 @@ class MysqlCtl(object):
             # if var_password:
             #     print " password present but not displayed"
             # print " password: %s" % var_password
-        #print
+        # print
         return(output)
+
     def parse_key_value(self, queried_table):
         lines = queried_table.splitlines()
         lines = input.splitlines()
@@ -1608,23 +1540,22 @@ class MysqlCtl(object):
                 break
             return_dict[result.group(1).strip()] = result.group(2).strip()
         return(return_dict)
+
     def not_used_instances(self, doc_roots):
         """
         With a list of doc_roots, examine the local xml we already parsed
-        Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password" 
-        
+        Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password"
         Returns a dict
         Value is None if it is undefined
-        
         globalconfig[
             "magento": {
                 "doc_root": {
                     "/var/www/vhosts/www.example.com/html": {
                         "local_xml": {
                             "db": {
-                                "dbname": "databasename", 
-                                "host": "172.24.16.2", 
-                                "password": "password", 
+                                "dbname": "databasename",
+                                "host": "172.24.16.2",
+                                "password": "password",
                                 "username": "someuser"
                             }
                         }
@@ -1632,14 +1563,13 @@ class MysqlCtl(object):
                 }
             }
         ]
-
         """
         # redis_instances = set()
         # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
-        return_dict = {} # "host:port" : {host:"",port:"",password:""}
+        return_dict = {}  # "host:port": {host:"", port:"", password:""}
         for doc_root in doc_roots:
-            if globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml"):
-                xml_db = globalconfig.get("magento",{}).get("doc_root",{}).get(doc_root,{}).get("local_xml",{}).get("db",{})
+            if globalconfig.get("magento", {}).get("doc_root", {}).get(doc_root, {}).get("local_xml"):
+                xml_db = globalconfig.get("magento", {}).get("doc_root", {}).get(doc_root, {}).get("local_xml", {}).get("db", {})
             return_dict[xml_db["host"]]["credentials"].add(xml_db)
             pass
         # globalconfig["mysql"]=return_dict
@@ -1652,15 +1582,15 @@ def socket_client(host, port, string, **kwargs):
     else:
         timeout = 5
     if isinstance(string, basestring):
-        strings = [ string ]
+        strings = [string]
     else:
         strings = string
-    #ip, port = '172.24.16.68', 6386
+    # ip, port = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout)
-    #sock.setdefaulttimeout(timeout)
-    #sock.setblocking(0)  # optional non-blocking
+    # sock.setdefaulttimeout(timeout)
+    # sock.setblocking(0)  # optional non-blocking
     try:
         sock.connect((host, int(port)))
         for string in strings:
@@ -1669,10 +1599,11 @@ def socket_client(host, port, string, **kwargs):
             # print "1352 reply %s" % reply
         sock.close()
     except socket.error:
-        sys.stderr.write("socket connect error host: %s port: %s" % (host,port))
-        error_collection.append("socket connect error host: %s port: %s" % (host,port))
+        sys.stderr.write("socket connect error host: %s port: %s" % (host, port))
+        error_collection.append("socket connect error host: %s port: %s" % (host, port))
         return(None)
     return reply
+
 
 def daemon_exe(match_exe):
     """
@@ -1682,8 +1613,7 @@ def daemon_exe(match_exe):
     """
     daemons = {}
     pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
-    #pp.pprint(pids)
-
+    # pp.pprint(pids)
     for pid in pids:
         psexe = ""
         ppid = ""
@@ -1691,13 +1621,13 @@ def daemon_exe(match_exe):
         pserror = ""
         try:
             ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
-            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000"," ").rstrip()
+            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000", " ").rstrip()
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
         except TypeError:
-            e=""
+            e = ""
             sys.stderr.write("TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
-        except (IOError,OSError): # proc has already terminated, you may not be root
+        except (IOError, OSError):  # proc has already terminated, you may not be root
             continue
         else:
             # probably don't need the if psexe now 1-20-2016
@@ -1710,16 +1640,17 @@ def daemon_exe(match_exe):
                     psexe = result.group(1).rstrip()
                     pass
                 if os.path.basename(psexe) in match_exe:
-                    #if os.path.basename(psexe) == daemon_name:
+                    # if os.path.basename(psexe) == daemon_name:
                     if ppid == "1" or not os.path.basename(psexe) in daemons:
-                        daemons[os.path.basename(psexe)] = { "exe" : "", "cmd" : "", "basename" : "" }
+                        daemons[os.path.basename(psexe)] = {"exe": "", "cmd": "", "basename": ""}
                         daemons[os.path.basename(psexe)]["exe"] = psexe
                         daemons[os.path.basename(psexe)]["cmd"] = pscmd
                         daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
                         if pserror:
-                            daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid,pserror)
+                            daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid, pserror)
                             pserror = ""
     return(daemons)
+
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
@@ -1730,20 +1661,19 @@ class AutoVivification(dict):
             value = self[item] = type(self)()
             return value
 
+
 def importfile(filename, keyword_regex, **kwargs):
     """
     pass the filename of the base config file, and a keyword regular expression to identify the include directive.
     The regexp should include parantheses ( ) around the filename part of the match
-    
     keywords: base_path = "/some/path"
     trailing / will be stripped
     kwargs["base_path"] will be added to filename that do not include and absolute path. i.e. Apache includes
-    
     Examples (the regexp is case insensitive):
     nginx
-        wholeconfig = importfile(conffile,'\s*include\s+(\S+)')
+        wholeconfig = importfile(conffile, '\s*include\s+(\S+)')
     httpd
-        wholeconfig = importfile(conffile,'\s*include\s+(\S+)', base_path="/etc/httpd")
+        wholeconfig = importfile(conffile, '\s*include\s+(\S+)', base_path="/etc/httpd")
     """
     # make the base_path incoming keyword a little more fault tolerant by removing the trailing slash
     if "base_path" in kwargs:
@@ -1756,26 +1686,25 @@ def importfile(filename, keyword_regex, **kwargs):
     else:
         kwargs["recurse_count"] = 0
     if kwargs["recurse_count"] > 20:
-        #arbitrary number
+        # arbitrary number
         sys.stderr.write("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         error_collection.append("Too many recursions while importing %s, the config is probably a loop.\n" % filename)
         sys.exit(1)
+
     def full_file_path(right_file, base_path):
         # If the right side of the full name doesn't have a leading slash, it is a relative path.
         #     Add the base_path to the left and return the value
         # else just return the name
         if right_file[0] not in "/":
-            #return(base_path+"/"+right_file)
+            # return(base_path+"/"+right_file)
             return(os.path.join(base_path, right_file))
         else:
-            return(right_file) # this is the fix!
-    #files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
-    files = glob.glob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
+            return(right_file)  # this is the fix!
+    # files = glob.iglob( full_file_path(filename, base_path) ) # either an absolute path to a file, or absolute path to a glob
+    files = glob.glob(full_file_path(filename, base_path))  # either an absolute path to a file, or absolute path to a glob
     combined = ""
-
     # print "1655 %r" % full_file_path(filename, base_path)
     # print "1656 %r" % files
-
     for onefile in files:
         # for each file in the glob (may be just one file), open it
         # try:
@@ -1789,12 +1718,11 @@ def importfile(filename, keyword_regex, **kwargs):
         #     combined += "#1664 file isn't a file? " % onefile
         # except:
         #     return()
-
         # go through the file, line by line
         # if it has an include, go follow it
         for line in onefile_handle:
-            result = re.match(keyword_regex, line.strip(), re.IGNORECASE )
-            #result = re.match('(include.*)', line.strip(), re.I | re.U )
+            result = re.match(keyword_regex, line.strip(), re.IGNORECASE)
+            # result = re.match('(include.*)', line.strip(), re.I | re.U)
             # if it is an include, remark out the line,
             # figure out the full filename
             # and import it inline
@@ -1808,12 +1736,13 @@ def importfile(filename, keyword_regex, **kwargs):
         if os.path.isfile(onefile):
             combined += "## END "+onefile+"\n"
         onefile_handle.close()
-        #print "#combined#"
-        #print combined
-        #print "#end#"
+        # print "#combined#"
+        # print combined
+        # print "#end#"
     return(combined)
 
-def kwsearch(keywords,line, **kwargs):
+
+def kwsearch(keywords, line, **kwargs):
     """
     pass:
         a list of keywords
@@ -1824,20 +1753,21 @@ def kwsearch(keywords,line, **kwargs):
     stanza = {}
     for word in keywords:
         result = re.match("(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
-        #result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
-        #result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str,keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
+        # result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
+        # result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str, keywords)), line.strip(), re.IGNORECASE) # this way, without the for loop took 10-12 times as long to run
         if result:
-            if not "single_value" in kwargs:
+            if "single_value" not in kwargs:
                 if not result.group(1).lower() in stanza:
                     stanza[result.group(1).lower()] = []
                 if not result.group(2).strip('\'"') in stanza[result.group(1).lower()]:
-                    if not "split_list" in kwargs:
+                    if "split_list" not in kwargs:
                         stanza[result.group(1).lower()] += [result.group(2).strip(';"\'')]
                     else:
                         stanza[result.group(1).lower()] += [result.group(2).strip(';"\'').split()]
             else:
                 stanza[result.group(1)] = result.group(2).strip('"\'')
-    return(stanza) #once we have a match, move on
+    return(stanza)  # once we have a match, move on
+
 
 def memory_estimate(process_name, **kwargs):
     """
@@ -1846,9 +1776,8 @@ def memory_estimate(process_name, **kwargs):
     free_mem 1092636
     line_sum 61348
     """
-    status = { "line_sum":0, "line_count":0, "biggest":0, "free_mem":0, "buffer_cache":0, "php_vsz-rss_sum":0 }
-
-    #freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
+    status = {"line_sum": 0, "line_count": 0, "biggest": 0, "free_mem": 0, "buffer_cache": 0, "php_vsz-rss_sum": 0}
+    # freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
     conf = "free"
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -1866,10 +1795,9 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
         if result:
             status["buffer_cache"] = int(result.group(4))
-            #print "1552 buffer_cache"
-            #print status["buffer_cache"]
+            # print "1552 buffer_cache"
+            # print status["buffer_cache"]
             break
-
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -1886,23 +1814,24 @@ def memory_estimate(process_name, **kwargs):
                 status["biggest"] = int(result.group(6))
     return(status)
 
+
 def memory_print(result, proc_name, proc_max):
     print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (result["line_count"], proc_name, result["line_sum"], result["free_mem"])
     print "Average memory per process: %d KB will use %d KB if max processes %d is reached." % (result["line_sum"]/result["line_count"], int(result["line_sum"] / result["line_count"] * proc_max), proc_max)
     print "Largest process: %d KB will use %d KB if max processes is reached.\n" % (result["biggest"], result["biggest"]*proc_max)
     print "What should I set max processes to?"
-    print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
+    print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int((result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
     print
     print "Current maximum processes: %d" % proc_max
     print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
     print "     %3d                %3d                %3d              %3d" % (
-        int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) )),
-        int(( (result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]) ) * .8),
-        int( (result["line_sum"]+result["free_mem"]) / result["biggest"]),
-        int( (result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
+        int(((result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"]))),
+        int(((result["line_sum"]+result["free_mem"]) / (result["line_sum"]/result["line_count"])) * .8),
+        int((result["line_sum"]+result["free_mem"]) / result["biggest"]),
+        int((result["line_sum"]+result["free_mem"]) / result["biggest"] * .8)
         )
     # print
-    # print "If we also allowed %s to use the memory currently used for buffers and cache by %s:" % (proc_name,proc_name)
+    # print "If we also allowed %s to use the memory currently used for buffers and cache by %s:" % (proc_name, proc_name)
     # print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
     # print "     %3d                %3d                %3d              %3d" % (
     #     int(( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / (result["line_sum"]/result["line_count"]) )),
@@ -1910,8 +1839,8 @@ def memory_print(result, proc_name, proc_max):
     #     int( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / result["biggest"]),
     #     int( (result["line_sum"]+result["free_mem"]+result["php_vsz-rss_sum"]) / result["biggest"] * .8)
     #     )
-    
-    
+
+
 def print_sites(localconfig):
     for one in sorted(localconfig):
         if "domains" in one:
@@ -1928,11 +1857,12 @@ def print_sites(localconfig):
             print "Error log: %s" % one["error_log"]
         print
 
+
 def update(d, u):
     """
     update dictionary d with updated dictionary u recursively
-    """   
-    #for k, v in u.iteritems():
+    """
+    # for k, v in u.iteritems():
     for k in u:
         # if isinstance(v, collections.Mapping):
         if isinstance(u[k], dict):
