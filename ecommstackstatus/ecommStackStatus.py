@@ -519,8 +519,8 @@ if not args.jsonfile:
         # find mage.php files in document roots
         # try:
         # sys.stderr.write("2031\n")
-        if True:
-            mage_files = magento.find_mage_php(globalconfig["doc_roots"])
+        if True:  # rmme 2016-08-29 waste of space
+            mage_files = magento.find_magento(globalconfig["doc_roots"])
         # except:
         #     sys.stderr.write("No Magento found in the web document roots\n")
         # get Magento information from those Mage.php
@@ -535,12 +535,12 @@ if not args.jsonfile:
         # return_dict[doc_root_path]["local_xml"] = { }
         # return_dict[doc_root_path]["local_xml"]["filename"] = os.path.join(head, "app", "etc", "local.xml")
         # return_dict[doc_root_path]["magento_version"] = "%s" % mage["version"]
-        mage_file_info = magento.mage_file_info(mage_files)
-        globalconfig["magento"]["doc_root"] = mage_file_info
+        # mage_file_info = magento.mage_file_info(mage_files)  # rmme 2016-08-29, duplicate line?!
+        # globalconfig["magento"]["doc_root"] = mage_file_info  # rmme 2016-08-29, duplicate line?!
 
         for doc_root in globalconfig["magento"]["doc_root"]:
             # sys.stderr.write("2054\n")
-            if doc_root not in globalconfig["magento"]["doc_root"]:
+            if doc_root not in globalconfig["magento"]["doc_root"]:  # rmme how could this NOT exist?!
                 globalconfig["magento"]["doc_root"][doc_root] = {}
             # else:
             #     print 'DEFINED: %s in globalconfig["magento"]["doc_root"]' % doc_root
@@ -559,7 +559,8 @@ if not args.jsonfile:
             # 1-20-2016 fixed
             update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"],
                    magento.open_local_xml(doc_root,
-                                          globalconfig["magento"]["doc_root"][doc_root]))
+                                          globalconfig["magento"]["doc_root"][doc_root])
+                   )
 
             # redis_module_xml = os.path.join(docroot,"app","etc","modules","Cm_RedisSession.xml")
             # app/etc/modules/Cm_RedisSession.xml
