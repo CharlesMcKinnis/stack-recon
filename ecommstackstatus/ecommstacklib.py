@@ -939,6 +939,8 @@ class MagentoCtl(object):
         pass
 
     def find_magento(self, doc_roots):
+        pp = pprint.PrettyPrinter(indent=4)
+
         return_dict = {}
         for doc_root_path in doc_roots:
             # with nginx and apache, we have docroot for web paths
