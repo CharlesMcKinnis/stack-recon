@@ -946,6 +946,7 @@ class MagentoCtl(object):
             # magento = MagentoCtl()
             # search_path = one # docroot
             mage_php_matches = []
+            magento_exe_matches = []
             for root, dirnames, filenames in os.walk(doc_root_path):
                 for filename in fnmatch.filter(filenames, 'Mage.php'):
                     mage_php_matches.append(os.path.join(root, filename))
