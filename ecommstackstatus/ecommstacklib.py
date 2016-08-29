@@ -954,8 +954,12 @@ class MagentoCtl(object):
                     mage_php_matches.append(os.path.join(root, filename))
                 for filename in fnmatch.filter(filenames, 'magento'):
                     magento_exe_matches.append(os.path.join(root, filename))
-            print "954 magento_exe_matches"
+            print "957 magento_exe_matches"
             pp.pprint(magento_exe_matches)
+            print "959 mage_php_matches"
+            pp.pprint(mage_php_matches)
+
+            # Magento 1 first, is there more than one Magento 1 install in this path?
             if len(mage_php_matches) > 1:
                 sys.stderr.write("There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
                 error_collection.append("Magento error: There are multiple Mage.php files in the Document Root %s. Choosing the shortest path.\n" % doc_root_path)
@@ -970,6 +974,7 @@ class MagentoCtl(object):
                         smallest_size = num_slashes
                         smallest_line = i
                 mage_php_matches[0] = smallest_line
+            # and if we found a magento path, lets add it to the return
             if mage_php_matches:
                 return_dict[doc_root_path] = mage_php_matches[0]
         return(return_dict)
