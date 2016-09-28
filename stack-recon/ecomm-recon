@@ -1,0 +1,1399 @@
+#!/usr/bin/env python
+
+# from ecommstacklib import *
+from stackreconlib import (apacheCtl, nginxCtl, phpfpmCtl, MagentoCtl,
+                           MemcacheCtl, RedisCtl, MysqlCtl, error_collection,
+                           daemon_exe, importfile, update, print_sites,
+                           memory_estimate, memory_print, print_table)
+import re
+# import glob
+import subprocess
+import sys
+import os
+# import yaml
+# import fnmatch
+try:
+    import xml.etree.ElementTree as ET
+except ImportError:
+    import cElementTree as ET
+import pprint
+import socket
+# import collections
+try:
+    import json
+    JSON = True
+except ImportError:
+    # sys.stderr.write("Data export omitted, module json and simplejson are "
+    #                  "not installed\n")
+    # sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: "
+    #                  "yum install python-simplejson")
+    # error_collection.append("Data export omitted because the json module is "
+    #                         "not installed\n")
+    JSON = False
+try:
+    import argparse
+    ARGPARSE = True
+except ImportError:
+    ARGPARSE = False
+    sys.stderr.write("This program is more robust if python argparse "
+                     "installed.\n")
+    # error_collection.append("This program is more robust if python "
+    #                         "argparse installed.\n")
+# try:
+#     import mysql.connector
+#     MYSQL = True
+# except ImportError:
+#     MYSQL = False
+#     sys.stderr.write("This program will be more robust if mysql.connector "
+#                      "installed.\n")
+#     error_collection.append("This program will be more robust if "
+#                             "mysql.connector installed.\n")
+
+STACK_STATUS_VERSION = 2016051601
+
+"""
+Magento is a trademark of Varien. Neither I nor these scripts are affiliated
+with or endorsed by the Magento Project or its trademark owners.
+
+"""
+
+"""
+git clone https://github.com/CharlesMcKinnis/stack-recon.git
+#dev branch
+cd stack-recon && git checkout -b dev origin/dev
+./ecomm-recon 2>&1 |tee report-`date +%b%d-%H%M`.txt|less
+
+To look at the json captured:
+cat config_dump.json |python -m json.tool|less
+"""
+
+"""
+The script will look for apache, nginx and php-fpm binaries in memory, and
+identify their configuration source. Using the web server config, the document
+root and domain information is collected and displayed php-fpm configuration
+is collected and displayed.
+
+Using the document roots, it searches for Mage.php to identify Magento 1
+installations and bin/magento to identify Magento 2.
+
+For each Magento installation, version and edition is collected from Mage.php
+Configuration for database, and session, object and full page caches
+
+The database (assumed to be MySQL) is queried for whether cache is enabled
+
+If either redis or memcache is configured, it is queried via tcp for status
+information, that is collected and displayed
+"""
+
+
+class argsAlt(object):
+    pass
+
+pp = pprint.PrettyPrinter(indent=4)
+
+# The argparse module is not installed on many systems. This way, it will
+#   work regardless
+if ARGPARSE:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "-j", "--jsonfile",
+                        help="Name of a config dump json file. Skips " +
+                        "detection and uses file values.",
+                        )
+    parser.add_argument("-s", "--silent",
+                        help="No output, not even stderr.",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose",
+                        help="Additional output, mostly to stderr.",
+                        action="store_true")
+    parser.add_argument("-F", "--nofiglet",
+                        help="Omits big text (figlet) banners. Banners do " +
+                        "not require figlet to be installed.",
+                        action="store_true")
+    # parser.add_argument("--plaintext", help="ANSI control characters are "
+    #   "omitted for colors and screen clear/home.",
+    #                     action="store_true")
+    parser.add_argument("-f", "--force",
+                        help="If config_dump.json already exists, overwrite " +
+                        "it. Default: do not overwrite.",
+                        action="store_true")
+    parser.add_argument("-o", "--output",
+                        help="Name of json file to place saved config in. " +
+                        "Default: ./config_dump.json",
+                        default="./config_dump.json")
+    parser.add_argument("--printwholeconfig",
+                        help="Print the concat (whole) config of a " +
+                        "daemon(s). Requires additional daemon switches.",
+                        action="store_true")
+    parser.add_argument("--apache",
+                        help="Daemon specific switch for other options " +
+                        "(printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--nginx",
+                        help="Daemon specific switch for other options " +
+                        "(printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--phpfpm",
+                        help="Daemon specific switch for other options " +
+                        "(printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--printglobalconfig",
+                        help="Pretty print the globalconfig dict",
+                        action="store_true")
+    parser.add_argument("--printjson",
+                        help="Pretty print the globalconfig json",
+                        action="store_true")
+    parser.add_argument("--nomagento",
+                        help="Skip Magento detection; it will detect apache, " +
+                        "nginx and php-fpm for normal LAMP stacks",
+                        action="store_true")
+    parser.add_argument("--notable",
+                        help="Output data will be colon seperated instead " +
+                        "of tables.",
+                        action="store_true")
+    parser.add_argument("--magentopath",
+                        help="Output data will be colon seperated instead of " +
+                        "tables.",
+                        )
+    """
+    parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
+                        action="store_true")
+    """
+
+    args = parser.parse_args()
+
+    # if (args.silent or args.batch) and not args.runtime:
+    #     args.runtime = 30
+    #     pass
+    # if args.batch:
+    #     args.plaintext = True
+    # if args.batch:
+    #     pass
+else:
+    args = argsAlt()
+    args.jsonfile = None
+    args.silent = None
+    args.verbose = None
+    args.nofiglet = None
+    args.force = None
+    args.printwholeconfig = None
+    args.printglobalconfig = None
+    args.apache = None
+    args.nginx = None
+    args.phpfpm = None
+    args.output = "./config_dump.json"
+    args.printjson = None
+    args.nomagento = None
+    args.notable = None
+    args.magentopath = None
+    # args.nopassword = None
+    """
+    defaults:
+        save a config_dump
+        do not show verbose messages
+        show figlet banners
+        do not overwrite config_dump.json
+        json filename, default config_dump.json
+    """
+
+# Because RHEL 5 :p
+try:
+    test = ".".format()
+except:
+    args.notable = True
+
+skip_apache = False
+skip_nginx = False
+skip_phpfpm = False
+globalconfig = {}
+
+if args.jsonfile and JSON is True:
+    if os.path.isfile(args.jsonfile):
+        f = open(args.jsonfile, 'r')
+        globalconfig = json.load(f)
+    else:
+        sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
+        error_collection.append("The file %s does not exist.\n" % args.jsonfile)
+        sys.exit(1)
+
+if args.magentopath:
+    skip_apache = True
+    skip_nginx = True
+    skip_phpfpm = True
+    # assigned in magento_data_gather
+    # globalconfig["doc_roots"] = [args.magentopath]
+
+# pp = pprint.PrettyPrinter(indent=4)
+# pp.pprint(daemons)
+
+if not args.jsonfile:
+    # these are the daemon executable names we are looking for
+    # added "php-fpm-5.4", "php-fpm-5.5", "php-fpm-5.6", "php-fpm-7.0" for
+    #   Amazon Linux
+    daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event",
+                          "httpd.worker", "mysql", "mysqld", "php-fpm", "php5-fpm",
+                          "php-fpm-5.4", "php-fpm-5.5", "php-fpm-5.6", "php-fpm-7.0"])
+    for i in daemons:
+        if daemons.get(i, {}).get("error"):
+            sys.stderr.write(daemons[i]["error"] + "\n")
+            error_collection.append(daemons[i]["error"] + "\n")
+    localfqdn = socket.getfqdn()
+    globalconfig = {"version": STACK_STATUS_VERSION, "fqdn": localfqdn}
+    globalconfig["daemons"] = daemons
+
+    """
+     ____    _  _____  _       ____    _  _____ _   _ _____ ____
+    |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \
+    | | | |/ _ \ | | / _ \   | |  _  / _ \ | | | |_| |  _| | |_) |
+    | |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ <
+    |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\
+    """
+    class DATA_GATHER(object):
+        pass
+    if skip_apache is not True:
+        # using this as a bookmark in the IDE
+        def APACHE_DATA_GATHER():
+            pass
+        sys.stderr.write("apache data gather\n")
+        ################################################
+        # APACHE
+        ################################################
+        apache_exe = ""
+        # what if they have multiple apache daemons on different MPMs?
+        alt_daemon_names = ["apache2", "httpd", "httpd.event", "httpd.worker"]
+        daemon_name = list(set(alt_daemon_names).intersection(daemons.keys()))
+        # # print "324 alt daemon names %r" % alt_daemon_names
+        # print "325 web daemon %r" % daemon_name[0]
+        # print "326 daemons %r" % daemons.keys()
+        # print "Version(s) of Apache is running %r. Using %s\n" % (daemon_name, daemon_name[0])
+        if len(daemon_name) > 1:
+            sys.stderr.write("More than one version of Apache is running %r. "
+                             "Using %s\n" %
+                             (daemon_name, daemon_name[0]))
+            error_collection.append("More than one version of Apache is "
+                                    "running %r. Using %s\n" %
+                                    (daemon_name, daemon_name[0]))
+            pass
+        elif len(daemon_name) == 1:
+            apache_basename = daemons[daemon_name[0]]["basename"]
+            apache_exe = daemons[daemon_name[0]]["exe"]
+            apache = apacheCtl(daemons[daemon_name[0]], exe=daemons[daemon_name[0]]["exe"])
+        else:
+            sys.stderr.write("Apache is not running\n")
+            error_collection.append("Apache is not running\n")
+
+        if apache_exe:
+            apache_conf_file = apache.get_conf()
+            apache_root_path = apache.get_root()
+            apache_mpm = apache.get_mpm()
+            if apache_conf_file and apache_root_path:
+                sys.stderr.write("Using config %s\n" % apache_conf_file)
+                error_collection.append("Using config %s\n" % apache_conf_file)
+                # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as
+                #   a whole word, and is a non-capturing group by virtue of
+                #   the (?:)
+                wholeconfig = importfile(apache_conf_file,
+                                         '\s*include(?:optional?)?\s+[\'"]?([^\s\'"]+)[\'"]?',
+                                         base_path=apache_root_path)
+                if args.printwholeconfig and args.apache:
+                    print(wholeconfig)
+                apache_config = apache.parse_config(wholeconfig)
+
+                if "apache" not in globalconfig:
+                    globalconfig["apache"] = {}
+                globalconfig["apache"] = apache_config
+                globalconfig["apache"]["version"] = apache.get_version()
+                """
+                globalconfig[apache][sites]: [
+                    {
+                    'domains': ['domain.com', 'www.domain.com new.domain.com'],
+                    'config_file': '/etc/httpd/conf.d/ssl.conf',
+                    'doc_root': '/var/www/html',
+                    'listening': ['192.168.100.248:443']
+                    }, {
+                    'domains': ['adomain.com', 'www.domain.com new.domain.com'],
+                    'config_file': '/etc/httpd/conf/httpd.conf',
+                    'doc_root': '/var/www/html',
+                    'listening': ['*:80']
+                    }, {
+                    'config_file': '/etc/httpd/conf.d/ssl.conf',
+                    'listening': ['_default_:443']
+                    }, {
+                    'config_file': '/etc/httpd/conf/httpd.conf',
+                    'listening': ['_default_:80']
+                    }, {
+                    'doc_root': '/var/www/html'
+                    }]
+                """
+
+                daemon_config = apache.get_conf_parameters()
+                if daemon_config:
+                    if "daemon" not in globalconfig["apache"]:
+                        globalconfig["apache"]["daemon"] = daemon_config
+                    globalconfig["apache"]["basename"] = apache_basename
+                    globalconfig["apache"]["exe"] = daemons[apache_basename]["exe"]
+                    globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
+
+    # using this as a bookmark in the IDE
+    def NGINX_DATA_GATHER():
+        pass
+    if skip_nginx is not True:
+        sys.stderr.write("nginx data gather\n")
+        ################################################
+        # NGINX
+        ################################################
+        if "nginx" not in daemons:
+            sys.stderr.write("nginx is not running\n")
+            error_collection.append("nginx is not running\n")
+        else:
+            nginx = nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
+            nginx_conf_file = nginx.get_conf()
+            if nginx_conf_file:
+                sys.stderr.write("Using config %s\n" % nginx_conf_file)
+                error_collection.append("Using config %s\n" % nginx_conf_file)
+
+                # configuration fetch and parse
+                wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+                if args.printwholeconfig and args.nginx:
+                    print(wholeconfig)
+                nginx_config = nginx.parse_config(wholeconfig)
+
+                if "nginx" not in globalconfig:
+                    globalconfig["nginx"] = {}
+                globalconfig["nginx"] = nginx_config
+                globalconfig["nginx"]["version"] = nginx.get_version()
+                """
+                {
+                'domains': ['www.domain.com'],
+                'config_file': '/etc/nginx/conf.d/production.domain.com.conf',
+                'doc_root': '/var/www/vhosts/production.domain.com/webroot',
+                'listening': ['443 default ssl']
+                }
+
+                """
+
+                daemon_config = nginx.get_conf_parameters()
+                if daemon_config:
+                    if "daemon" not in globalconfig["nginx"]:
+                        globalconfig["nginx"]["daemon"] = daemon_config
+                    globalconfig["nginx"]["basename"] = "nginx"
+                    globalconfig["nginx"]["exe"] = daemons["nginx"]["exe"]
+                    globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
+
+    # using this as a bookmark in the IDE
+    def PHP_FPM_DATA_GATHER():
+        pass
+    if skip_phpfpm is not True:
+        sys.stderr.write("php-fpm data gather\n")
+        ################################################
+        # PHP-FPM
+        ################################################
+
+        daemon_exe = ""  # to fix not defined
+        # php-fpm executable name is different between distros and versions.
+        # daemon_exe catches them all, but then we need to narrow down the
+        #   names for this specific daemon
+        alt_daemon_names = ["php-fpm", "php5-fpm", "php-fpm-5.4", "php-fpm-5.5",
+                            "php-fpm-5.6", "php-fpm-7.0"]
+        daemon_name = list(set(alt_daemon_names).intersection(daemons.keys()))
+        # print "324 alt daemon names %r" % alt_daemon_names
+        # print "325 web daemon %r" % daemon_name[0]
+        # print "326 daemons %r" % daemons.keys()
+        # print "Version(s) of Apache is running %r. Using %s\n" % (daemon_name,
+        #                                                           daemon_name[0])
+        if len(daemon_name) > 1:
+            # print "More than one version of Apache is running."
+            sys.stderr.write("More than one version of php-fpm is running %r. "
+                             "Using %s\n" % (daemon_name, daemon_name[0]))
+            error_collection.append("More than one version of php-fpm is "
+                                    "running %r. Using %s\n" %
+                                    (daemon_name, daemon_name[0]))
+            pass
+        elif len(daemon_name) == 1:
+            phpfpm = phpfpmCtl(daemons[daemon_name[0]],
+                               exe=daemons[daemon_name[0]]["exe"])
+            phpfpm_conf_file = phpfpm.get_conf()
+            if phpfpm_conf_file:
+                wholeconfig = importfile(phpfpm_conf_file,
+                                         '\s*include[\s=]+(\S+)')
+                if args.printwholeconfig and args.phpfpm:
+                    print(wholeconfig)
+
+                phpfpm_config = phpfpm.parse_config(wholeconfig)
+
+                if daemon_name[0] not in globalconfig:
+                    globalconfig[daemon_name[0]] = {}
+                globalconfig[daemon_name[0]] = phpfpm_config
+                globalconfig[daemon_name[0]]["version"] = phpfpm.get_version()
+                globalconfig[daemon_name[0]]["basename"] = daemon_name[0]
+                globalconfig[daemon_name[0]]["exe"] = daemons[daemon_name[0]]["exe"]
+                globalconfig[daemon_name[0]]["cmd"] = daemons[daemon_name[0]]["cmd"]
+
+                if "phpfpm_meta" not in globalconfig:
+                    globalconfig["phpfpm_meta"] = {}
+                globalconfig["phpfpm_meta"] = globalconfig[daemon_name[0]]
+                globalconfig["phpfpm_meta"]["version"] = globalconfig[daemon_name[0]]["version"]
+                globalconfig["phpfpm_meta"]["basename"] = globalconfig[daemon_name[0]]["basename"]
+                globalconfig["phpfpm_meta"]["exe"] = globalconfig[daemon_name[0]]["exe"]
+                globalconfig["phpfpm_meta"]["cmd"] = globalconfig[daemon_name[0]]["cmd"]
+        else:
+            sys.stderr.write("php-fpm is not running\n")
+            error_collection.append("php-fpm is not running\n")
+
+    if not args.nomagento:
+        def MAGENTO_DATA_GATHER():
+            pass
+        sys.stderr.write("magento data gather\n")
+        magento = MagentoCtl()
+        ################################################
+        # Magento
+        ################################################
+        # get a list of unique document roots
+        if not args.magentopath:
+            doc_roots = set()
+            for apache_site in globalconfig.get("apache", {}).get("sites", {}):
+                if "doc_root" in apache_site:
+                    # reason for strip trailing slash is because paths will
+                    # appear twice if two identical paths are docroot,
+                    # and Magento find will run twice too
+                    doc_roots.add(apache_site["doc_root"].rstrip('/'))
+            for nginx_site in globalconfig.get("nginx", {}).get("sites", {}):
+                if "doc_root" in nginx_site:
+                    doc_roots.add(nginx_site["doc_root"].rstrip('/'))
+            more_doc_roots = []
+            for doc_root in doc_roots:
+                pass
+                magento_path, magento_path_dir = os.path.split(doc_root)
+                # This is to improve Magento 2 discovery
+                if magento_path_dir == "pub":
+                    # append magento_path to doc_root
+                    more_doc_roots.append(magento_path.rstrip('/'))
+            for doc_root in more_doc_roots:
+                doc_roots.add(doc_root)
+            globalconfig["doc_roots"] = list(doc_roots)
+        elif args.magentopath:
+            globalconfig["doc_roots"] = [args.magentopath]
+
+        if "magento" not in globalconfig:
+            globalconfig["magento"] = {"doc_root": {}}
+
+        # find mage.php and bin/magento files in document roots
+        mage_files = magento.find_magento(globalconfig["doc_roots"])
+        # print "454 %r" % mage_files
+        # get Magento information from the Mage.php and bin/magento files
+        # not config info, just version
+        for doc_root_path, mage_php_file in mage_files.iteritems():
+            # globalconfig["magento"]["doc_root"][doc_root_path] = {}
+            globalconfig["magento"]["doc_root"][doc_root_path] = magento.mage_file_info(mage_php_file)
+
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+            # Do not erase it, if it exists!
+            if doc_root not in globalconfig["magento"]["doc_root"]:
+                globalconfig["magento"]["doc_root"][doc_root] = {}
+            # Mage 1 specific
+            if "local_xml" in doc_root_dict:
+                local_xml = doc_root_dict["local_xml"]["filename"]
+                # Mage 1 specific, the Mage 2 analog is parsing json
+                # This gets the local_xml config from the local.xml config file,
+                #   also specific to Mage 1
+                return_dict = magento.open_local_xml(doc_root,
+                                                     doc_root_dict)
+                update(globalconfig["magento"]["doc_root"][doc_root]["local_xml"],
+                       return_dict)
+
+                # Need to move summary contents from
+                #   globalconfig["magento"]["doc_root"][doc_root]["local_xml"]
+                # in to
+                #   globalconfig["magento"]["doc_root"][doc_root]["config"]
+
+                # Mage 1 specific; this is in a config file now
+                # get the cache table information from mysql, and store it in
+                #       ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+                return_dict = magento.db_cache_table(doc_root,
+                                                     doc_root_dict.get("local_xml", {}).get("db", {}))
+                update(globalconfig["magento"]["doc_root"][doc_root],
+                       return_dict)
+
+            # Mage 2 specific
+            if "env_php" in globalconfig["magento"]["doc_root"][doc_root]:
+                env_php = magento.mage2_config_gather(doc_root_dict)
+                update(globalconfig["magento"]["doc_root"][doc_root]["env_php"],
+                       env_php)
+                # mage2_config_parse(globalconfig["magento"]["doc_root"][doc_root])
+                # print "env.php json:"
+                # pp.pprint(env_php)
+                # print "========================="
+
+        def MEMCACHE_DATA_GATHER():
+            pass
+        sys.stderr.write("memcache data gather\n")
+        memcache = MemcacheCtl()
+
+        memcache_instances = memcache.instances(globalconfig.get("magento", {}).get("doc_root", {}))
+
+        if not globalconfig.get("memcache") and memcache_instances:
+            globalconfig["memcache"] = {}
+
+        if memcache_instances:
+            update(globalconfig["memcache"],
+                   memcache.get_all_statuses(memcache_instances))
+
+        def REDIS_DATA_GATHER():
+            pass
+        sys.stderr.write("redis data gather\n")
+        redis = RedisCtl()
+        # print "477 GC magento doc_root this has data"
+        # pp.pprint(globalconfig.get("magento", {}).get("doc_root", {}))
+        redis_instances = redis.instances(globalconfig.get("magento", {}).get("doc_root", {}))
+        # print "478 redis_instances this is empty"
+        # pp.pprint(redis_instances)
+
+        if not globalconfig.get("redis") and redis_instances:
+            globalconfig["redis"] = {}
+
+        if redis_instances:
+            update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
+        # print "483 redis instances"
+        # pp.pprint(redis.get_all_statuses(redis_instances))
+
+    def MYSQL_DATA_GATHER():
+            pass
+    sys.stderr.write("mysql data gather\n")
+    mysqlctl = MysqlCtl()
+    ################################################
+    # MySQL
+    ################################################
+
+    if "mysql" not in globalconfig:
+        globalconfig["mysql"] = {"db_list": [], "host_dict": {}}
+    # globalconfig["mysql"] = mysql_config
+
+    doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
+    db_list = []
+    host_dict = {}
+    for doc_root, doc_root_dict in doc_roots.iteritems():
+        # Magento 1
+        # doc_root["local_xml"]["db"]
+        # local.xml db
+        v = doc_root_dict.get("local_xml", {}).get("db", {})
+        if v:
+            if ({"host": v.get("host"),
+                 "dbname": v.get("dbname"),
+                 "password": v.get("password"),
+                 "username": v.get("username")} not in db_list):
+                db_list.append({"host": v.get("host"),
+                                "dbname": v.get("dbname"),
+                                "password": v.get("password"),
+                                "username": v.get("username")})
+                host_dict = {v.get("host"):
+                             {"password": v.get("password"),
+                              "username": v.get("username")}}
+        # Magento 2
+        env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
+        for k, v in env_db.iteritems():
+            if ({"host": v.get("host"),
+                 "dbname": v.get("dbname"),
+                 "password": v.get("password"),
+                 "username": v.get("username")} not in db_list):
+                db_list.append({"host": v.get("host"),
+                                "dbname": v.get("dbname"),
+                                "password": v.get("password"),
+                                "username": v.get("username")})
+                host_dict = {v.get("host"):
+                             {"password": v.get("password"),
+                              "username": v.get("username")}}
+        globalconfig["mysql"]["db_list"] = db_list
+        globalconfig["mysql"]["host_dict"] = host_dict
+
+    """
+                    u'db': {   u'connection': {   u'default': {   u'active': u'1',
+                                                          u'dbname': u'stage',
+                                                          u'host': u'10.1.2.3',
+                                                          u'password': u'password
+                                                          u'username': u'username'},
+                                          u'indexer': {   u'active': u'1',
+                                                          u'dbname': u'stage',
+                                                          u'host': u'10.1.2.3',
+                                                          u'password': u'password',
+                                                          u'persistent': None,
+                                                          u'username': u'stage'}},
+                       u'table_prefix': u''},
+    """
+    # find mysql from local_xml
+    """
+    I want to add globalconfig["mysql"], and I'll need a list of them I guess?
+    Each one needs host and auth info
+    Then a dict for each query that contains a dict of key value pairs
+
+    dbConnInfo = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["db"]
+    output = db_query(dbConnInfo, sqlquery)
+    parse_key_value(output)
+
+    globalconfig[
+        "magento": {
+            "doc_root": {
+                "/var/www/vhosts/www.example.com/html": {
+                    "local_xml": {
+                        "db": {
+                            "dbname": "databasename",
+                            "host": "172.24.16.2",
+                            "password": "password",
+                            "username": "someuser"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+    """
+else:
+    for i in globalconfig["errors"]:
+        sys.stdout.write(i)
+"""
+{'/var/www/html':
+    {
+        'Mage.php': '/var/www/html/app/Mage.php',
+        'mage_version':
+        {
+            'major': '1',
+            'number': '',
+            'patch': '0',
+            'stability': '',
+            'edition': 'EDITION_COMMUNITY',
+            'version': '1.9.1.0',
+            'minor': '9',
+            'revision': '1'},
+       'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
+       'magento_path': '/var/www/html'
+    }
+}
+"""
+
+
+# using this as a bookmark in the IDE
+class OUTPUT(object):
+    pass
+"""
+  ___  _   _ _____ ____  _   _ _____
+ / _ \| | | |_   _|  _ \| | | |_   _|
+| | | | | | | | | | |_) | | | | | |
+| |_| | |_| | | | |  __/| |_| | | |
+ \___/ \___/  |_| |_|    \___/  |_|
+"""
+################################################
+# Output body for checking values below
+################################################
+
+print "FQDN: %s" % localfqdn
+
+
+# if not args.silent:
+def NGINX_PRINT():
+    pass
+# sys.stderr.write("nginx data print\n")
+################################################
+# NGINX
+################################################
+# maxclients or number of processes is "worker_processes"
+if "nginx" in globalconfig:
+    nginx.figlet()
+    nginx_dict = globalconfig.get("nginx", {})
+    if nginx_dict.get("version"):
+        print nginx_dict.get("version")
+    else:
+        print "No nginx version?"
+    if nginx_dict.get("sites"):
+        print "nginx sites:"
+        """
+
+        "sites" : [
+            blah :{
+                'domains': [
+                    'example.com', 'www.example.com new.example.com'
+                    ],
+                'config_file': '/etc/httpd/conf/httpd.conf',
+                'doc_root': '/var/www/html',
+                'listening': [
+                    '*:80'
+                    ]
+            }
+        ]
+        """
+        if globalconfig.get("nginx", {}).get("error"):
+            sys.stderr.write("Errors: \n%s\n" % nginx_dict["error"])
+            error_collection.append("Errors: \n%s\n" % nginx_dict["error"])
+
+        print_sites(globalconfig["nginx"]["sites"])
+
+        # memory profile
+        if nginx_dict.get("basename") and nginx_dict.get("maxprocesses"):
+            proc_name = nginx_dict["basename"]
+            proc_max = int(nginx_dict["maxprocesses"])
+            result = memory_estimate(proc_name)
+            if result:
+                memory_print(result, proc_name, proc_max)
+        print
+
+# globalconfig["nginx"]["maxclients"]
+
+
+def APACHE_PRINT():
+    pass
+# sys.stderr.write("apache data print\n")
+################################################
+# APACHE
+################################################
+if "apache" in globalconfig:
+    apache.figlet()
+    apache_dict = globalconfig.get("apache", {})
+    if apache_dict.get("version"):
+        print "Apache version: %s" % apache_dict.get("version")
+    else:
+        print "No apache version?"
+    if apache_dict.get("daemon", {}).get("Server MPM"):
+        print ("Apache server MPM: %s\n" %
+               apache_dict.get("daemon", {}).get("Server MPM"))
+    else:
+        print "No apache server MPM?\n"
+    if globalconfig.get("apache", {}).get("sites"):
+        print "Apache sites:"
+        """
+        28 Oct 2015
+        {'domains':
+        ['example.com', 'www.example.com new.example.com'],
+        'config_file': '/etc/httpd/conf/httpd.conf',
+        'doc_root': '/var/www/html',
+        'listening': ['*:80']}
+        """
+        print_sites(globalconfig["apache"]["sites"])
+
+        # memory profile
+        if ("basename" in globalconfig["apache"] and
+                "maxprocesses" in globalconfig["apache"]):
+            proc_name = globalconfig["apache"]["basename"]
+            proc_max = globalconfig["apache"]["maxprocesses"]
+            result = memory_estimate(proc_name)
+            if result:
+                memory_print(result, proc_name, proc_max)
+        print "\n"
+
+
+# globalconfig["nginx"]["maxclients"]
+
+def PHP_FPM_PRINT():
+    pass
+# sys.stderr.write("php-fpm data print\n")
+################################################
+# PHP-FPM
+################################################
+# maxclients is per stanza, and is pm.max_children
+# for real numbers for calculation, I'll need to sum them all
+
+if "phpfpm_meta" in globalconfig:
+    phpfpm.figlet()
+    if globalconfig.get("phpfpm_meta", {}).get("version"):
+        print ("php-fpm version: %s" %
+               globalconfig.get("phpfpm_meta", {}).get("version"))
+    else:
+        print "No php version?"
+    print "php-fpm pools:"
+    for one in globalconfig["phpfpm_meta"]:
+        if type(globalconfig["phpfpm_meta"][one]) is dict:
+            print "%s" % (one,)
+
+    print
+    # memory profile
+    print "php-fpm memory profile:"
+    if (globalconfig.get("phpfpm_meta", {}).get("basename") and
+            globalconfig.get("phpfpm_meta", {}).get("maxprocesses")):
+        proc_name = globalconfig["phpfpm_meta"]["basename"]
+        proc_max = int(globalconfig["phpfpm_meta"]["maxprocesses"])
+        result = memory_estimate(proc_name)
+        if result:
+            memory_print(result, proc_name, proc_max)
+
+# globalconfig["nginx"]["maxclients"]
+
+
+def MAGENTO_PRINT():
+    pass
+# sys.stderr.write("magento data print\n")
+################################################
+# Magento
+################################################
+
+if globalconfig.get("magento", {}).get("doc_root"):
+    magento.figlet()
+    print "\nMagento versions installed:"
+    if globalconfig.get("magento", {}).get("doc_root"):
+        for key, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+            print "-" * 60
+            print "Magento path: %s" % key
+
+            # Mage 1
+            if "local_xml" in doc_root_dict:
+
+                local_xml = doc_root_dict.get("local_xml")
+
+                print "local.xml: %s" % local_xml["filename"]
+                print "Version: %s" % doc_root_dict["magento_version"]
+                print
+                # Mage 1 DATABASE settings
+                # walk through the keys and values in
+                #   globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["db"]
+                #   skipping keys in the "skip" list
+                # If local_xml does not exist, the loop ends without an error,
+                #   so no extra checking is needed for Magento 2
+                local_db = local_xml.get("db")
+                skip = ["pdoType", "initStatements", "model", "type"]
+                if doc_root_dict.get("local_xml", {}).get("db"):
+                    print "Database settings"
+                    table = []
+                    for k2, v2 in local_db.iteritems():
+                        if k2 in skip:
+                            continue
+                        try:
+                            if v2:
+                                table.append([k2, v2])
+                            # print "%s: %s" % (k2, v2)
+                        except UnicodeEncodeError:
+                            pass
+                    if len(table):
+                        print_table(table, NOTABLE=args.notable)
+                    print
+
+                # Mage 1 SESSION CACHE settings
+                # walk through the keys and values in
+                #   globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["session_cache"]["session_save"]
+                #   skipping keys in the "skip" list
+                # If local_xml does not exist, the loop ends without an error,
+                #   so no extra checking is needed for Magento 2
+                local_session = local_xml.get("session_cache")
+                local_session_save = local_xml.get("session_cache", {}).get("session_save")
+                skip = ["engine", "disable_locking", "compression_threshold",
+                        "log_level", "first_lifetime", "bot_first_lifetime",
+                        "bot_lifetime", "compression_lib",
+                        "break_after_adminhtml", "break_after_frontend",
+                        "connect_retries"
+                        ]
+                if local_session_save:
+                    print ("Session Cache engine: %s" %
+                           local_session.get("engine", "EMPTY"))
+                    print "Session Cache backend: %s" % local_session_save
+                    table = []
+                    for k2, v2 in local_session.iteritems():
+                        if k2 in skip:
+                            continue
+                        if k2 == "Cm_RedisSession.xml active" and v2 == "false":
+                            print ("WARNING: Redis session cache is disabled, "
+                                   "even if configured, when "
+                                   "Cm_RedisSession.xml active is false.")
+                        if v2:
+                            table.append([k2, v2])
+                        # print "%s: %s" % (k2, v2)
+                    if len(table):
+                        print_table(table, NOTABLE=args.notable)
+                    print
+
+                # Mage 1 OBJECT CACHE settings
+                # walk through the keys and values in
+                #   globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["object_cache"]["backend"]
+                #   skipping keys in the "skip" list
+                # If local_xml does not exist, the loop ends without an error,
+                #   so no extra checking is needed for Magento 2
+                local_object = local_xml.get("object_cache", {})
+                skip = ["engine", "compress_tags", "use_lua",
+                        "automatic_cleaning_factor", "force_standalone",
+                        "compress_data", "compress_threshold",
+                        "compression_lib", "connect_retries"
+                        ]
+                if local_object.get("backend"):
+                    print ("Object Cache engine: %s" %
+                           local_object.get("engine", "EMPTY"))
+                    print ("Object Cache backend: %s" %
+                           local_object.get("backend", "EMPTY"))
+                    table = []
+                    for k2, v2 in doc_root_dict["local_xml"]["object_cache"].iteritems():
+                        if k2 in skip:
+                            continue
+                        if v2:
+                            table.append([k2, v2])
+                        # print "%s: %s" % (k2, v2)
+                    if len(table):
+                        print_table(table, NOTABLE=args.notable)
+                    print
+
+                # Mage 1 FULL PAGE CACHE settings
+                # walk through the keys and values in
+                #   globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["full_page_cache"]
+                #       ["backend"]
+                #   skipping keys in the "skip" list
+                local_fpc = local_xml.get("full_page_cache")
+                skip = ["engine", "connect_retries", "force_standalone",
+                        "compress_data"
+                        ]
+                # Magento 1.13.0.2 produced an error without this check
+                if local_fpc:
+                    if "engine" in local_fpc:
+                        print ("Full Page Cache engine: %s" %
+                               local_fpc.get("engine", "EMPTY"))
+                    if "backend" in local_fpc:
+                        print ("Full Page Cache backend: %s" %
+                               local_fpc.get("backend", "EMPTY"))
+                        # add WARNING about Cm vs Mage for Enterprise vs Community
+                        table = []
+                        for k2, v2 in local_fpc.iteritems():
+                            if k2 in skip:
+                                continue
+                            if v2:
+                                table.append([k2, v2])
+                            # print "%s: %s" % (k2, v2)
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                    print
+
+                # DATABASE CACHE TABLE
+                # globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
+                # This will not be present for Magento 2, and an additional
+                #     test is not required
+                cache_option_table = doc_root_dict.get("cache", {}).get("cache_option_table")
+                if cache_option_table:
+                    WARN_TURP = False
+                    WARN_FPC = False
+                    for row in cache_option_table:
+                        if "turpentine" in row[0] and WARN_TURP is False:
+                            print ("The table contains turpentine which "
+                                   "indicates varnish plug-ins are or were "
+                                   "present")
+                            WARN_TURP = True
+                        if ("full_page" in row[0] and
+                                row[1] == 0 and
+                                WARN_FPC is False):
+                            print
+                            print ("WARNING: The full_page value being set to "
+                                   "0 indicates Full Page Cache (FPC) is "
+                                   "disabled, even if it is configured.")
+                            WARN_FPC = True
+                    print "cache_option_table:"
+                    print_table(cache_option_table)
+                print
+
+            # Mage 2
+            if "env_php" in doc_root_dict:
+                print "env.php: %s" % doc_root_dict["env_php"]["filename"]
+                print "Version: %s" % doc_root_dict["magento_version"]
+                # print "env.php json:"
+                print
+
+                env_php = doc_root_dict.get("env_php", {})
+
+                # Mage 2 DATABASE settings
+                if "db" in env_php:
+                    print "Database settings"
+                    env_db = env_php.get("db", {})
+                    print "Table prefix: %s" % env_db["table_prefix"]
+
+                    skip = []
+                    for k, v in env_db["connection"].iteritems():
+                        pass
+                        print "Connection name: %s" % k
+                        table = []
+                        for k2, v2 in v.iteritems():
+                            if k2 in skip:
+                                continue
+                            if v2:
+                                table.append([k2, v2])
+                                # print "%s: %s" % (k2, v2)
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                            print
+
+                # Mage 2 SESSION CACHE
+                if "session" in env_php:
+                    env_cache = env_php.get("session", {})
+
+                    if "redis" in env_cache:
+                        env_cache_options = env_cache.get("redis", {})
+                        skip = ["bot_first_lifetime",
+                                "bot_lifetime",
+                                "break_after_adminhtml",
+                                "break_after_frontend",
+                                "compression_library",
+                                "compression_threshold",
+                                "disable_locking",
+                                "first_lifetime",
+                                "log_level",
+                                "max_concurrency",
+                                "max_lifetime",
+                                "min_lifetime",
+                                "timeout"]
+                    elif "memcache" in env_cache or "memcached" in env_cache:
+                        env_cache_options = env_cache.get("memcache", {})
+                        skip = []
+                    else:
+                        env_cache_options = {}
+                        skip = []
+
+                    if env_cache.get("save"):
+                        print ("Session Cache engine: %s" %
+                               env_cache.get("save", "EMPTY"))
+                        table = []
+                        for k2, v2 in env_cache_options.iteritems():
+                            if k2 in skip:
+                                continue
+                            if v2:
+                                table.append([k2, v2])
+                                # print "%s: %s" % (k2, v2)
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                            print
+
+                # Mage 2 FULL PAGE CACHE (FPC)
+                if "cache" in env_php:
+                    env_cache = env_php.get("cache", {}).get("frontend", {}).get("default", {})
+                    env_cache_options = env_cache.get("backend_options", {})
+
+                    # if env_cache.get("backend"):
+                    if env_cache.get("backend") == "Cm_Cache_Backend_Redis":
+                        skip = ['automatic_cleaning_factor',
+                                'compress_data',
+                                'compress_tags',
+                                'compress_threshold',
+                                'compression_lib',
+                                'connect_retries',
+                                'force_standalone']
+                        print ("Default Frontend Cache engine: redis")
+                        table = []
+                        for k2, v2 in env_cache_options.iteritems():
+                            if k2 in skip:
+                                continue
+                            if v2:
+                                table.append([k2, v2])
+                                # print "%s: %s" % (k2, v2)
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                            print
+                    else:
+                        print ("Default Frontend Cache engine: %s" %
+                               env_cache.get("backend", "EMPTY"))
+
+                # Mage 2 FULL PAGE CACHE (FPC)
+                if "cache" in env_php:
+                    env_cache = env_php.get("cache", {}).get("frontend", {}).get("page_cache", {})
+                    env_cache_options = env_cache.get("backend_options", {})
+
+                    # if env_cache.get("backend"):
+                    if env_cache.get("backend") == "Cm_Cache_Backend_Redis":
+                        skip = ['automatic_cleaning_factor',
+                                'compress_data',
+                                'compress_tags',
+                                'compress_threshold',
+                                'compression_lib',
+                                'connect_retries',
+                                'force_standalone']
+                        print ("Full Page Cache engine: redis")
+                        table = []
+                        for k2, v2 in env_cache_options.iteritems():
+                            if k2 in skip:
+                                continue
+                            if v2:
+                                table.append([k2, v2])
+                                # print "%s: %s" % (k2, v2)
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                            print
+                    else:
+                        print ("Full Page Cache engine: %s" %
+                               env_cache.get("backend", "EMPTY"))
+
+                # Mage 2 CACHE TYPES TABLE Similar to cache_option_table
+                #   in Mage 1
+                print "Cache types (similar to cache_option_table)"
+                table = []
+                for k2, v2 in env_php.get("cache_types").iteritems():
+                    if k2 == "full_page" and v2 == "0":
+                        print ("The full_page value being set to 0 indicates "
+                               "Full Page Cache (FPC) is disabled, even if it "
+                               "is configured")
+                    elif k2 == "full_page" and v2 == "1":
+                        print ("full_page is set to 1; If no Full Page "
+                               "Cache Engine is above, Varnish may be in use.")
+                    if v2:
+                        table.append([k2, v2])
+                # pp.pprint(env_php)
+                if len(table):
+                    print_table(table, NOTABLE=args.notable)
+                print
+                """
+# database settings
+skip = ["pdoType", "initStatements", "model", "type"]
+
+# session cache settings
+skip = ["engine", "disable_locking", "compression_threshold",
+        "log_level", "first_lifetime", "bot_first_lifetime",
+        "bot_lifetime", "compression_lib", "break_after_adminhtml",
+        "break_after_frontend", "connect_retries"
+        ]
+
+# object cache settings
+skip = ["engine", "compress_tags", "use_lua",
+        "automatic_cleaning_factor", "force_standalone",
+        "compress_data", "compress_threshold",
+        "compression_lib", "connect_retries"
+        ]
+
+# full page cache settings
+skip = ["engine", "connect_retries", "force_standalone",
+        "compress_data"
+        ]
+
+variable dict paths for values
+globalconfig["magento"]["doc_root"][doc_root]["env_php"] = {}
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache"]["frontend"]["default"]
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache"]["frontend"]["default"]["backend"] = u'Cm_Cache_Backend_Redis'
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache"]["frontend"]["default"]["backend_options"] = { 
+u'automatic_cleaning_factor': u'0',
+u'compress_data': u'1',
+u'compress_tags': u'1',
+u'compress_threshold': u'20480',
+u'compression_lib': u'gzip',
+u'connect_retries': u'1',
+u'database': u'0',
+u'force_standalone': u'0',
+u'persistent': u'',
+u'port': u'6379',
+u'read_timeout': u'10',
+u'server': u'127.0.0.1'
+}
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache"]["frontend"]["page_cache"]
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache"]["frontend"]["page_cache"]["backend"] = u'Cm_Cache_Backend_Redis'
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache"]["frontend"]["page_cache"]["backend_options"] = {
+u'automatic_cleaning_factor': u'0',
+u'compress_data': u'0',
+u'compress_tags': u'1',
+u'compress_threshold': u'20480',
+u'compression_lib': u'gzip',
+u'connect_retries': u'1',
+u'database': u'1',
+u'force_standalone': u'0',
+u'persistent': u'',
+u'port': u'6380',
+u'read_timeout': u'10',
+u'server': u'127.0.0.1'}
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["cache_types"] = {
+u'block_html': 1,
+u'collections': 1,
+u'compiled_config': 1,
+u'config': 1,
+u'config_integration': 1,
+u'config_integration_api': 1,
+u'config_webservice': 1,
+u'customer_notification': 1,
+u'db_ddl': 1,
+u'eav': 1,
+u'full_page': 1,
+u'layout': 1,
+u'reflection': 1,
+u'translate': 1}
+
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["db"]["connection"]["default"] = {
+u'active': u'1',
+u'dbname': u'db2',
+u'engine': u'innodb',
+u'host': u'192.168.1.1:3306',
+u'initStatements': u'SET NAMES utf8;',
+u'model': u'mysql4',
+u'password': u'passw0rd',
+u'username': u'dbuser'}
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["db"]["connection"]["table_prefix"] = ""
+
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["install"] = u'date': u'Tue, 14 Jun 2016 18:40:00 +0000'
+globalconfig["magento"]["doc_root"][doc_root]["env_php"]["session"] = {   u'save': u'files'},
+                """
+
+"""
+    pp.pprint(globalconfig["magento"]["doc_root"])
+This output is flawed because local.xml was not configured correctly
+{   '/var/www/vhosts/domain.com': {   'Mage.php': '/var/www/vhosts/domain.com/app/Mage.php',
+                                             'local_xml': {   'db': {   'active': '1',
+                                                                        'db/table_prefix': None,
+                                                                        'dbname': 'new_mangento',
+                                                                        'host': '172.24.1.1',
+                                                                        'initStatements': 'SET NAMES utf8',
+                                                                        'model': 'mysql4',
+                                                                        'password': 'password',
+                                                                        'pdoType': None,
+                                                                        'type': 'pdo_mysql',
+                                                                        'username': 'magentouser2'},
+                                                              'filename': '/var/www/vhosts/domain.com/app/etc/local.xml',
+                                                              'full_page_cache': {   'backend': 'Mage_Cache_Backend_Redis',
+                                                                                     'compress_data': '0',
+                                                                                     'connect_retries': '3',
+                                                                                     'database': '0',
+                                                                                     'force_standalone': '0',
+                                                                                     'lifetimelimit': '57600',
+                                                                                     'password': None,
+                                                                                     'persistent': None,
+                                                                                     'port': '6379',
+                                                                                     'server': '127.0.0.1'},
+                                                              'object_cache': {   'backend': 'memcached'},
+                                                              'session_cache': {   'session_save': 'memcache',
+                                                                                   'session_save_path': 'tcp://127.0.0.1:11211?persistent=0&weight=2&timeout=10&retry_interval=10'}},
+                                             'mage_version': {   'edition': 'EDITION_ENTERPRISE',
+                                                                 'major': '1',
+                                                                 'minor': '14',
+                                                                 'number': '',
+                                                                 'patch': '0',
+                                                                 'revision': '2',
+                                                                 'stability': '',
+                                                                 'version': '1.14.2.0'},
+                                             'magento_path': '/var/www/vhosts/domain.com',
+                                             'magento_version': 'Magento 1.14.2.0 EDITION_ENTERPRISE'}}
+
+"""
+
+
+def MEMCACHE_PRINT():
+    pass
+# sys.stderr.write("memcache data print\n")
+if globalconfig.get("memcache"):
+    memcache.figlet()
+    # pp.pprint(globalconfig.get("memcache"))
+    for instance, instance_dict in globalconfig.get("memcache").iteritems():
+        print "Server: %s" % instance
+        table = []
+        table.append(["Version", instance_dict.get('version', "")])
+        # print "Version: %s" % instance_dict.get('version', "")
+        table.append(["Bytes", instance_dict.get('bytes', "")])
+        # print "Bytes: %s" % instance_dict.get('bytes', "")
+        table.append(["Bytes Read", instance_dict.get('bytes_read', "")])
+        # print "Bytes Read: %s" % instance_dict.get('bytes_read', "")
+        table.append(["Bytes Written", instance_dict.get('bytes_written', "")])
+        # print "Bytes Written: %s" % instance_dict.get('bytes_written', "")
+        table.append(["Current items", instance_dict.get('curr_items', "")])
+        # print "Current items: %s" % instance_dict.get('curr_items', "")
+        table.append(["Evictions", instance_dict.get('evictions', "")])
+        # print "Evictions: %s" % instance_dict.get('evictions', "")
+        table.append(["Get hits", instance_dict.get('get_hits', "")])
+        # print "Get hits: %s" % instance_dict.get('get_hits', "")
+        table.append(["Get misses", instance_dict.get('get_misses', "")])
+        # print "Get misses: %s" % instance_dict.get('get_misses', "")
+        table.append(["Limit MaxBytes", instance_dict.get('limit_maxbytes', "")])
+        # print "Limit MaxBytes: %s" % instance_dict.get('limit_maxbytes', "")
+        if len(table):
+            print_table(table, NOTABLE=args.notable)
+        print
+
+
+def REDIS_PRINT():
+    pass
+if globalconfig.get("redis"):
+    redis.figlet()
+    for instance, instance_dict in globalconfig.get("redis").iteritems():
+        print "Server: %s" % instance
+
+        # If this is ObjectRocket, it won't have Evicted Keys or Keyspace;
+        #   it is less confusing to not display them
+        table = []
+        if "used_memory_peak_human" in instance_dict:
+            table.append(["Used memory peak",
+                          instance_dict.get("used_memory_peak_human")])
+        if "evicted_keys" in instance_dict:
+            table.append(["Evicted keys", instance_dict.get("evicted_keys")])
+        if len(table):
+            print_table(table, NOTABLE=args.notable)
+
+        if "Keyspace" in instance_dict:
+            print "Keyspace:"
+            table = []
+            for key, value in instance_dict.get("Keyspace", {}).iteritems():
+                if value:
+                    table.append([key, value])
+                # print "%s: %s" % (key, value)
+            if len(table):
+                print_table(table, NOTABLE=args.notable)
+        print
+print
+
+
+def MYSQL_PRINT():
+    pass
+if globalconfig.get("mysql"):
+    mysqlctl.figlet()
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(globalconfig["mysql"])
+
+
+def cron_php_check():
+    pass
+# Check for cron.php in crontab
+# get a list of users
+command = ["/usr/bin/getent", "passwd"]
+proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+for line in iter(proc.stdout.readline, ''):
+    # extract the username
+    result = re.match("([^:]+)", line.rstrip())
+    if result:
+        username = result.group(1)
+        # print "User: %s" % username
+        # query for crontab jobs
+        command = ["crontab", "-l", "-u%s" % username]
+        p2 = subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        for line2 in iter(p2.stdout.readline, ""):
+            # print line2
+            # if cron.php is present, present a warning
+            if ("/cron.php" in line2 and not re.match('\s*#', line2) and
+                    "/cron.sh cron.php" not in line2):
+                print ("WARNING: User %s is calling cron.php in crontab but "
+                       "should probably call cron.sh" % username)
+                print "%s" % line2
+                error_collection.append("WARNING: User %s is calling cron.php "
+                                        "in crontab but should probably call "
+                                        "cron.sh" %
+                                        username)
+
+"""
+ _____ ___  ____   ___
+|_   _/ _ \|  _ \ / _ \
+  | || | | | | | | | | |
+  | || |_| | |_| | |_| |
+  |_| \___/|____/ \___/
+"""
+
+
+class TODO(object):
+    pass
+
+# Save the config as a json file
+# filename = "config_dump.json"
+if ((not os.path.isfile(args.output) or
+     args.force) and not args.jsonfile and JSON is True):
+
+    globalconfig["errors"] = error_collection
+    json_str = json.dumps(globalconfig)
+    # with open(args.output,'w') as outfile:
+    #     outfile.write( json_str )
+    outfile = open(args.output, 'w')
+    outfile.write(json_str)
+    outfile.close()
+
+if args.printglobalconfig:
+    print """
+  ____ _       _           _  ____             __ _
+ / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _
+| |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
+| |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
+ \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
+                                                    |___/
+"""
+    pp.pprint(globalconfig)
+
+if args.printjson and JSON is True:
+    print json.dumps(globalconfig)
