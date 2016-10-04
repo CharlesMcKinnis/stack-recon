@@ -2228,6 +2228,8 @@ table = [
 [ "row3col1", "row3col2", "row3col3"]
 ]
 
+    if HEADER=True then divide the first line from the following lines
+    if NOTABLE=True then no table, colon separated instead
     turn a dict in to a list with
     table = [(str(k), str(v)) for k, v in mydict.iteritems()]
     """
@@ -2258,9 +2260,10 @@ table = [
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'), col_width[i])
                                         for i, x in enumerate(line)) + " |"
-                if first_line is True and kwargs.get("header") is True:
+                if first_line is True and kwargs.get("HEADER") is True:
                     print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                             for i, x in enumerate(table[0])) + "-+"
+                    first_line = False
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
 
