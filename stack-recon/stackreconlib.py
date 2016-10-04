@@ -55,7 +55,7 @@ cd stack-recon && git checkout -b dev origin/dev
 To look at the json captured:
 cat config_dump.json |python -m json.tool|less
 """
-STACK_LIB_VERSION = 2016051601
+STACK_LIB_VERSION = 2016092801
 error_collection = []
 
 
@@ -1845,9 +1845,9 @@ class MysqlCtl(object):
             # do stuff sqlquery
             cursor.execute(sqlquery)
             return_list = cursor.fetchall()
-            for (i, j) in cursor:
-                # print("%s - %s" % (i, j))
-                pass
+            # for (i, j) in cursor:
+            #     # print("%s - %s" % (i, j))
+            #     pass
             cnx.close()
         # else:
             # print "Skipping database because there isn't enough login information"

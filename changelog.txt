@@ -1,3 +1,8 @@
+2016-09-28
+Checks for cron job, should be cron.sh NOT cron.php
+Magento 2 support is complete
+MySQL is now queried with mysql-connector instead of the mysql binary on the client machines
+
 2016-09-08
 The project name changed from ecommStackStatus to stackrecon to better reflect its capabilities. 
 The classic ecommStackStatus will be ecomm-recon and Apache, Nginx and PHP capabilities will be available as web-recon.
@@ -43,7 +48,6 @@ If it returns results, assuming Magento is in /var/www, it is vulnerable.
 Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
 If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
 * Check Magento for SUPEE-7405
-* Check for cron job, should be cron.sh NOT cron.php
 * check php opcache
 i.e.
 Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:

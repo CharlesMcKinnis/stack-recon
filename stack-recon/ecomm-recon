@@ -49,7 +49,7 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
-STACK_STATUS_VERSION = 2016051601
+STACK_STATUS_VERSION = 2016092801
 
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated
