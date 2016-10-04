@@ -1845,9 +1845,9 @@ class MysqlCtl(object):
             # do stuff sqlquery
             cursor.execute(sqlquery)
             return_list = cursor.fetchall()
-            # for (i, j) in cursor:
-            #     # print("%s - %s" % (i, j))
-            #     pass
+            for (i, j) in cursor:
+                # print("%s - %s" % (i, j))
+                pass
             cnx.close()
         # else:
             # print "Skipping database because there isn't enough login information"
@@ -2253,10 +2253,14 @@ table = [
             col_width = [max(len(x.encode('utf-8')) for x in col) for col in zip(*table)]
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
+            first_line = True
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'), col_width[i])
                                         for i, x in enumerate(line)) + " |"
+                if first_line is True and kwargs.get("header") is True:
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                                            for i, x in enumerate(table[0])) + "-+"
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
 
