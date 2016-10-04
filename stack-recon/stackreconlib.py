@@ -2241,6 +2241,7 @@ table = [
             print ": ".join(line)
     else:
         # Ugly workaround for unicode
+        first_line = True
         try:
             col_width = [max(len(str(x)) for x in col) for col in zip(*table)]
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
@@ -2249,13 +2250,16 @@ table = [
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x, col_width[i])
                                         for i, x in enumerate(line)) + " |"
+                if first_line is True and kwargs.get("HEADER") is True:
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                                            for i, x in enumerate(table[0])) + "-+"
+                    first_line = False
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
         except UnicodeEncodeError:
             col_width = [max(len(x.encode('utf-8')) for x in col) for col in zip(*table)]
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
-            first_line = True
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'), col_width[i])
