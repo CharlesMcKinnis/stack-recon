@@ -1495,9 +1495,9 @@ for db_list in globalconfig["mysql"]["db_list"]:
             sys.exit(3)
 
     query = ("SELECT "
-             "SUM((data_length + index_length) AS 'size' "
+             "SUM(data_length + index_length) AS 'size'"
              "FROM information_schema.TABLES "
-             "WHERE engine = 'innodb' AND table_schema = '%s'" % db_list["dbname"]
+             "WHERE engine = 'innodb' AND table_schema = '%s';" % db_list["dbname"]
              )
     cursor.execute(query)
     # table = [["variable", "current", "suggested", "notes"]]
