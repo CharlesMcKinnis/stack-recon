@@ -1475,7 +1475,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
 def mysql_innodb_table_size_sum():
     pass
-
+print "Database size of innoDB tables, total per DB"
 table = [["Server", "DB Name", "Size"]]
 for db_list in globalconfig["mysql"]["db_list"]:
     config = {
