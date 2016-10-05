@@ -1374,7 +1374,7 @@ print ("This is a quick check of common MySQL variable values for production "
 print ("If there are WARNINGs in the notes and Magento is experiencing "
        "performance issues, please escalate the issue.")
 base_values = {
-    "query_cache_type": 1,
+    "query_cache_type": "ON",
     "query_cache_size": "128M",
     "query_cache_limit": "4M",
     "tmp_table_size": "256M",
@@ -1386,6 +1386,20 @@ base_values = {
     "innodb_lock_wait_timeout": 1800,
     # 29/2*1024*1014,  # This should be half the memory on the mysql server
     "innodb_buffer_pool_size": "0B"
+}
+eval_type = {
+    "query_cache_type": "string",
+    "query_cache_size": "bytes2human",
+    "query_cache_limit": "bytes2human",
+    "tmp_table_size": "bytes2human",
+    "max_heap_table_size": "bytes2human",
+    "max_connections": "int",
+    "max_allowed_packet": "bytes2human",
+    "key_buffer_size": "bytes2human",
+    "myisam_sort_buffer_size": "bytes2human",
+    "innodb_lock_wait_timeout": "int",
+    # 29/2*1024*1014,  # This should be half the memory on the mysql server
+    "innodb_buffer_pool_size": "bytes2human"
 }
 # dbConnInfo = {"dbname": "",
 #               "host": k,
@@ -1429,25 +1443,33 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
             row.append(i)
             if i in base_values:
                 NUMBERS = False
-                if isinstance(base_values[i], int):
+                if eval_type[i] == "int":
                     # If it is a number
                     NUMBERS = True
                     real_human_v = j
                     sugg_human_v = base_values[i]
                     real_bytes_v = False
                     sugg_bytes_v = False
-                elif isinstance(base_values[i], basestring):
-                    # If it is a string, see if it converts to bytes and is a number
-                    try: 
-                        real_bytes_v = int(j)
-                        real_human_v = stackreconlib.bytes2human(j)
-                        sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
-                        sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
-                        NUMBERS = True
-                    except ValueError:
-                        # Could just say pass since it is already False
-                        NUMBERS = False
-                if NUMBERS is False:
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                        config_file_output = config_file_output + ("%s = %s\n" %
+                                                                   (i.replace("_", "-"),
+                                                                    base_values[i]))
+                        notes = "WARNING: This is probably too low"
+                elif eval_type[i] == "bytes2human":
+                    real_bytes_v = int(j)
+                    real_human_v = stackreconlib.bytes2human(j)
+                    sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
+                    # This makes sure the format is consistent
+                    sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
+                    NUMBERS = True
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                        config_file_output = config_file_output + ("%s = %s\n" %
+                                                                   (i.replace("_", "-"),
+                                                                    base_values[i]))
+                        notes = "WARNING: This is probably too low"
+                elif eval_type[i] == "string":
                     real_human_v = j
                     sugg_human_v = base_values[i]
                     real_bytes_v = False
@@ -1456,13 +1478,18 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     config_file_output = config_file_output + ("%s = %s\n" %
                                                                (i.replace("_", "-"),
                                                                 base_values[i]))
-                else:
-                    if sugg_bytes_v > real_bytes_v:
+                    if sugg_human_v != real_human_v:
                         sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
                         config_file_output = config_file_output + ("%s = %s\n" %
                                                                    (i.replace("_", "-"),
                                                                     base_values[i]))
-                        notes = "WARNING: This is probably too low"
+                else:
+                    # "none"? or a catch all
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+
                 if i == "innodb_buffer_pool_size":
                     notes = ("For a dedicated DB server, this should be ~1/2 of the "
                              "DB server RAM")
@@ -1474,7 +1501,8 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     stackreconlib.print_table(table, HEADER=True)
     cnx.close()
     if sqloutput:
-        print "SQL Commands to change running values (some may return an error if they cannot be changed live)"
+        print ("SQL Commands to change running values (some may return an "
+               "error if they cannot be changed live)")
         print sqloutput
     if config_file_output:
         print "Configuration file options to change or update"
