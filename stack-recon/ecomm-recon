@@ -1332,8 +1332,8 @@ def MYSQL_PRINT():
     pass
 if globalconfig.get("mysql"):
     mysqlctl.figlet()
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(globalconfig["mysql"])
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(globalconfig["mysql"])
 
 
 def mysql_global_variables():
@@ -1573,7 +1573,6 @@ lines_list = string.split(output, '\n')
 total_mem = lines_list[1].split()[1]
 free_mem = lines_list[1].split()[4]
 buffer_cache = lines_list[2].split()[3]
-print float(total_mem)
 max_clients = int(float(total_mem) / 1024 * .8 / 150)
 
 hyperthread = False
@@ -1587,12 +1586,11 @@ cpu_mhz_total = len(match) * float(match[0]) * 1024
 if hyperthread is True:
     cpu_mhz_total = cpu_mhz_total / 2
 cpu_mhz_total = int(cpu_mhz_total)
-print "Total MHz %d" % cpu_mhz_total
 cpu_clients = cpu_mhz_total / 60
 
 print
 print ("WARNING: Free advice is sometimes worth what you paid for it.")
-print ("This is an estimate.")
+print ("This is an estimate. Numbers are approximate and may not reflect actual utilization.")
 print ("This free advice is based on numbers that would typically be used "
        "during optimization for Magento automation.")
 print ("For a dedicated web node,")
