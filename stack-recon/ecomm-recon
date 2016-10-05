@@ -569,6 +569,8 @@ if not args.jsonfile:
         globalconfig["mysql"] = {"db_list": [], "host_dict": {}}
     # globalconfig["mysql"] = mysql_config
 
+    # This would be better as a function in the stackreconlib
+
     doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
     db_list = []
     host_dict = {}
@@ -1333,40 +1335,11 @@ if globalconfig.get("mysql"):
     pp.pprint(globalconfig["mysql"])
 
 
-def cron_php_check():
+def mysql_global_variables():
     pass
-# Check for cron.php in crontab
-# get a list of users
-command = ["/usr/bin/getent", "passwd"]
-proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-for line in iter(proc.stdout.readline, ''):
-    # extract the username
-    result = re.match("([^:]+)", line.rstrip())
-    if result:
-        username = result.group(1)
-        # print "User: %s" % username
-        # query for crontab jobs
-        command = ["crontab", "-l", "-u%s" % username]
-        p2 = subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        for line2 in iter(p2.stdout.readline, ""):
-            # print line2
-            # if cron.php is present, present a warning
-            if ("/cron.php" in line2 and not re.match('\s*#', line2) and
-                    "/cron.sh cron.php" not in line2):
-                print ("WARNING: User %s is calling cron.php in crontab but "
-                       "should probably call cron.sh" % username)
-                print "%s" % line2
-                error_collection.append("WARNING: User %s is calling cron.php "
-                                        "in crontab but should probably call "
-                                        "cron.sh" %
-                                        username)
-
-
-def mysql_variables():
-    pass
-
+# This would be better as a function in the stackreconlib, but the presentation
+#   and logic need to be separated first.
+# And the values need to be crammed in globalconfig
 print
 print ("This is a quick check of common MySQL variable values for production "
        "Magento servers.")
@@ -1397,17 +1370,8 @@ eval_type = {
     "key_buffer_size": "bytes2human",
     "myisam_sort_buffer_size": "bytes2human",
     "innodb_lock_wait_timeout": "int",
-    # 29/2*1024*1014,  # This should be half the memory on the mysql server
     "innodb_buffer_pool_size": "bytes2human"
 }
-# dbConnInfo = {"dbname": "",
-#               "host": k,
-#               "username": v["username"],
-#               "password": v["password"]
-#               }
-# db_query(dbConnInfo,query)
-
-# do stuff sql query
 
 query = "show global variables;"
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
@@ -1505,6 +1469,75 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     if config_file_output:
         print "Configuration file options to change or update"
         print config_file_output
+
+
+def mysql_innodb_table_size_sum():
+    pass
+for db_list in globalconfig["mysql"]["db_list"]:
+    config = {
+        'user': db_list["username"],
+        'password': db_list["password"],
+        'host': db_list["host"],
+        'raise_on_warnings': True,
+    }
+    try:
+        cnx = mysql.connector.connect(**config)
+        cursor = cnx.cursor()
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+            sys.exit(1)
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+            sys.exit(2)
+        else:
+            print(err)
+            sys.exit(3)
+
+    query = ("SELECT "
+             "SUM((data_length + index_length) AS 'size' "
+             "FROM information_schema.TABLES "
+             "WHERE engine = 'innodb' and table_schema = '%s'" % db_list["dbname"]
+             )
+    cursor.execute(query)
+    # table = [["variable", "current", "suggested", "notes"]]
+    # sqloutput = ""
+    # config_file_output = ""
+    for (i) in cursor:
+        print "DB Name: %s, Size: %s" % (db_list["dbname"], stackreconlib.bytes2human(i))
+
+
+def cron_php_check():
+    pass
+# Check for cron.php in crontab
+# get a list of users
+command = ["/usr/bin/getent", "passwd"]
+proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+for line in iter(proc.stdout.readline, ''):
+    # extract the username
+    result = re.match("([^:]+)", line.rstrip())
+    if result:
+        username = result.group(1)
+        # print "User: %s" % username
+        # query for crontab jobs
+        command = ["crontab", "-l", "-u%s" % username]
+        p2 = subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        for line2 in iter(p2.stdout.readline, ""):
+            # print line2
+            # if cron.php is present, present a warning
+            if ("/cron.php" in line2 and not re.match('\s*#', line2) and
+                    "/cron.sh cron.php" not in line2):
+                print ("WARNING: User %s is calling cron.php in crontab but "
+                       "should probably call cron.sh" % username)
+                print "%s" % line2
+                error_collection.append("WARNING: User %s is calling cron.php "
+                                        "in crontab but should probably call "
+                                        "cron.sh" %
+                                        username)
+
+
 
 """
  _____ ___  ____   ___
