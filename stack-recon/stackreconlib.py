@@ -1355,6 +1355,11 @@ class MagentoCtl(object):
         return local_xml
 
     def db_cache_table(self, doc_root, value):
+        """
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+            db_cache_table(doc_root,
+                            doc_root_dict.get("local_xml", {}).get("db", {}))
+        """
         mysql = MysqlCtl()
         # Some of these aren't used yet, BUT WILL BE. DO NOT REMOVE THEM
         var_table_prefix = value.get("db/table_prefix", "")
@@ -1790,6 +1795,13 @@ class MysqlCtl(object):
         return(reply)
 
     def db_query(self, dbConnInfo, sqlquery):
+        """
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+            db_cache_table(doc_root,
+                            doc_root_dict.get("local_xml", {}).get("db", {}))
+            db_query(doc_root_dict.get("local_xml", {}).get("db", {}),
+                     sqlquery)
+        """
         # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
         # output = ""
         # flake8 lies. DO NOT REMOVE table_prefix

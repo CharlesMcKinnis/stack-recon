@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 # from ecommstacklib import *
-from stackreconlib import (apacheCtl, nginxCtl, phpfpmCtl, MagentoCtl,
-                           MemcacheCtl, RedisCtl, MysqlCtl, error_collection,
+import stackreconlib
+from stackreconlib import (error_collection,
                            daemon_exe, importfile, update, print_sites,
                            memory_estimate, memory_print, print_table)
+import mysql.connector
+from mysql.connector import errorcode
 import re
 # import glob
 import subprocess
@@ -276,7 +278,7 @@ if not args.jsonfile:
         elif len(daemon_name) == 1:
             apache_basename = daemons[daemon_name[0]]["basename"]
             apache_exe = daemons[daemon_name[0]]["exe"]
-            apache = apacheCtl(daemons[daemon_name[0]], exe=daemons[daemon_name[0]]["exe"])
+            apache = stackreconlib.apacheCtl(daemons[daemon_name[0]], exe=daemons[daemon_name[0]]["exe"])
         else:
             sys.stderr.write("Apache is not running\n")
             error_collection.append("Apache is not running\n")
@@ -345,7 +347,7 @@ if not args.jsonfile:
             sys.stderr.write("nginx is not running\n")
             error_collection.append("nginx is not running\n")
         else:
-            nginx = nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
+            nginx = stackreconlib.nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
             nginx_conf_file = nginx.get_conf()
             if nginx_conf_file:
                 sys.stderr.write("Using config %s\n" % nginx_conf_file)
@@ -409,7 +411,7 @@ if not args.jsonfile:
                                     (daemon_name, daemon_name[0]))
             pass
         elif len(daemon_name) == 1:
-            phpfpm = phpfpmCtl(daemons[daemon_name[0]],
+            phpfpm = stackreconlib.phpfpmCtl(daemons[daemon_name[0]],
                                exe=daemons[daemon_name[0]]["exe"])
             phpfpm_conf_file = phpfpm.get_conf()
             if phpfpm_conf_file:
@@ -443,7 +445,7 @@ if not args.jsonfile:
         def MAGENTO_DATA_GATHER():
             pass
         sys.stderr.write("magento data gather\n")
-        magento = MagentoCtl()
+        magento = stackreconlib.MagentoCtl()
         ################################################
         # Magento
         ################################################
@@ -526,7 +528,7 @@ if not args.jsonfile:
         def MEMCACHE_DATA_GATHER():
             pass
         sys.stderr.write("memcache data gather\n")
-        memcache = MemcacheCtl()
+        memcache = stackreconlib.MemcacheCtl()
 
         memcache_instances = memcache.instances(globalconfig.get("magento", {}).get("doc_root", {}))
 
@@ -540,7 +542,7 @@ if not args.jsonfile:
         def REDIS_DATA_GATHER():
             pass
         sys.stderr.write("redis data gather\n")
-        redis = RedisCtl()
+        redis = stackreconlib.RedisCtl()
         # print "477 GC magento doc_root this has data"
         # pp.pprint(globalconfig.get("magento", {}).get("doc_root", {}))
         redis_instances = redis.instances(globalconfig.get("magento", {}).get("doc_root", {}))
@@ -558,7 +560,7 @@ if not args.jsonfile:
     def MYSQL_DATA_GATHER():
             pass
     sys.stderr.write("mysql data gather\n")
-    mysqlctl = MysqlCtl()
+    mysqlctl = stackreconlib.MysqlCtl()
     ################################################
     # MySQL
     ################################################
@@ -585,7 +587,8 @@ if not args.jsonfile:
                                 "password": v.get("password"),
                                 "username": v.get("username")})
                 host_dict = {v.get("host"):
-                             {"password": v.get("password"),
+                             {"host": v.get("host"),
+                              "password": v.get("password"),
                               "username": v.get("username")}}
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
@@ -599,7 +602,8 @@ if not args.jsonfile:
                                 "password": v.get("password"),
                                 "username": v.get("username")})
                 host_dict = {v.get("host"):
-                             {"password": v.get("password"),
+                             {"host": v.get("host"),
+                              "password": v.get("password"),
                               "username": v.get("username")}}
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
@@ -1358,6 +1362,107 @@ for line in iter(proc.stdout.readline, ''):
                                         "in crontab but should probably call "
                                         "cron.sh" %
                                         username)
+
+
+def mysql_variables():
+    pass
+print "Quick MySQL check"
+
+base_values = {
+    "query_cache_type": 1,
+    "query_cache_size": "128M",
+    "query_cache_limit": "4M",
+    "tmp_table_size": "256M",
+    "max_heap_table_size": "256M",
+    "max_connections": 750,
+    "max_allowed_packet": "256M",
+    "key_buffer_size": "512M",
+    "myisam_sort_buffer_size": "128M",
+    "innodb_lock_wait_timeout": 1800,
+    # 29/2*1024*1014,  # This should be half the memory on the mysql server
+    "innodb_buffer_pool_size": "UNKNOWN"
+}
+# dbConnInfo = {"dbname": "",
+#               "host": k,
+#               "username": v["username"],
+#               "password": v["password"]
+#               }
+# db_query(dbConnInfo,query)
+
+# do stuff sql query
+
+query = "show global variables;"
+for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    config = {
+        'user': v["username"],
+        'password': v["password"],
+        'host': k,
+        'raise_on_warnings': True,
+    }
+    try:
+        cnx = mysql.connector.connect(**config)
+        cursor = cnx.cursor()
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+            sys.exit(1)
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+            sys.exit(2)
+        else:
+            print(err)
+            sys.exit(3)
+
+    cursor.execute(query)
+    table = [["variable", "current", "suggested"]]
+    sqloutput = ""
+    config_file_output = ""
+    for (i, j) in cursor:
+        if i in base_values:
+            row = []
+            row.append(i)
+            if i in base_values:
+                NUMBERS = False
+                if isinstance(base_values[i], int):
+                    # If it is a number
+                    NUMBERS = True
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+                elif isinstance(base_values[i], basestring):
+                    # If it is a string, see if it converts to bytes and is a number
+                    try: 
+                        real_bytes_v = int(j)
+                        real_human_v = stackreconlib.bytes2human(j)
+                        sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
+                        sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
+                        NUMBERS = True
+                    except ValueError:
+                        # Could just say pass since it is already False
+                        NUMBERS = False
+                if NUMBERS is False:
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+                    sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                    config_file_output = config_file_output + ("%s = %s\n" %
+                                                               (i.replace("_", "-"),
+                                                                base_values[i]))
+                else:
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                        config_file_output = config_file_output + ("%s = %s\n" %
+                                                                   (i.replace("_", "-"),
+                                                                    base_values[i]))
+                row.append(real_human_v)
+                row.append(sugg_human_v)
+                table.append(row)
+    stackreconlib.print_table(table, HEADER=True)
+    cnx.close()
+    print sqloutput
+    print config_file_output
 
 """
  _____ ___  ____   ___
