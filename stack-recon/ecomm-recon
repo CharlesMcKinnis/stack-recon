@@ -1474,10 +1474,6 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_human_v = base_values[i]
                     real_bytes_v = False
                     sugg_bytes_v = False
-                    sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
-                    config_file_output = config_file_output + ("%s = %s\n" %
-                                                               (i.replace("_", "-"),
-                                                                base_values[i]))
                     if sugg_human_v != real_human_v:
                         sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
                         config_file_output = config_file_output + ("%s = %s\n" %
