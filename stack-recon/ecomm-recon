@@ -1525,9 +1525,9 @@ if table:
     print
     print "Database size of innoDB tables, total per DB"
     stackreconlib.print_table(table, HEADER=True)
-    print ("The global variable for innodb_buffer_pool_size should be larger than "
-           "the database sizes above. If a database isn't in use, don't consider "
-           "its size.")
+    print ("The global variable for innodb_buffer_pool_size should be larger "
+           "than the database sizes above.")
+    print ("If a database isn't in use, don't consider its size.")
 
 
 def cron_php_check():
@@ -1573,7 +1573,7 @@ lines_list = string.split(output, '\n')
 total_mem = lines_list[1].split()[2]
 free_mem = lines_list[1].split()[4]
 buffer_cache = lines_list[2].split()[3]
-max_clients = total_mem*1024*.8/150
+max_clients = int(float(total_mem) * 1024 * .8 / 150)
 
 hyperthread = False
 f = open('/proc/cpuinfo', 'r')
@@ -1595,9 +1595,9 @@ print ("This is an estimate.")
 print ("This free advice is based on numbers that would typically be used "
        "during optimization for Magento automation.")
 print ("For a dedicated web node,")
-print ("    the memory would dictate max clients would be %d, and" %
+print ("    The memory may support max clients of %d" %
        max_clients)
-print ("    the CPUs may support %d concurrent connections." % cpu_clients)
+print ("    The CPUs may support conncurrent connections, %d." % cpu_clients)
 
 # import os
 # mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
