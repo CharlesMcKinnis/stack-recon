@@ -1467,10 +1467,12 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                 table.append(row)
     stackreconlib.print_table(table, HEADER=True)
     cnx.close()
-    print "SQL Commands to change running values (some may return an error if they cannot be changed live)"
-    print sqloutput
-    print "Configuration file options to change or update"
-    print config_file_output
+    if sqloutput:
+        print "SQL Commands to change running values (some may return an error if they cannot be changed live)"
+        print sqloutput
+    if config_file_output:
+        print "Configuration file options to change or update"
+        print config_file_output
 
 """
  _____ ___  ____   ___
