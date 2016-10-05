@@ -1378,7 +1378,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     config = {
         'user': v["username"],
         'password': v["password"],
-        'host': k,
+        'host': v["host"],
         'raise_on_warnings': True,
     }
     try:
@@ -1460,7 +1460,9 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                 row.append(str(sugg_human_v))
                 row.append(notes)
                 table.append(row)
-    stackreconlib.print_table(table, HEADER=True)
+    if table:
+        print "Host: %s" % v["host"]
+        stackreconlib.print_table(table, HEADER=True)
     cnx.close()
     if sqloutput:
         print ("SQL Commands to change running values (some may return an "
@@ -1473,6 +1475,8 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
 def mysql_innodb_table_size_sum():
     pass
+
+table = [["Server", "DB Name", "Size"]]
 for db_list in globalconfig["mysql"]["db_list"]:
     config = {
         'user': db_list["username"],
@@ -1504,9 +1508,22 @@ for db_list in globalconfig["mysql"]["db_list"]:
     # sqloutput = ""
     # config_file_output = ""
     for (i) in cursor:
+        row = []
+
         # There is only one column, but it is a tuple, so unroll it
         size = i[0]
-        print "DB Name: %s, Size: %s" % (db_list["dbname"], stackreconlib.bytes2human(size))
+        print ("DB Name: %s, Size: %s" %
+               (db_list["dbname"],
+                stackreconlib.bytes2human(size)))
+        # total_size = total_size + size
+        row.append(db_list["host"])
+        row.append(db_list["dbname"])
+        row.append(stackreconlib.bytes2human(size))
+        table.append(row)
+stackreconlib.print_table(table, HEADER=True)
+print ("The global variable for innodb_buffer_pool_size should be larger than "
+       "the database sizes above. If a database isn't in use, don't consider "
+       "its size.")
 
 
 def cron_php_check():
