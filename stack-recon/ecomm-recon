@@ -1467,8 +1467,8 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     notes = ("For a dedicated DB server, this should be ~1/2 of the "
                              "DB server RAM")
                     sugg_human_v = ""
-                row.append(real_human_v)
-                row.append(sugg_human_v)
+                row.append(str(real_human_v))
+                row.append(str(sugg_human_v))
                 row.append(notes)
                 table.append(row)
     stackreconlib.print_table(table, HEADER=True)
