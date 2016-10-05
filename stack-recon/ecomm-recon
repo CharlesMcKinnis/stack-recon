@@ -1504,7 +1504,9 @@ for db_list in globalconfig["mysql"]["db_list"]:
     # sqloutput = ""
     # config_file_output = ""
     for (i) in cursor:
-        print "DB Name: %s, Size: %s" % (db_list["dbname"], stackreconlib.bytes2human(i))
+        # There is only one column, but it is a tuple, so unroll it
+        size = i[0]
+        print "DB Name: %s, Size: %s" % (db_list["dbname"], stackreconlib.bytes2human(size))
 
 
 def cron_php_check():
