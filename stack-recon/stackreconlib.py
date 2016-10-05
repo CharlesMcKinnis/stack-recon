@@ -2144,8 +2144,8 @@ def memory_estimate(process_name, **kwargs):
     if not output:
         raise NameError("Fail: %s" % err)
     lines_list = string.split(output, '\n')
-    status["free_mem"] = lines_list[1].split()[4]
-    status["buffer_cache"] = lines_list[2].split()[3]
+    status["free_mem"] = int(lines_list[1].split()[4])
+    status["buffer_cache"] = int(lines_list[2].split()[3])
     # print stuff[1].split()[1]
     # The calculation is using RSS, and free memory.
     # There are buffers and cache used by the process, and that throws off
