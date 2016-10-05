@@ -1368,11 +1368,10 @@ def mysql_variables():
     pass
 
 print
-print "Quick MySQL check"
 print ("This is a quick check of common MySQL variable values for production "
        "Magento servers.")
 print ("If there are WARNINGs in the notes and Magento is experiencing "
-       "performance issues, please escalate the issue.")
+       "performance issues, escalate the issue.")
 base_values = {
     "query_cache_type": "ON",
     "query_cache_size": "128M",
