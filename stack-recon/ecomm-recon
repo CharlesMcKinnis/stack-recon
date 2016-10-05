@@ -1489,6 +1489,9 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     notes = ("For a dedicated DB server, this should be ~1/2 of the "
                              "DB server RAM")
                     sugg_human_v = ""
+                elif i == "max_connections":
+                    notes = ("Automation default 750. Max value could be max "
+                             "clients of all web heads.")
                 row.append(str(real_human_v))
                 row.append(str(sugg_human_v))
                 row.append(notes)
