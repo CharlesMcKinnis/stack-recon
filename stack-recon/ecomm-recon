@@ -1366,8 +1366,13 @@ for line in iter(proc.stdout.readline, ''):
 
 def mysql_variables():
     pass
-print "Quick MySQL check"
 
+print
+print "Quick MySQL check"
+print ("This is a quick check of common MySQL variable values for production "
+       "Magento servers.")
+print ("If there are WARNINGs in the notes and Magento is experiencing "
+       "performance issues, please escalate the issue.")
 base_values = {
     "query_cache_type": 1,
     "query_cache_size": "128M",
@@ -1459,8 +1464,9 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                                                                     base_values[i]))
                         notes = "WARNING: This is probably too low"
                 if i == "innodb_buffer_pool_size":
-                    notes = ("For a dedicated DB, this should be 1/2 of the "
+                    notes = ("For a dedicated DB server, this should be ~1/2 of the "
                              "DB server RAM")
+                    sugg_human_v = ""
                 row.append(real_human_v)
                 row.append(sugg_human_v)
                 row.append(notes)
