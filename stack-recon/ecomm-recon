@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import os
+import string
 # import yaml
 # import fnmatch
 try:
@@ -1461,6 +1462,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                 row.append(notes)
                 table.append(row)
     if table:
+        print
         print "Host: %s" % v["host"]
         stackreconlib.print_table(table, HEADER=True)
     cnx.close()
@@ -1475,7 +1477,6 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
 def mysql_innodb_table_size_sum():
     pass
-print "Database size of innoDB tables, total per DB"
 table = [["Server", "DB Name", "Size"]]
 for db_list in globalconfig["mysql"]["db_list"]:
     config = {
@@ -1512,18 +1513,21 @@ for db_list in globalconfig["mysql"]["db_list"]:
 
         # There is only one column, but it is a tuple, so unroll it
         size = i[0]
-        print ("DB Name: %s, Size: %s" %
-               (db_list["dbname"],
-                stackreconlib.bytes2human(size)))
+        # print ("DB Name: %s, Size: %s" %
+        #        (db_list["dbname"],
+        #         stackreconlib.bytes2human(size)))
         # total_size = total_size + size
         row.append(db_list["host"])
         row.append(db_list["dbname"])
         row.append(stackreconlib.bytes2human(size))
         table.append(row)
-stackreconlib.print_table(table, HEADER=True)
-print ("The global variable for innodb_buffer_pool_size should be larger than "
-       "the database sizes above. If a database isn't in use, don't consider "
-       "its size.")
+if table:
+    print
+    print "Database size of innoDB tables, total per DB"
+    stackreconlib.print_table(table, HEADER=True)
+    print ("The global variable for innodb_buffer_pool_size should be larger than "
+           "the database sizes above. If a database isn't in use, don't consider "
+           "its size.")
 
 
 def cron_php_check():
@@ -1557,7 +1561,47 @@ for line in iter(proc.stdout.readline, ''):
                                         username)
 
 
+def system_specs():
+    pass
+command = "free"
+p = subprocess.Popen(
+    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+output, err = p.communicate()
+if not output:
+    raise NameError("Fail: %s" % err)
+lines_list = string.split(output, '\n')
+total_mem = lines_list[1].split()[2]
+free_mem = lines_list[1].split()[4]
+buffer_cache = lines_list[2].split()[3]
+max_clients = total_mem*1024*.8/150
 
+hyperthread = False
+f = open('/proc/cpuinfo', 'r')
+output = f.read()
+if " ht " in output:
+    hyperthread = True
+match = re.findall('([0-9\.]+)GHz', output)
+# number of cores, and speed in MHz
+cpu_mhz_total = len(match) * float(match[0]) * 1024
+if hyperthread is True:
+    cpu_mhz_total = cpu_mhz_total / 2
+cpu_mhz_total = int(cpu_mhz_total)
+print "Total MHz %d" % cpu_mhz_total
+cpu_clients = cpu_mhz_total / 60
+
+print
+print ("WARNING: Free advice is sometimes worth what you paid for it.")
+print ("This is an estimate.")
+print ("This free advice is based on numbers that would typically be used "
+       "during optimization for Magento automation.")
+print ("For a dedicated web node,")
+print ("    the memory would dictate max clients would be %d, and" %
+       max_clients)
+print ("    the CPUs may support %d concurrent connections." % cpu_clients)
+
+# import os
+# mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
+# mem_gib = mem_bytes/(1024.**3)  # e.g. 3.74
 """
  _____ ___  ____   ___
 |_   _/ _ \|  _ \ / _ \

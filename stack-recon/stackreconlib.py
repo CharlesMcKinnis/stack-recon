@@ -5,6 +5,7 @@ import subprocess
 import sys
 import os
 import mysql.connector
+import string
 from mysql.connector import errorcode
 from xml.parsers.expat import ExpatError
 # import platform
@@ -2142,20 +2143,24 @@ def memory_estimate(process_name, **kwargs):
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
-    lines = output.splitlines()
+    lines_list = string.split(output, '\n')
+    status["free_mem"] = lines_list[1].split()[4]
+    status["buffer_cache"] = lines_list[2].split()[3]
+    # print stuff[1].split()[1]
     # The calculation is using RSS, and free memory.
-    # There are buffers and cache used by the process, and that throws off the calculation
-    for line in lines:
-        result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-        if result:
-            status["free_mem"] = int(result.group(4))
-            continue
-        result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-        if result:
-            status["buffer_cache"] = int(result.group(4))
-            # print "1552 buffer_cache"
-            # print status["buffer_cache"]
-            break
+    # There are buffers and cache used by the process, and that throws off
+    #   the calculation
+    # for line in lines:
+    #     result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+    #     if result:
+    #         status["free_mem"] = int(result.group(4))
+    #         continue
+    #     result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+    #     if result:
+    #         status["buffer_cache"] = int(result.group(4))
+    #         # print "1552 buffer_cache"
+    #         # print status["buffer_cache"]
+    #         break
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
