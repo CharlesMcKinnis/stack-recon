@@ -1416,9 +1416,11 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_bytes_v = False
                     if sugg_bytes_v > real_bytes_v:
                         sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
-                        config_file_output = config_file_output + ("%s = %s\n" %
-                                                                   (i.replace("_", "-"),
-                                                                    base_values[i]))
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" % (i.replace("_", "-"),
+                                                              base_values[i]
+                                                              )
+                                               ))
                         notes = "NOTICE: This is may be low"
                 elif eval_type[i] == "bytes2human":
                     real_bytes_v = int(j)
@@ -1428,10 +1430,13 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
                     NUMBERS = True
                     if sugg_bytes_v > real_bytes_v:
-                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
-                        config_file_output = config_file_output + ("%s = %s\n" %
-                                                                   (i.replace("_", "-"),
-                                                                    base_values[i]))
+                        sqloutput = (sqloutput +
+                                     ("set global %s=%s;\n" %
+                                      (i, base_values[i])))
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" %
+                                               (i.replace("_", "-"),
+                                                base_values[i])))
                         notes = "NOTICE: This is may be low"
                 elif eval_type[i] == "string":
                     real_human_v = j
@@ -1439,10 +1444,13 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     real_bytes_v = False
                     sugg_bytes_v = False
                     if sugg_human_v != real_human_v:
-                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
-                        config_file_output = config_file_output + ("%s = %s\n" %
-                                                                   (i.replace("_", "-"),
-                                                                    base_values[i]))
+                        sqloutput = (sqloutput +
+                                     "set global %s=%s;\n" %
+                                     (i, base_values[i]))
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" %
+                                               (i.replace("_", "-"),
+                                                base_values[i])))
                 else:
                     # "none"? or a catch all
                     real_human_v = j
@@ -1451,8 +1459,8 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_bytes_v = False
 
                 if i == "innodb_buffer_pool_size":
-                    notes = ("For a dedicated DB server, this might be ~1/2 of the "
-                             "DB server RAM")
+                    notes = ("For a dedicated DB server, this might be ~1/2 of "
+                             "the DB server RAM")
                     sugg_human_v = ""
                 elif i == "max_connections":
                     notes = ("Automation default 750. Max value could be max "
@@ -1500,7 +1508,7 @@ for db_list in globalconfig["mysql"]["db_list"]:
             sys.exit(3)
 
     query = ("SELECT "
-             "data_length, index_length"
+             "data_length, index_length, "
              "SUM(data_length + index_length) AS 'size'"
              "FROM information_schema.TABLES "
              "WHERE engine = 'innodb' AND table_schema = '%s';" % db_list["dbname"]
