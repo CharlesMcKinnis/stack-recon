@@ -1419,7 +1419,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                         config_file_output = config_file_output + ("%s = %s\n" %
                                                                    (i.replace("_", "-"),
                                                                     base_values[i]))
-                        notes = "WARNING: This is may be low"
+                        notes = "NOTICE: This is may be low"
                 elif eval_type[i] == "bytes2human":
                     real_bytes_v = int(j)
                     real_human_v = stackreconlib.bytes2human(j)
@@ -1432,7 +1432,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                         config_file_output = config_file_output + ("%s = %s\n" %
                                                                    (i.replace("_", "-"),
                                                                     base_values[i]))
-                        notes = "WARNING: This is may be low"
+                        notes = "NOTICE: This is may be low"
                 elif eval_type[i] == "string":
                     real_human_v = j
                     sugg_human_v = base_values[i]
@@ -1451,7 +1451,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_bytes_v = False
 
                 if i == "innodb_buffer_pool_size":
-                    notes = ("For a dedicated DB server, this should be ~1/2 of the "
+                    notes = ("For a dedicated DB server, this might be ~1/2 of the "
                              "DB server RAM")
                     sugg_human_v = ""
                 elif i == "max_connections":
@@ -1477,7 +1477,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
 def mysql_innodb_table_size_sum():
     pass
-table = [["Server", "DB Name", "Size"]]
+table = [["Server", "DB Name", "data length", "index length", "total size"]]
 for db_list in globalconfig["mysql"]["db_list"]:
     config = {
         'user': db_list["username"],
@@ -1500,6 +1500,7 @@ for db_list in globalconfig["mysql"]["db_list"]:
             sys.exit(3)
 
     query = ("SELECT "
+             "data_length, index_length"
              "SUM(data_length + index_length) AS 'size'"
              "FROM information_schema.TABLES "
              "WHERE engine = 'innodb' AND table_schema = '%s';" % db_list["dbname"]
@@ -1508,17 +1509,20 @@ for db_list in globalconfig["mysql"]["db_list"]:
     # table = [["variable", "current", "suggested", "notes"]]
     # sqloutput = ""
     # config_file_output = ""
-    for (i) in cursor:
+    for (i, j, k) in cursor:
         row = []
-
         # There is only one column, but it is a tuple, so unroll it
-        size = i[0]
+        data_size = i[0]
+        index_size = i[1]
+        size = i[2]
         # print ("DB Name: %s, Size: %s" %
         #        (db_list["dbname"],
         #         stackreconlib.bytes2human(size)))
         # total_size = total_size + size
         row.append(db_list["host"])
         row.append(db_list["dbname"])
+        row.append(stackreconlib.bytes2human(data_size))
+        row.append(stackreconlib.bytes2human(index_size))
         row.append(stackreconlib.bytes2human(size))
         table.append(row)
 if table:
