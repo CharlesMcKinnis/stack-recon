@@ -1520,9 +1520,9 @@ for db_list in globalconfig["mysql"]["db_list"]:
     for (i, j, k) in cursor:
         row = []
         # There is only one column, but it is a tuple, so unroll it
-        data_size = i[0]
-        index_size = i[1]
-        size = i[2]
+        data_size = i
+        index_size = j
+        size = k
         # print ("DB Name: %s, Size: %s" %
         #        (db_list["dbname"],
         #         stackreconlib.bytes2human(size)))
