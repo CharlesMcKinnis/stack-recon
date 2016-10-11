@@ -843,6 +843,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
 
                 print "local.xml: %s" % local_xml["filename"]
                 print "Version: %s" % doc_root_dict["magento_version"]
+                # Insert a WARNING here if the php version is a mismatch?
                 print
                 # Mage 1 DATABASE settings
                 # walk through the keys and values in

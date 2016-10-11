@@ -1855,6 +1855,19 @@ class MysqlCtl(object):
                     print("Database does not exist")
                 else:
                     print(err)
+                    # sys.exit(1)  # fixme
+                    sys.stderr.write("WARNING MySQL: %s.\n" % err)
+                    error_collection.append("WARNING MySQL: %s.\n" % err)
+                    """
+Traceback (most recent call last):
+ File "./ecomm-recon", line 515, in <module>
+   doc_root_dict.get("local_xml", {}).get("db", {}))
+ File "/root/stack-recon/stack-recon/stackreconlib.py", line 1374, in db_cache_table
+   (var_dbname, var_table_prefix))
+ File "/root/stack-recon/stack-recon/stackreconlib.py", line 1859, in db_query
+   cursor.execute(sqlquery)
+UnboundLocalError: local variable 'cursor' referenced before assignment
+                    """
             # do stuff sqlquery
             cursor.execute(sqlquery)
             return_list = cursor.fetchall()
@@ -2355,7 +2368,12 @@ def bytes2human(n, format='%(value).1f %(symbol)s', symbols='customary'):
       >>> bytes2human(10000, format="%(value).5f %(symbol)s")
       '9.76562 K'
     """
-    n = int(n)
+    try:
+        n = int(n)  # fixme TypeError: int() argument must be a string or a number, not 'NoneType'
+    except TypeError:
+        sys.stderr.write("NOTICE: TypeError, int value expected.\n")
+        error_collection.append("NOTICE: TypeError, int value expected.\n")
+        return
     if n < 0:
         raise ValueError("n < 0")
     symbols = SYMBOLS[symbols]
