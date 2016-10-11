@@ -1858,6 +1858,7 @@ class MysqlCtl(object):
                     # sys.exit(1)  # fixme
                     sys.stderr.write("WARNING MySQL: %s.\n" % err)
                     error_collection.append("WARNING MySQL: %s.\n" % err)
+                    return
                     """
 Traceback (most recent call last):
  File "./ecomm-recon", line 515, in <module>
