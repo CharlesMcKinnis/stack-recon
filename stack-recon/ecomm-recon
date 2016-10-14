@@ -413,7 +413,7 @@ if not args.jsonfile:
             pass
         elif len(daemon_name) == 1:
             phpfpm = stackreconlib.phpfpmCtl(daemons[daemon_name[0]],
-                               exe=daemons[daemon_name[0]]["exe"])
+                                             exe=daemons[daemon_name[0]]["exe"])
             phpfpm_conf_file = phpfpm.get_conf()
             if phpfpm_conf_file:
                 wholeconfig = importfile(phpfpm_conf_file,
@@ -1447,7 +1447,10 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     if sugg_human_v != real_human_v:
                         sqloutput = (sqloutput +
                                      "set global %s=%s;\n" %
-                                     (i, base_values[i]))
+                                     (i,
+                                      stackreconlib.bytes2human(base_values[i])
+                                      )
+                                     )
                         config_file_output = (config_file_output +
                                               ("%s = %s\n" %
                                                (i.replace("_", "-"),

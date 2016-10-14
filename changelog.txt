@@ -11,6 +11,8 @@ The library is now named stackreconlib. This should make it easier to separate i
 Magento 2 support is coming along. I added version parsing today.
 
 * TODO things to add
+php shell/indexer.php --status
+
 We could get information similar to MySQL Buddy and display it, to name a few:
 long_query_time
 query_cache_size
