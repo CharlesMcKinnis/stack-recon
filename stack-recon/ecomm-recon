@@ -1433,7 +1433,11 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     if sugg_bytes_v > real_bytes_v:
                         sqloutput = (sqloutput +
                                      ("set global %s=%s;\n" %
-                                      (i, base_values[i])))
+                                      (i,
+                                       stackreconlib.human2bytes(base_values[i])
+                                       )
+                                      )
+                                     )
                         config_file_output = (config_file_output +
                                               ("%s = %s\n" %
                                                (i.replace("_", "-"),
@@ -1447,10 +1451,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     if sugg_human_v != real_human_v:
                         sqloutput = (sqloutput +
                                      "set global %s=%s;\n" %
-                                     (i,
-                                      stackreconlib.bytes2human(base_values[i])
-                                      )
-                                     )
+                                     (i, base_values[i]))
                         config_file_output = (config_file_output +
                                               ("%s = %s\n" %
                                                (i.replace("_", "-"),
