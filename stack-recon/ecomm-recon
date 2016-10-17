@@ -1345,7 +1345,7 @@ def mysql_global_variables():
 print
 print ("This is a quick check of common MySQL variable values for production "
        "Magento servers.")
-print ("If there are WARNINGs in the notes and Magento is experiencing "
+print ("If there are NOTICEs in the notes and Magento is experiencing "
        "performance issues, escalate the issue.")
 base_values = {
     "query_cache_type": "ON",
@@ -1464,8 +1464,8 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_bytes_v = False
 
                 if i == "innodb_buffer_pool_size":
-                    notes = ("For a dedicated DB server, this might be ~1/2 of "
-                             "the DB server RAM")
+                    notes = (notes + "For a dedicated DB server, this might be "
+                             "~1/2 of the DB server RAM")
                     sugg_human_v = ""
                 elif i == "max_connections":
                     notes = ("Automation default 750. Max value could be max "
