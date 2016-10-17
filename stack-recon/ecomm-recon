@@ -1383,6 +1383,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
         'host': v["host"],
         'raise_on_warnings': True,
     }
+
     try:
         cnx = mysql.connector.connect(**config)
         cursor = cnx.cursor()
@@ -1401,7 +1402,10 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
     config_file_output = ""
+    globalconfig["mysql"]["host_dict"][k]["variables"] = {}
     for (i, j) in cursor:
+        globalconfig["mysql"]["host_dict"][k]["variables"][i] = j
+    for i, j in globalconfig["mysql"]["host_dict"][k]["variables"].iteritems():
         if i in base_values:
             row = []
             notes = ""
@@ -1463,22 +1467,38 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     real_bytes_v = False
                     sugg_bytes_v = False
 
+                # Situation specific error messages
+                if i == "query_cache_type":
+                    if sugg_human_v == "OFF":
+                        notes = (notes + "URGENT: Query cache is off")
+                        error_collection.append("URGENT: Query cache is off")
+                        sqloutput = (sqloutput + "# query_cache_type "
+                                     "cannot be changed live")
+                        config_file_output = (config_file_output +
+                                              "query-cache-type = ON")
                 if i == "innodb_buffer_pool_size":
                     if real_human_v == "128.0 M":
-                        notes = (notes + "URGENT: THIS IS TOO LOW! ")
+                        notes = (notes + "URGENT: THIS IS TOO LOW!")
                         error_collection.append("URGENT: innodb_buffer_"
                                                 "pool_size is 128MB. "
                                                 "This is much too low.")
+                        sqloutput = (sqloutput + "# innodb_buffer_pool_size "
+                                     "cannot be changed live")
+                        config_file_output = (config_file_output +
+                                              "innodb-buffer-pool-size = ##G  "
+                                              "# change ## to value\n")
                     notes = (notes + "For a dedicated DB server, this might be "
                              "~1/2 of the DB server RAM")
                     sugg_human_v = ""
                 elif i == "max_connections":
                     notes = ("Automation default 750. Max value could be max "
                              "clients of all web heads.")
+
                 row.append(str(real_human_v))
                 row.append(str(sugg_human_v))
                 row.append(notes)
                 table.append(row)
+
     if table:
         print
         print "Host: %s" % v["host"]
