@@ -1464,6 +1464,11 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                     sugg_bytes_v = False
 
                 if i == "innodb_buffer_pool_size":
+                    if real_human_v == "128.0 M":
+                        notes = (notes + "URGENT: THIS IS TOO LOW! ")
+                        error_collection.append("URGENT: innodb_buffer_"
+                                                "pool_size is 128MB. "
+                                                "This is much too low.")
                     notes = (notes + "For a dedicated DB server, this might be "
                              "~1/2 of the DB server RAM")
                     sugg_human_v = ""
