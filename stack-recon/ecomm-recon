@@ -594,10 +594,10 @@ if not args.jsonfile:
                         {"host": v.get("host"),
                          "password": v.get("password"),
                          "username": v.get("username")}})
-                host_dict = {v.get("host"):
-                             {"host": v.get("host"),
-                              "password": v.get("password"),
-                              "username": v.get("username")}}
+                # host_dict = {v.get("host"):
+                #              {"host": v.get("host"),
+                #               "password": v.get("password"),
+                #               "username": v.get("username")}}
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
         for k, v in env_db.iteritems():
