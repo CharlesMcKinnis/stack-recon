@@ -1470,20 +1470,20 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                 # Situation specific error messages
                 if i == "query_cache_type":
                     if sugg_human_v == "OFF":
-                        notes = (notes + "URGENT: Query cache is off")
-                        error_collection.append("URGENT: Query cache is off")
+                        notes = (notes + "URGENT: Query cache is off ")
+                        error_collection.append("URGENT: Query cache is off ")
                         sqloutput = (sqloutput + "# query_cache_type "
-                                     "cannot be changed live")
+                                     "cannot be changed live\n")
                         config_file_output = (config_file_output +
                                               "query-cache-type = ON")
                 if i == "innodb_buffer_pool_size":
                     if real_human_v == "128.0 M":
-                        notes = (notes + "URGENT: THIS IS TOO LOW!")
+                        notes = (notes + "URGENT: THIS IS TOO LOW! ")
                         error_collection.append("URGENT: innodb_buffer_"
                                                 "pool_size is 128MB. "
                                                 "This is much too low.")
                         sqloutput = (sqloutput + "# innodb_buffer_pool_size "
-                                     "cannot be changed live")
+                                     "cannot be changed live\n")
                         config_file_output = (config_file_output +
                                               "innodb-buffer-pool-size = ##G  "
                                               "# change ## to value\n")
