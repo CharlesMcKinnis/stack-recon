@@ -589,6 +589,11 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
+                update(host_dict,
+                       {v.get("host"):
+                        {"host": v.get("host"),
+                         "password": v.get("password"),
+                         "username": v.get("username")}})
                 host_dict = {v.get("host"):
                              {"host": v.get("host"),
                               "password": v.get("password"),
@@ -604,10 +609,11 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                host_dict = {v.get("host"):
-                             {"host": v.get("host"),
-                              "password": v.get("password"),
-                              "username": v.get("username")}}
+                update(host_dict,
+                       {v.get("host"):
+                        {"host": v.get("host"),
+                         "password": v.get("password"),
+                         "username": v.get("username")}})
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
 
