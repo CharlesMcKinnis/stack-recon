@@ -617,13 +617,19 @@ if not args.jsonfile:
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
 
-    # mysql global variables
+    # mysql global variables and status
     for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
         return_dict = mysqlctl.global_variables(v)
         if return_dict:
             globalconfig["mysql"]["host_dict"][k]["variables"] = {}
             update(globalconfig["mysql"]["host_dict"][k]["variables"],
+                   return_dict)
+
+        return_dict = mysqlctl.global_status(v)
+        if return_dict:
+            globalconfig["mysql"]["host_dict"][k]["status"] = {}
+            update(globalconfig["mysql"]["host_dict"][k]["status"],
                    return_dict)
 
     # mysql innodb table sizes
@@ -1326,6 +1332,10 @@ print ("This is a quick check of common MySQL variable values for production "
        "Magento servers.")
 print ("If there are NOTICEs in the notes and Magento is experiencing "
        "performance issues, escalate the issue.")
+
+"""
+MySQL global variables
+"""
 base_values = {
     "query_cache_type": "ON",
     "query_cache_size": "128M",
@@ -1464,6 +1474,39 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
         print "Configuration file options to change or update"
         print config_file_output
 
+"""
+MySQL global status
+"""
+base_values = {
+    "query_cache_type": "ON",
+    "query_cache_size": "128M",
+    "query_cache_limit": "4M",
+    "tmp_table_size": "256M",
+    "max_heap_table_size": "256M",
+    "max_connections": 750,
+    "max_allowed_packet": "256M",
+    "key_buffer_size": "512M",
+    "myisam_sort_buffer_size": "128M",
+    "innodb_lock_wait_timeout": 1800,
+    # 29/2*1024*1014,  # This should be half the memory on the mysql server
+    "innodb_buffer_pool_size": "0B"
+}
+eval_type = {
+    "query_cache_type": "string",
+    "query_cache_size": "bytes2human",
+    "query_cache_limit": "bytes2human",
+    "tmp_table_size": "bytes2human",
+    "max_heap_table_size": "bytes2human",
+    "max_connections": "int",
+    "max_allowed_packet": "bytes2human",
+    "key_buffer_size": "bytes2human",
+    "myisam_sort_buffer_size": "bytes2human",
+    "innodb_lock_wait_timeout": "int",
+    "innodb_buffer_pool_size": "bytes2human"
+}
+
+for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    print "%s: %r" % (k, v)
 
 table = [["Server", "DB Name", "data length", "index length", "total size"]]
 for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
