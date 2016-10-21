@@ -737,14 +737,16 @@ if "nginx" in globalconfig:
 
         print_sites(globalconfig["nginx"]["sites"])
 
-        # memory profile
-        if nginx_dict.get("basename") and nginx_dict.get("maxprocesses"):
-            proc_name = nginx_dict["basename"]
-            proc_max = int(nginx_dict["maxprocesses"])
-            result = memory_estimate(proc_name)
-            if result:
-                memory_print(result, proc_name, proc_max)
-        print
+        # This just doesn't matter normally. It is PHP that uses memory and needs
+        # threads
+        # # memory profile
+        # if nginx_dict.get("basename") and nginx_dict.get("maxprocesses"):
+        #     proc_name = nginx_dict["basename"]
+        #     proc_max = int(nginx_dict["maxprocesses"])
+        #     result = memory_estimate(proc_name)
+        #     if result:
+        #         memory_print(result, proc_name, proc_max)
+        # print
 
 # globalconfig["nginx"]["maxclients"]
 
