@@ -1385,8 +1385,11 @@ eval_type = {
 
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
-    update(globalconfig["mysql"]["host_dict"][k]["variables"],
-           mysql_global_variables(v))
+    return_dict = mysql_global_variables(v)
+    if return_dict:
+        globalconfig["mysql"]["host_dict"][k]["variables"] = {}
+        update(globalconfig["mysql"]["host_dict"][k]["variables"],
+               mysql_global_variables(v))
 
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
