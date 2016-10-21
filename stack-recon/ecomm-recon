@@ -620,7 +620,7 @@ if not args.jsonfile:
     # mysql global variables
     for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
-        return_dict = mysql.global_variables(v)
+        return_dict = mysqlctl.global_variables(v)
         if return_dict:
             globalconfig["mysql"]["host_dict"][k]["variables"] = {}
             update(globalconfig["mysql"]["host_dict"][k]["variables"],
