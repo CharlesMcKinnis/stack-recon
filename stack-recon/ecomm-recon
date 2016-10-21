@@ -1525,7 +1525,6 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 def mysql_innodb_table_size_sum():
     pass
 table = [["Server", "DB Name", "data length", "index length", "total size"]]
-counter = 0
 for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
     config = {
         'user': db_list["username"],
@@ -1561,7 +1560,6 @@ for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
     # table = [["variable", "current", "suggested", "notes"]]
     # sqloutput = ""
     # config_file_output = ""
-counter = 0
 for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
     config = {
         'user': db_list["username"],
