@@ -1943,6 +1943,41 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         # globalconfig["mysql"]=return_dict
         return(return_dict)
 
+    def mysql_global_variables(self, mysql_host_dict):
+        """
+        pass a dict with
+
+        returns a dict of key, value pairs
+        """
+        return_dict = {}
+        query = "show global variables;"
+        config = {
+            'user': mysql_host_dict["username"],
+            'password': mysql_host_dict["password"],
+            'host': mysql_host_dict["host"],
+            'raise_on_warnings': True,
+        }
+
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+                sys.exit(1)
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+                sys.exit(2)
+            else:
+                print(err)
+                sys.exit(3)
+
+        cursor.execute(query)
+        for (i, j) in cursor:
+            return_dict[i] = j
+        cnx.close()
+        return(return_dict)
+
 
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:

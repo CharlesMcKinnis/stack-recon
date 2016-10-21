@@ -1383,33 +1383,10 @@ eval_type = {
     "innodb_buffer_pool_size": "bytes2human"
 }
 
-query = "show global variables;"
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    config = {
-        'user': v["username"],
-        'password': v["password"],
-        'host': v["host"],
-        'raise_on_warnings': True,
-    }
 
-    try:
-        cnx = mysql.connector.connect(**config)
-        cursor = cnx.cursor()
-    except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
-            sys.exit(1)
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
-            sys.exit(2)
-        else:
-            print(err)
-            sys.exit(3)
-
-    cursor.execute(query)
-    globalconfig["mysql"]["host_dict"][k]["variables"] = {}
-    for (i, j) in cursor:
-        globalconfig["mysql"]["host_dict"][k]["variables"][i] = j
+    update(globalconfig["mysql"]["host_dict"][k]["variables"],
+           mysql_global_variables(v))
 
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
@@ -1512,7 +1489,6 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
         print
         print "Host: %s" % v["host"]
         stackreconlib.print_table(table, HEADER=True)
-    cnx.close()
     if sqloutput:
         print ("SQL Commands to change running values (some may return an "
                "error if they cannot be changed live)")
