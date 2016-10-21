@@ -626,6 +626,12 @@ if not args.jsonfile:
             update(globalconfig["mysql"]["host_dict"][k]["variables"],
                    return_dict)
 
+    # mysql innodb table sizes
+    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+        return_dict = mysqlctl.innodb_table_size(db_list)
+        globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
+
+
 else:
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
@@ -1416,7 +1422,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
                 # Situation specific error messages
                 if i == "query_cache_type":
-                    if sugg_human_v == "OFF":
+                    if real_human_v == "OFF":
                         notes = (notes + "URGENT: Query cache is off ")
                         error_collection.append("URGENT: Query cache is off ")
                         sqloutput = (sqloutput + "# query_cache_type "
@@ -1459,13 +1465,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
         print config_file_output
 
 
-def mysql_innodb_table_size_sum():
-    pass
 table = [["Server", "DB Name", "data length", "index length", "total size"]]
-for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
-    return_dict = mysqlctl.innodb_table_size(db_list)
-    globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
-
 for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
     config = {
         'user': db_list["username"],
