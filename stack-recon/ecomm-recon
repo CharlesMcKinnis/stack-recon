@@ -1549,7 +1549,7 @@ for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
 
     query = ("SELECT "
              "SUM(data_length), "
-             "SUM(index_length), "
+             "SUM(index_length) "
              "FROM information_schema.TABLES "
              "WHERE engine = 'innodb' AND table_schema = '%s';" % db_list["dbname"]
              )
