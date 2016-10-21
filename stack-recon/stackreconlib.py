@@ -1978,6 +1978,42 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         cnx.close()
         return(return_dict)
 
+    def innodb_table_size(self, db_list):
+        return_dict = {}
+        query = ("SELECT "
+                 "SUM(data_length), "
+                 "SUM(index_length) "
+                 "FROM information_schema.TABLES "
+                 "WHERE engine = 'innodb' AND table_schema = '%s';" %
+                 db_list["dbname"]
+                 )
+        config = {
+            'user': db_list["username"],
+            'password': db_list["password"],
+            'host': db_list["host"],
+            'raise_on_warnings': True,
+        }
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+                sys.exit(1)
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+                sys.exit(2)
+            else:
+                print(err)
+                sys.exit(3)
+
+        cursor.execute(query)
+        for (i, j) in cursor:
+            return_dict = {"data_size": i,
+                           "index_size": j,
+                           "data+index_size": i+j  }
+        return(return_dict)
+
 
 def socket_client(host, port, string, **kwargs):
     if "TIMEOUT" in kwargs:
