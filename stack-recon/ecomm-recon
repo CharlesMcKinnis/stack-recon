@@ -150,11 +150,11 @@ if ARGPARSE:
                         "nginx and php-fpm for normal LAMP stacks",
                         action="store_true")
     parser.add_argument("--notable",
-                        help="Output data will be colon seperated instead " +
+                        help="Output data will be colon separated instead " +
                         "of tables.",
                         action="store_true")
     parser.add_argument("--magentopath",
-                        help="Output data will be colon seperated instead of " +
+                        help="Output data will be colon separated instead of " +
                         "tables.",
                         )
     """
