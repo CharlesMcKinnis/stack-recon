@@ -1943,7 +1943,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         # globalconfig["mysql"]=return_dict
         return(return_dict)
 
-    def mysql_global_variables(self, mysql_host_dict):
+    def global_variables(self, mysql_host_dict):
         """
         pass a dict with
 

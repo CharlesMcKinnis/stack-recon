@@ -617,47 +617,15 @@ if not args.jsonfile:
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
 
-    """
-                    u'db': {   u'connection': {   u'default': {   u'active': u'1',
-                                                          u'dbname': u'stage',
-                                                          u'host': u'10.1.2.3',
-                                                          u'password': u'password
-                                                          u'username': u'username'},
-                                          u'indexer': {   u'active': u'1',
-                                                          u'dbname': u'stage',
-                                                          u'host': u'10.1.2.3',
-                                                          u'password': u'password',
-                                                          u'persistent': None,
-                                                          u'username': u'stage'}},
-                       u'table_prefix': u''},
-    """
-    # find mysql from local_xml
-    """
-    I want to add globalconfig["mysql"], and I'll need a list of them I guess?
-    Each one needs host and auth info
-    Then a dict for each query that contains a dict of key value pairs
+    # mysql global variables
+    for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 
-    dbConnInfo = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["db"]
-    output = db_query(dbConnInfo, sqlquery)
-    parse_key_value(output)
+        return_dict = mysql.global_variables(v)
+        if return_dict:
+            globalconfig["mysql"]["host_dict"][k]["variables"] = {}
+            update(globalconfig["mysql"]["host_dict"][k]["variables"],
+                   return_dict)
 
-    globalconfig[
-        "magento": {
-            "doc_root": {
-                "/var/www/vhosts/www.example.com/html": {
-                    "local_xml": {
-                        "db": {
-                            "dbname": "databasename",
-                            "host": "172.24.16.2",
-                            "password": "password",
-                            "username": "someuser"
-                        }
-                    }
-                }
-            }
-        }
-    ]
-    """
 else:
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
@@ -1344,9 +1312,6 @@ if globalconfig.get("mysql"):
     # pp = pprint.PrettyPrinter(indent=4)
     # pp.pprint(globalconfig["mysql"])
 
-
-def mysql_global_variables():
-    pass
 # This would be better as a function in the stackreconlib, but the presentation
 #   and logic need to be separated first.
 # And the values need to be crammed in globalconfig
@@ -1384,13 +1349,6 @@ eval_type = {
 }
 
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-
-    return_dict = mysql_global_variables(v)
-    if return_dict:
-        globalconfig["mysql"]["host_dict"][k]["variables"] = {}
-        update(globalconfig["mysql"]["host_dict"][k]["variables"],
-               mysql_global_variables(v))
-
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
     config_file_output = ""
