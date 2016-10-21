@@ -1554,7 +1554,7 @@ for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
              "WHERE engine = 'innodb' AND table_schema = '%s';" % db_list["dbname"]
              )
     cursor.execute(query)
-    for line_index, (i, j) in cursor:
+    for (i, j) in cursor:
         globalconfig["mysql"]["db_list"][counter]["innodb"] = {"data_size": i,
                                                                "index_size": j,
                                                                "data+index_size": i+j  }
