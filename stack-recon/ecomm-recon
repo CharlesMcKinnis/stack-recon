@@ -1407,12 +1407,13 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
             sys.exit(3)
 
     cursor.execute(query)
-    table = [["variable", "current", "suggested", "notes"]]
-    sqloutput = ""
-    config_file_output = ""
     globalconfig["mysql"]["host_dict"][k]["variables"] = {}
     for (i, j) in cursor:
         globalconfig["mysql"]["host_dict"][k]["variables"][i] = j
+
+    table = [["variable", "current", "suggested", "notes"]]
+    sqloutput = ""
+    config_file_output = ""
     for i, j in globalconfig["mysql"]["host_dict"][k]["variables"].iteritems():
         if i in base_values:
             row = []
@@ -1524,7 +1525,8 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 def mysql_innodb_table_size_sum():
     pass
 table = [["Server", "DB Name", "data length", "index length", "total size"]]
-for db_list in globalconfig["mysql"]["db_list"]:
+counter = 0
+for counter, db_list in globalconfig["mysql"]["db_list"]:
     config = {
         'user': db_list["username"],
         'password': db_list["password"],
@@ -1546,21 +1548,34 @@ for db_list in globalconfig["mysql"]["db_list"]:
             sys.exit(3)
 
     query = ("SELECT "
-             "SUM(data_length), SUM(index_length), "
-             "SUM(data_length + index_length) AS 'size'"
+             "SUM(data_length), "
+             "SUM(index_length), "
              "FROM information_schema.TABLES "
              "WHERE engine = 'innodb' AND table_schema = '%s';" % db_list["dbname"]
              )
     cursor.execute(query)
+    for line_index, (i, j) in cursor:
+        globalconfig["mysql"]["db_list"][counter]["innodb"] = {"data_size": i,
+                                                               "index_size": j,
+                                                               "data+index_size": i+j  }
     # table = [["variable", "current", "suggested", "notes"]]
     # sqloutput = ""
     # config_file_output = ""
-    for (i, j, k) in cursor:
+counter = 0
+for counter, db_list in globalconfig["mysql"]["db_list"]:
+    config = {
+        'user': db_list["username"],
+        'password': db_list["password"],
+        'host': db_list["host"],
+        'raise_on_warnings': True,
+    }
+    for v in db_list["innodb"]:
         row = []
         # There is only one column, but it is a tuple, so unroll it
-        data_size = i
-        index_size = j
-        size = k
+
+        data_size = db_list["innodb"]["data_size"]
+        index_size = db_list["innodb"]["index_size"]
+        size = db_list["innodb"]["data+index_size"]
         # print ("DB Name: %s, Size: %s" %
         #        (db_list["dbname"],
         #         stackreconlib.bytes2human(size)))
