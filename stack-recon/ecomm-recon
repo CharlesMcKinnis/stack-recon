@@ -1505,8 +1505,8 @@ eval_type = {
     "innodb_buffer_pool_size": "bytes2human"
 }
 
-for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    print "%s: %r" % (k, v)
+# for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+#     print "%s: %r" % (k, v)
 
 table = [["Server", "DB Name", "data length", "index length", "total size"]]
 for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
