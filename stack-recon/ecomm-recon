@@ -1438,7 +1438,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                         sqloutput = (sqloutput + "# query_cache_type "
                                      "cannot be changed live\n")
                         config_file_output = (config_file_output +
-                                              "query-cache-type = ON")
+                                              "query-cache-type = ON\n")
                 if i == "innodb_buffer_pool_size":
                     if real_human_v == "128.0 M":
                         notes = (notes + "URGENT: THIS IS TOO LOW! ")
