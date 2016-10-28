@@ -6,12 +6,12 @@ from stackreconlib import (error_collection,
                            daemon_exe, importfile, update, print_sites,
                            memory_estimate, memory_print, print_table)
 try:
-    MYSQL = True
     import mysql.connector
+    from mysql.connector import errorcode
+    MYSQL = True
 except SyntaxError:
+    print "Error importing mysql library"
     MYSQL = False
-
-from mysql.connector import errorcode
 import re
 # import glob
 import subprocess
@@ -625,22 +625,22 @@ if not args.jsonfile:
                              "username": v.get("username")}})
             globalconfig["mysql"]["db_list"] = db_list
             globalconfig["mysql"]["host_dict"] = host_dict
-    
+
         # mysql global variables and status
-        for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    
+        for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
+
             return_dict = mysqlctl.global_variables(v)
             if return_dict:
                 globalconfig["mysql"]["host_dict"][k]["variables"] = {}
                 update(globalconfig["mysql"]["host_dict"][k]["variables"],
                        return_dict)
-    
+
             return_dict = mysqlctl.global_status(v)
             if return_dict:
                 globalconfig["mysql"]["host_dict"][k]["status"] = {}
                 update(globalconfig["mysql"]["host_dict"][k]["status"],
                        return_dict)
-    
+
         # mysql innodb table sizes
         for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
             return_dict = mysqlctl.innodb_table_size(db_list)

@@ -5,12 +5,13 @@ import subprocess
 import sys
 import os
 try:
-    MYSQL = True
     import mysql.connector
+    from mysql.connector import errorcode
+    MYSQL = True
 except SyntaxError:
+    print "Error importing mysql library"
     MYSQL = False
 import string
-from mysql.connector import errorcode
 from xml.parsers.expat import ExpatError
 # import platform
 # import yaml
