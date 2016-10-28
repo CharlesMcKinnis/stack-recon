@@ -7,10 +7,10 @@ import os
 try:
     import mysql.connector
     from mysql.connector import errorcode
-    MYSQL = True
+    MYSQL_CONNECTOR = True
 except SyntaxError:
     print "Error importing mysql library"
-    MYSQL = False
+    MYSQL_CONNECTOR = False
 import string
 from xml.parsers.expat import ExpatError
 # import platform
