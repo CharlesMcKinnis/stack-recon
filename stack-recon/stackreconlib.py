@@ -1365,6 +1365,8 @@ class MagentoCtl(object):
             db_cache_table(doc_root,
                             doc_root_dict.get("local_xml", {}).get("db", {}))
         """
+        if MYSQL is False:
+            return
         mysql = MysqlCtl()
         # Some of these aren't used yet, BUT WILL BE. DO NOT REMOVE THEM
         var_table_prefix = value.get("db/table_prefix", "")
