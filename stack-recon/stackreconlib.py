@@ -4,7 +4,11 @@ import glob
 import subprocess
 import sys
 import os
-import mysql.connector
+try:
+    MYSQL = True
+    import mysql.connector
+except SyntaxError:
+    MYSQL = False
 import string
 from mysql.connector import errorcode
 from xml.parsers.expat import ExpatError

@@ -5,7 +5,12 @@ import stackreconlib
 from stackreconlib import (error_collection,
                            daemon_exe, importfile, update, print_sites,
                            memory_estimate, memory_print, print_table)
-import mysql.connector
+try:
+    MYSQL = True
+    import mysql.connector
+except SyntaxError:
+    MYSQL = False
+
 from mysql.connector import errorcode
 import re
 # import glob
@@ -560,82 +565,83 @@ if not args.jsonfile:
 
     def MYSQL_DATA_GATHER():
             pass
-    sys.stderr.write("mysql data gather\n")
-    mysqlctl = stackreconlib.MysqlCtl()
-    ################################################
-    # MySQL
-    ################################################
-
-    if "mysql" not in globalconfig:
-        globalconfig["mysql"] = {"db_list": [], "host_dict": {}}
-    # globalconfig["mysql"] = mysql_config
-
-    # This would be better as a function in the stackreconlib
-
-    doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
-    db_list = []
-    host_dict = {}
-    for doc_root, doc_root_dict in doc_roots.iteritems():
-        # Magento 1
-        # doc_root["local_xml"]["db"]
-        # local.xml db
-        v = doc_root_dict.get("local_xml", {}).get("db", {})
-        if v:
-            if ({"host": v.get("host"),
-                 "dbname": v.get("dbname"),
-                 "password": v.get("password"),
-                 "username": v.get("username")} not in db_list):
-                db_list.append({"host": v.get("host"),
-                                "dbname": v.get("dbname"),
-                                "password": v.get("password"),
-                                "username": v.get("username")})
-                update(host_dict,
-                       {v.get("host"):
-                        {"host": v.get("host"),
-                         "password": v.get("password"),
-                         "username": v.get("username")}})
-                # host_dict = {v.get("host"):
-                #              {"host": v.get("host"),
-                #               "password": v.get("password"),
-                #               "username": v.get("username")}}
-        # Magento 2
-        env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
-        for k, v in env_db.iteritems():
-            if ({"host": v.get("host"),
-                 "dbname": v.get("dbname"),
-                 "password": v.get("password"),
-                 "username": v.get("username")} not in db_list):
-                db_list.append({"host": v.get("host"),
-                                "dbname": v.get("dbname"),
-                                "password": v.get("password"),
-                                "username": v.get("username")})
-                update(host_dict,
-                       {v.get("host"):
-                        {"host": v.get("host"),
-                         "password": v.get("password"),
-                         "username": v.get("username")}})
-        globalconfig["mysql"]["db_list"] = db_list
-        globalconfig["mysql"]["host_dict"] = host_dict
-
-    # mysql global variables and status
-    for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-
-        return_dict = mysqlctl.global_variables(v)
-        if return_dict:
-            globalconfig["mysql"]["host_dict"][k]["variables"] = {}
-            update(globalconfig["mysql"]["host_dict"][k]["variables"],
-                   return_dict)
-
-        return_dict = mysqlctl.global_status(v)
-        if return_dict:
-            globalconfig["mysql"]["host_dict"][k]["status"] = {}
-            update(globalconfig["mysql"]["host_dict"][k]["status"],
-                   return_dict)
-
-    # mysql innodb table sizes
-    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
-        return_dict = mysqlctl.innodb_table_size(db_list)
-        globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
+    if MYSQL is not False:
+        sys.stderr.write("mysql data gather\n")
+        mysqlctl = stackreconlib.MysqlCtl()
+        ################################################
+        # MySQL
+        ################################################
+    
+        if "mysql" not in globalconfig:
+            globalconfig["mysql"] = {"db_list": [], "host_dict": {}}
+        # globalconfig["mysql"] = mysql_config
+    
+        # This would be better as a function in the stackreconlib
+    
+        doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
+        db_list = []
+        host_dict = {}
+        for doc_root, doc_root_dict in doc_roots.iteritems():
+            # Magento 1
+            # doc_root["local_xml"]["db"]
+            # local.xml db
+            v = doc_root_dict.get("local_xml", {}).get("db", {})
+            if v:
+                if ({"host": v.get("host"),
+                     "dbname": v.get("dbname"),
+                     "password": v.get("password"),
+                     "username": v.get("username")} not in db_list):
+                    db_list.append({"host": v.get("host"),
+                                    "dbname": v.get("dbname"),
+                                    "password": v.get("password"),
+                                    "username": v.get("username")})
+                    update(host_dict,
+                           {v.get("host"):
+                            {"host": v.get("host"),
+                             "password": v.get("password"),
+                             "username": v.get("username")}})
+                    # host_dict = {v.get("host"):
+                    #              {"host": v.get("host"),
+                    #               "password": v.get("password"),
+                    #               "username": v.get("username")}}
+            # Magento 2
+            env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
+            for k, v in env_db.iteritems():
+                if ({"host": v.get("host"),
+                     "dbname": v.get("dbname"),
+                     "password": v.get("password"),
+                     "username": v.get("username")} not in db_list):
+                    db_list.append({"host": v.get("host"),
+                                    "dbname": v.get("dbname"),
+                                    "password": v.get("password"),
+                                    "username": v.get("username")})
+                    update(host_dict,
+                           {v.get("host"):
+                            {"host": v.get("host"),
+                             "password": v.get("password"),
+                             "username": v.get("username")}})
+            globalconfig["mysql"]["db_list"] = db_list
+            globalconfig["mysql"]["host_dict"] = host_dict
+    
+        # mysql global variables and status
+        for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    
+            return_dict = mysqlctl.global_variables(v)
+            if return_dict:
+                globalconfig["mysql"]["host_dict"][k]["variables"] = {}
+                update(globalconfig["mysql"]["host_dict"][k]["variables"],
+                       return_dict)
+    
+            return_dict = mysqlctl.global_status(v)
+            if return_dict:
+                globalconfig["mysql"]["host_dict"][k]["status"] = {}
+                update(globalconfig["mysql"]["host_dict"][k]["status"],
+                       return_dict)
+    
+        # mysql innodb table sizes
+        for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+            return_dict = mysqlctl.innodb_table_size(db_list)
+            globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
 
 
 else:
