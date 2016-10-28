@@ -518,8 +518,11 @@ if not args.jsonfile:
                 #       ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
                 return_dict = magento.db_cache_table(doc_root,
                                                      doc_root_dict.get("local_xml", {}).get("db", {}))
-                update(globalconfig["magento"]["doc_root"][doc_root],
-                       return_dict)
+                # If mysql library cannot be loaded, the return_dict is null
+                # Most notably, RHEL 5, Python 2.4
+                if return_dict:
+                    update(globalconfig["magento"]["doc_root"][doc_root],
+                           return_dict)
 
             # Mage 2 specific
             if "env_php" in globalconfig["magento"]["doc_root"][doc_root]:
