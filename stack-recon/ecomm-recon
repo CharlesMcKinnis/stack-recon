@@ -568,19 +568,19 @@ if not args.jsonfile:
 
     def MYSQL_DATA_GATHER():
             pass
-    if MYSQL is not False:
+    if MYSQL is True:
         sys.stderr.write("mysql data gather\n")
         mysqlctl = stackreconlib.MysqlCtl()
         ################################################
         # MySQL
         ################################################
-    
+
         if "mysql" not in globalconfig:
             globalconfig["mysql"] = {"db_list": [], "host_dict": {}}
         # globalconfig["mysql"] = mysql_config
-    
+
         # This would be better as a function in the stackreconlib
-    
+
         doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
         db_list = []
         host_dict = {}
