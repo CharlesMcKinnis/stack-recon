@@ -8,7 +8,7 @@ from stackreconlib import (error_collection,
 try:
     import mysql.connector
     from mysql.connector import errorcode
-    MYSQL_CONNECTOR = True
+    # MYSQL_CONNECTOR = True
 except SyntaxError:
     print "Error importing mysql library"
     # MYSQL_CONNECTOR = False
@@ -568,7 +568,8 @@ if not args.jsonfile:
 
     def MYSQL_DATA_GATHER():
             pass
-    if MYSQL_CONNECTOR:
+    print "571"
+    if mysql:
         sys.stderr.write("mysql data gather\n")
         mysqlctl = stackreconlib.MysqlCtl()
         ################################################
