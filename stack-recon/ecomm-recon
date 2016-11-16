@@ -26,6 +26,7 @@ except ImportError:
     import cElementTree as ET
 import pprint
 import socket
+import decimal
 # import collections
 try:
     import json
@@ -57,7 +58,14 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
-STACK_STATUS_VERSION = 2016092801
+STACK_STATUS_VERSION = 2016111602
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated
@@ -1549,37 +1557,6 @@ if table:
     print ("If a database isn't in use, don't consider its size.")
 
 
-def cron_php_check():
-    pass
-# Check for cron.php in crontab
-# get a list of users
-command = ["/usr/bin/getent", "passwd"]
-proc = subprocess.Popen(command, stdout=subprocess.PIPE)
-for line in iter(proc.stdout.readline, ''):
-    # extract the username
-    result = re.match("([^:]+)", line.rstrip())
-    if result:
-        username = result.group(1)
-        # print "User: %s" % username
-        # query for crontab jobs
-        command = ["crontab", "-l", "-u%s" % username]
-        p2 = subprocess.Popen(command,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        for line2 in iter(p2.stdout.readline, ""):
-            # print line2
-            # if cron.php is present, present a warning
-            if ("/cron.php" in line2 and not re.match('\s*#', line2) and
-                    "/cron.sh cron.php" not in line2):
-                print ("WARNING: User %s is calling cron.php in crontab but "
-                       "should probably call cron.sh" % username)
-                print "%s" % line2
-                error_collection.append("WARNING: User %s is calling cron.php "
-                                        "in crontab but should probably call "
-                                        "cron.sh" %
-                                        username)
-
-
 def system_specs():
     pass
 command = "free"
@@ -1617,6 +1594,38 @@ print ("    The memory may support concurrent connection of %d" %
        max_clients)
 print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
 
+
+def cron_php_check():
+    pass
+# Check for cron.php in crontab
+# get a list of users
+command = ["/usr/bin/getent", "passwd"]
+proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+for line in iter(proc.stdout.readline, ''):
+    # extract the username
+    result = re.match("([^:]+)", line.rstrip())
+    if result:
+        username = result.group(1)
+        # print "User: %s" % username
+        # query for crontab jobs
+        command = ["crontab", "-l", "-u%s" % username]
+        p2 = subprocess.Popen(command,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        for line2 in iter(p2.stdout.readline, ""):
+            # print line2
+            # if cron.php is present, present a warning
+            if ("/cron.php" in line2 and not re.match('\s*#', line2) and
+                    "/cron.sh cron.php" not in line2):
+                print ("WARNING: User %s is calling cron.php in crontab but "
+                       "should probably call cron.sh" % username)
+                print "%s" % line2
+                error_collection.append("WARNING: User %s is calling cron.php "
+                                        "in crontab but should probably call "
+                                        "cron.sh" %
+                                        username)
+
+
 # import os
 # mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
 # mem_gib = mem_bytes/(1024.**3)  # e.g. 3.74
@@ -1638,7 +1647,7 @@ if ((not os.path.isfile(args.output) or
      args.force) and not args.jsonfile and JSON is True):
 
     globalconfig["errors"] = error_collection
-    json_str = json.dumps(globalconfig)
+    json_str = json.dumps(globalconfig, cls=DecimalEncoder)
     # with open(args.output,'w') as outfile:
     #     outfile.write( json_str )
     outfile = open(args.output, 'w')
@@ -1657,4 +1666,4 @@ if args.printglobalconfig:
     pp.pprint(globalconfig)
 
 if args.printjson and JSON is True:
-    print json.dumps(globalconfig)
+    print json.dumps(globalconfig, cls=DecimalEncoder)
