@@ -1,15 +1,23 @@
 #!/usr/bin/env python
 
 # from ecommstacklib import *
-from stackreconlib import (apacheCtl, nginxCtl, phpfpmCtl, MagentoCtl,
-                           MemcacheCtl, RedisCtl, MysqlCtl, error_collection,
+import stackreconlib
+from stackreconlib import (error_collection,
                            daemon_exe, importfile, update, print_sites,
                            memory_estimate, memory_print, print_table)
+try:
+    import mysql.connector
+    from mysql.connector import errorcode
+    # MYSQL_CONNECTOR = True
+except SyntaxError:
+    print "Error importing mysql library"
+    # MYSQL_CONNECTOR = False
 import re
 # import glob
 import subprocess
 import sys
 import os
+import string
 # import yaml
 # import fnmatch
 try:
@@ -18,6 +26,7 @@ except ImportError:
     import cElementTree as ET
 import pprint
 import socket
+import decimal
 # import collections
 try:
     import json
@@ -49,7 +58,14 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
-STACK_STATUS_VERSION = 2016051601
+STACK_STATUS_VERSION = 2016111602
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated
@@ -147,11 +163,11 @@ if ARGPARSE:
                         "nginx and php-fpm for normal LAMP stacks",
                         action="store_true")
     parser.add_argument("--notable",
-                        help="Output data will be colon seperated instead " +
+                        help="Output data will be colon separated instead " +
                         "of tables.",
                         action="store_true")
     parser.add_argument("--magentopath",
-                        help="Output data will be colon seperated instead of " +
+                        help="Output data will be colon separated instead of " +
                         "tables.",
                         )
     """
@@ -276,7 +292,7 @@ if not args.jsonfile:
         elif len(daemon_name) == 1:
             apache_basename = daemons[daemon_name[0]]["basename"]
             apache_exe = daemons[daemon_name[0]]["exe"]
-            apache = apacheCtl(daemons[daemon_name[0]], exe=daemons[daemon_name[0]]["exe"])
+            apache = stackreconlib.apacheCtl(daemons[daemon_name[0]], exe=daemons[daemon_name[0]]["exe"])
         else:
             sys.stderr.write("Apache is not running\n")
             error_collection.append("Apache is not running\n")
@@ -345,7 +361,7 @@ if not args.jsonfile:
             sys.stderr.write("nginx is not running\n")
             error_collection.append("nginx is not running\n")
         else:
-            nginx = nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
+            nginx = stackreconlib.nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
             nginx_conf_file = nginx.get_conf()
             if nginx_conf_file:
                 sys.stderr.write("Using config %s\n" % nginx_conf_file)
@@ -409,8 +425,8 @@ if not args.jsonfile:
                                     (daemon_name, daemon_name[0]))
             pass
         elif len(daemon_name) == 1:
-            phpfpm = phpfpmCtl(daemons[daemon_name[0]],
-                               exe=daemons[daemon_name[0]]["exe"])
+            phpfpm = stackreconlib.phpfpmCtl(daemons[daemon_name[0]],
+                                             exe=daemons[daemon_name[0]]["exe"])
             phpfpm_conf_file = phpfpm.get_conf()
             if phpfpm_conf_file:
                 wholeconfig = importfile(phpfpm_conf_file,
@@ -443,7 +459,7 @@ if not args.jsonfile:
         def MAGENTO_DATA_GATHER():
             pass
         sys.stderr.write("magento data gather\n")
-        magento = MagentoCtl()
+        magento = stackreconlib.MagentoCtl()
         ################################################
         # Magento
         ################################################
@@ -510,8 +526,11 @@ if not args.jsonfile:
                 #       ["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
                 return_dict = magento.db_cache_table(doc_root,
                                                      doc_root_dict.get("local_xml", {}).get("db", {}))
-                update(globalconfig["magento"]["doc_root"][doc_root],
-                       return_dict)
+                # If mysql library cannot be loaded, the return_dict is null
+                # Most notably, RHEL 5, Python 2.4
+                if return_dict:
+                    update(globalconfig["magento"]["doc_root"][doc_root],
+                           return_dict)
 
             # Mage 2 specific
             if "env_php" in globalconfig["magento"]["doc_root"][doc_root]:
@@ -526,7 +545,7 @@ if not args.jsonfile:
         def MEMCACHE_DATA_GATHER():
             pass
         sys.stderr.write("memcache data gather\n")
-        memcache = MemcacheCtl()
+        memcache = stackreconlib.MemcacheCtl()
 
         memcache_instances = memcache.instances(globalconfig.get("magento", {}).get("doc_root", {}))
 
@@ -540,7 +559,7 @@ if not args.jsonfile:
         def REDIS_DATA_GATHER():
             pass
         sys.stderr.write("redis data gather\n")
-        redis = RedisCtl()
+        redis = stackreconlib.RedisCtl()
         # print "477 GC magento doc_root this has data"
         # pp.pprint(globalconfig.get("magento", {}).get("doc_root", {}))
         redis_instances = redis.instances(globalconfig.get("magento", {}).get("doc_root", {}))
@@ -558,7 +577,7 @@ if not args.jsonfile:
     def MYSQL_DATA_GATHER():
             pass
     sys.stderr.write("mysql data gather\n")
-    mysqlctl = MysqlCtl()
+    mysqlctl = stackreconlib.MysqlCtl()
     ################################################
     # MySQL
     ################################################
@@ -566,6 +585,8 @@ if not args.jsonfile:
     if "mysql" not in globalconfig:
         globalconfig["mysql"] = {"db_list": [], "host_dict": {}}
     # globalconfig["mysql"] = mysql_config
+
+    # This would be better as a function in the stackreconlib
 
     doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
     db_list = []
@@ -584,9 +605,15 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                host_dict = {v.get("host"):
-                             {"password": v.get("password"),
-                              "username": v.get("username")}}
+                update(host_dict,
+                       {v.get("host"):
+                        {"host": v.get("host"),
+                         "password": v.get("password"),
+                         "username": v.get("username")}})
+                # host_dict = {v.get("host"):
+                #              {"host": v.get("host"),
+                #               "password": v.get("password"),
+                #               "username": v.get("username")}}
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
         for k, v in env_db.iteritems():
@@ -598,53 +625,35 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                host_dict = {v.get("host"):
-                             {"password": v.get("password"),
-                              "username": v.get("username")}}
+                update(host_dict,
+                       {v.get("host"):
+                        {"host": v.get("host"),
+                         "password": v.get("password"),
+                         "username": v.get("username")}})
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
 
-    """
-                    u'db': {   u'connection': {   u'default': {   u'active': u'1',
-                                                          u'dbname': u'stage',
-                                                          u'host': u'10.1.2.3',
-                                                          u'password': u'password
-                                                          u'username': u'username'},
-                                          u'indexer': {   u'active': u'1',
-                                                          u'dbname': u'stage',
-                                                          u'host': u'10.1.2.3',
-                                                          u'password': u'password',
-                                                          u'persistent': None,
-                                                          u'username': u'stage'}},
-                       u'table_prefix': u''},
-    """
-    # find mysql from local_xml
-    """
-    I want to add globalconfig["mysql"], and I'll need a list of them I guess?
-    Each one needs host and auth info
-    Then a dict for each query that contains a dict of key value pairs
+    # mysql global variables and status
+    for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
 
-    dbConnInfo = globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["db"]
-    output = db_query(dbConnInfo, sqlquery)
-    parse_key_value(output)
+        return_dict = mysqlctl.global_variables(v)
+        if return_dict:
+            globalconfig["mysql"]["host_dict"][k]["variables"] = {}
+            update(globalconfig["mysql"]["host_dict"][k]["variables"],
+                   return_dict)
 
-    globalconfig[
-        "magento": {
-            "doc_root": {
-                "/var/www/vhosts/www.example.com/html": {
-                    "local_xml": {
-                        "db": {
-                            "dbname": "databasename",
-                            "host": "172.24.16.2",
-                            "password": "password",
-                            "username": "someuser"
-                        }
-                    }
-                }
-            }
-        }
-    ]
-    """
+        return_dict = mysqlctl.global_status(v)
+        if return_dict:
+            globalconfig["mysql"]["host_dict"][k]["status"] = {}
+            update(globalconfig["mysql"]["host_dict"][k]["status"],
+                   return_dict)
+
+    # mysql innodb table sizes
+    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+        return_dict = mysqlctl.innodb_table_size(db_list)
+        globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
+
+
 else:
     for i in globalconfig["errors"]:
         sys.stdout.write(i)
@@ -724,14 +733,16 @@ if "nginx" in globalconfig:
 
         print_sites(globalconfig["nginx"]["sites"])
 
-        # memory profile
-        if nginx_dict.get("basename") and nginx_dict.get("maxprocesses"):
-            proc_name = nginx_dict["basename"]
-            proc_max = int(nginx_dict["maxprocesses"])
-            result = memory_estimate(proc_name)
-            if result:
-                memory_print(result, proc_name, proc_max)
-        print
+        # This just doesn't matter normally. It is PHP that uses memory and needs
+        # threads
+        # # memory profile
+        # if nginx_dict.get("basename") and nginx_dict.get("maxprocesses"):
+        #     proc_name = nginx_dict["basename"]
+        #     proc_max = int(nginx_dict["maxprocesses"])
+        #     result = memory_estimate(proc_name)
+        #     if result:
+        #         memory_print(result, proc_name, proc_max)
+        # print
 
 # globalconfig["nginx"]["maxclients"]
 
@@ -836,6 +847,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
 
                 print "local.xml: %s" % local_xml["filename"]
                 print "Version: %s" % doc_root_dict["magento_version"]
+                # Insert a WARNING here if the php version is a mismatch?
                 print
                 # Mage 1 DATABASE settings
                 # walk through the keys and values in
@@ -1325,8 +1337,262 @@ def MYSQL_PRINT():
     pass
 if globalconfig.get("mysql"):
     mysqlctl.figlet()
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(globalconfig["mysql"])
+    # pp = pprint.PrettyPrinter(indent=4)
+    # pp.pprint(globalconfig["mysql"])
+
+# This would be better as a function in the stackreconlib, but the presentation
+#   and logic need to be separated first.
+# And the values need to be crammed in globalconfig
+print
+print ("This is a quick check of common MySQL variable values for production "
+       "Magento servers.")
+print ("If there are NOTICEs in the notes and Magento is experiencing "
+       "performance issues, escalate the issue.")
+
+"""
+MySQL global variables
+"""
+base_values = {
+    "query_cache_type": "ON",
+    "query_cache_size": "128M",
+    "query_cache_limit": "4M",
+    "tmp_table_size": "256M",
+    "max_heap_table_size": "256M",
+    "max_connections": 750,
+    "max_allowed_packet": "256M",
+    "key_buffer_size": "512M",
+    "myisam_sort_buffer_size": "128M",
+    "innodb_lock_wait_timeout": 1800,
+    # 29/2*1024*1014,  # This should be half the memory on the mysql server
+    "innodb_buffer_pool_size": "0B"
+}
+eval_type = {
+    "query_cache_type": "string",
+    "query_cache_size": "bytes2human",
+    "query_cache_limit": "bytes2human",
+    "tmp_table_size": "bytes2human",
+    "max_heap_table_size": "bytes2human",
+    "max_connections": "int",
+    "max_allowed_packet": "bytes2human",
+    "key_buffer_size": "bytes2human",
+    "myisam_sort_buffer_size": "bytes2human",
+    "innodb_lock_wait_timeout": "int",
+    "innodb_buffer_pool_size": "bytes2human"
+}
+
+for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    table = [["variable", "current", "suggested", "notes"]]
+    sqloutput = ""
+    config_file_output = ""
+    for i, j in globalconfig["mysql"]["host_dict"][k]["variables"].iteritems():
+        if i in base_values:
+            row = []
+            notes = ""
+            row.append(i)
+            if i in base_values:
+                NUMBERS = False
+                if eval_type[i] == "int":
+                    # If it is a number
+                    NUMBERS = True
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" % (i.replace("_", "-"),
+                                                              base_values[i]
+                                                              )
+                                               ))
+                        notes = "NOTICE: This is may be low"
+                elif eval_type[i] == "bytes2human":
+                    real_bytes_v = int(j)
+                    real_human_v = stackreconlib.bytes2human(j)
+                    sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
+                    # This makes sure the format is consistent
+                    sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
+                    NUMBERS = True
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = (sqloutput +
+                                     ("set global %s=%s;\n" %
+                                      (i,
+                                       stackreconlib.human2bytes(base_values[i])
+                                       )
+                                      )
+                                     )
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" %
+                                               (i.replace("_", "-"),
+                                                base_values[i])))
+                        notes = "NOTICE: This is may be low"
+                elif eval_type[i] == "string":
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+                    if sugg_human_v != real_human_v:
+                        sqloutput = (sqloutput +
+                                     "set global %s=%s;\n" %
+                                     (i, base_values[i]))
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" %
+                                               (i.replace("_", "-"),
+                                                base_values[i])))
+                else:
+                    # "none"? or a catch all
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+
+                # Situation specific error messages
+                if i == "query_cache_type":
+                    if real_human_v == "OFF":
+                        notes = (notes + "URGENT: Query cache is off ")
+                        error_collection.append("URGENT: Query cache is off ")
+                        sqloutput = (sqloutput + "# query_cache_type "
+                                     "cannot be changed live\n")
+                        # config_file_output = (config_file_output +
+                        #                       "query-cache-type = ON\n")
+                if i == "innodb_buffer_pool_size":
+                    if real_human_v == "128.0 M":
+                        notes = (notes + "URGENT: THIS IS TOO LOW! ")
+                        error_collection.append("URGENT: innodb_buffer_"
+                                                "pool_size is 128MB. "
+                                                "This is much too low.")
+                        sqloutput = (sqloutput + "# innodb_buffer_pool_size "
+                                     "cannot be changed live\n")
+                        config_file_output = (config_file_output +
+                                              "innodb-buffer-pool-size = ##G  "
+                                              "# change ## to value\n")
+                    notes = (notes + "For a dedicated DB server, this might be "
+                             "~1/2 of the DB server RAM")
+                    sugg_human_v = ""
+                elif i == "max_connections":
+                    notes = ("Automation default 750. Max value could be max "
+                             "clients of all web heads.")
+
+                row.append(str(real_human_v))
+                row.append(str(sugg_human_v))
+                row.append(notes)
+                table.append(row)
+
+    if table:
+        print
+        print "Host: %s" % v["host"]
+        stackreconlib.print_table(table, HEADER=True)
+    if sqloutput:
+        print ("SQL Commands to change running values (some may return an "
+               "error if they cannot be changed live)")
+        print sqloutput
+    if config_file_output:
+        print "Configuration file options to change or update"
+        print config_file_output
+
+"""
+MySQL global status
+"""
+base_values = {
+    "query_cache_type": "ON",
+    "query_cache_size": "128M",
+    "query_cache_limit": "4M",
+    "tmp_table_size": "256M",
+    "max_heap_table_size": "256M",
+    "max_connections": 750,
+    "max_allowed_packet": "256M",
+    "key_buffer_size": "512M",
+    "myisam_sort_buffer_size": "128M",
+    "innodb_lock_wait_timeout": 1800,
+    # 29/2*1024*1014,  # This should be half the memory on the mysql server
+    "innodb_buffer_pool_size": "0B"
+}
+eval_type = {
+    "query_cache_type": "string",
+    "query_cache_size": "bytes2human",
+    "query_cache_limit": "bytes2human",
+    "tmp_table_size": "bytes2human",
+    "max_heap_table_size": "bytes2human",
+    "max_connections": "int",
+    "max_allowed_packet": "bytes2human",
+    "key_buffer_size": "bytes2human",
+    "myisam_sort_buffer_size": "bytes2human",
+    "innodb_lock_wait_timeout": "int",
+    "innodb_buffer_pool_size": "bytes2human"
+}
+
+# for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+#     print "%s: %r" % (k, v)
+
+table = [["Server", "DB Name", "data length", "index length", "total size"]]
+for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+    config = {
+        'user': db_list["username"],
+        'password': db_list["password"],
+        'host': db_list["host"],
+        'raise_on_warnings': True,
+    }
+    row = []
+    # There is only one column, but it is a tuple, so unroll it
+
+    data_size = db_list["innodb"]["data_size"]
+    index_size = db_list["innodb"]["index_size"]
+    size = db_list["innodb"]["data+index_size"]
+    # print ("DB Name: %s, Size: %s" %
+    #        (db_list["dbname"],
+    #         stackreconlib.bytes2human(size)))
+    # total_size = total_size + size
+    row.append(db_list["host"])
+    row.append(db_list["dbname"])
+    row.append(stackreconlib.bytes2human(data_size))
+    row.append(stackreconlib.bytes2human(index_size))
+    row.append(stackreconlib.bytes2human(size))
+    table.append(row)
+if table:
+    print
+    print "Database size of innoDB tables, total per DB"
+    stackreconlib.print_table(table, HEADER=True)
+    print ("The global variable for innodb_buffer_pool_size should be larger "
+           "than the database sizes above.")
+    print ("If a database isn't in use, don't consider its size.")
+
+
+def system_specs():
+    pass
+command = "free"
+p = subprocess.Popen(
+    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+output, err = p.communicate()
+if not output:
+    raise NameError("Fail: %s" % err)
+lines_list = string.split(output, '\n')
+total_mem = lines_list[1].split()[1]
+free_mem = lines_list[1].split()[4]
+buffer_cache = lines_list[2].split()[3]
+max_clients = int(float(total_mem) / 1024 * .8 / 150)
+
+hyperthread = False
+f = open('/proc/cpuinfo', 'r')
+output = f.read()
+if " ht " in output:
+    hyperthread = True
+match = re.findall('([0-9\.]+)GHz', output)
+# number of cores, and speed in MHz
+cpu_mhz_total = len(match) * float(match[0]) * 1024
+if hyperthread is True:
+    cpu_mhz_total = cpu_mhz_total / 2
+cpu_mhz_total = int(cpu_mhz_total)
+cpu_clients = cpu_mhz_total / 60
+
+print
+print ("WARNING: Free advice is sometimes worth what you paid for it.")
+print ("This is an estimate. Numbers are approximate and may not reflect actual utilization.")
+print ("This free advice is based on numbers that would typically be used "
+       "during optimization for Magento automation.")
+print ("For a dedicated web node,")
+print ("    The memory may support concurrent connection of %d" %
+       max_clients)
+print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
 
 
 def cron_php_check():
@@ -1359,6 +1625,10 @@ for line in iter(proc.stdout.readline, ''):
                                         "cron.sh" %
                                         username)
 
+
+# import os
+# mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
+# mem_gib = mem_bytes/(1024.**3)  # e.g. 3.74
 """
  _____ ___  ____   ___
 |_   _/ _ \|  _ \ / _ \
@@ -1377,7 +1647,7 @@ if ((not os.path.isfile(args.output) or
      args.force) and not args.jsonfile and JSON is True):
 
     globalconfig["errors"] = error_collection
-    json_str = json.dumps(globalconfig)
+    json_str = json.dumps(globalconfig, cls=DecimalEncoder)
     # with open(args.output,'w') as outfile:
     #     outfile.write( json_str )
     outfile = open(args.output, 'w')
@@ -1396,4 +1666,4 @@ if args.printglobalconfig:
     pp.pprint(globalconfig)
 
 if args.printjson and JSON is True:
-    print json.dumps(globalconfig)
+    print json.dumps(globalconfig, cls=DecimalEncoder)

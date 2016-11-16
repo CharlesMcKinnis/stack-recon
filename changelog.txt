@@ -1,3 +1,14 @@
+TO-DO List
+Add checks for eth0 or bond0 IP vs the database and cache IPs
+Add per server check for innodb data+index vs innodb buffer size
+MySQL max connections check
+mysql-recon
+
+2016-09-28
+Checks for cron job, should be cron.sh NOT cron.php
+Magento 2 support is complete
+MySQL is now queried with mysql-connector instead of the mysql binary on the client machines
+
 2016-09-08
 The project name changed from ecommStackStatus to stackrecon to better reflect its capabilities. 
 The classic ecommStackStatus will be ecomm-recon and Apache, Nginx and PHP capabilities will be available as web-recon.
@@ -6,6 +17,8 @@ The library is now named stackreconlib. This should make it easier to separate i
 Magento 2 support is coming along. I added version parsing today.
 
 * TODO things to add
+php shell/indexer.php --status
+
 We could get information similar to MySQL Buddy and display it, to name a few:
 long_query_time
 query_cache_size
@@ -43,7 +56,6 @@ If it returns results, assuming Magento is in /var/www, it is vulnerable.
 Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
 If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
 * Check Magento for SUPEE-7405
-* Check for cron job, should be cron.sh NOT cron.php
 * check php opcache
 i.e.
 Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:

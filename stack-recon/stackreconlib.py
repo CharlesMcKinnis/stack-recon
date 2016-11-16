@@ -4,8 +4,14 @@ import glob
 import subprocess
 import sys
 import os
-import mysql.connector
-from mysql.connector import errorcode
+try:
+    import mysql.connector
+    from mysql.connector import errorcode
+    MYSQL_CONNECTOR = True
+except SyntaxError:
+    print "Error importing mysql library"
+    MYSQL_CONNECTOR = False
+import string
 from xml.parsers.expat import ExpatError
 # import platform
 # import yaml
@@ -55,7 +61,7 @@ cd stack-recon && git checkout -b dev origin/dev
 To look at the json captured:
 cat config_dump.json |python -m json.tool|less
 """
-STACK_LIB_VERSION = 2016051601
+STACK_LIB_VERSION = 2016111601
 error_collection = []
 
 
@@ -1355,6 +1361,13 @@ class MagentoCtl(object):
         return local_xml
 
     def db_cache_table(self, doc_root, value):
+        """
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+            db_cache_table(doc_root,
+                            doc_root_dict.get("local_xml", {}).get("db", {}))
+        """
+        if MYSQL_CONNECTOR is False:
+            return
         mysql = MysqlCtl()
         # Some of these aren't used yet, BUT WILL BE. DO NOT REMOVE THEM
         var_table_prefix = value.get("db/table_prefix", "")
@@ -1790,6 +1803,13 @@ class MysqlCtl(object):
         return(reply)
 
     def db_query(self, dbConnInfo, sqlquery):
+        """
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+            db_cache_table(doc_root,
+                            doc_root_dict.get("local_xml", {}).get("db", {}))
+            db_query(doc_root_dict.get("local_xml", {}).get("db", {}),
+                     sqlquery)
+        """
         # dbConnInfo = { "db/table_prefix", "dbname", "host", "username", "password" }
         # output = ""
         # flake8 lies. DO NOT REMOVE table_prefix
@@ -1835,13 +1855,27 @@ class MysqlCtl(object):
             try:
                 cnx = mysql.connector.connect(**config)
                 cursor = cnx.cursor()
-            except mysql.connector.Error as err:
+            except mysql.connector.Error, err:
                 if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                     print("Something is wrong with your user name or password")
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
                 else:
                     print(err)
+                    # sys.exit(1)  # fixme
+                    sys.stderr.write("WARNING MySQL: %s.\n" % err)
+                    error_collection.append("WARNING MySQL: %s.\n" % err)
+                    return
+                    """
+Traceback (most recent call last):
+ File "./ecomm-recon", line 515, in <module>
+   doc_root_dict.get("local_xml", {}).get("db", {}))
+ File "/root/stack-recon/stack-recon/stackreconlib.py", line 1374, in db_cache_table
+   (var_dbname, var_table_prefix))
+ File "/root/stack-recon/stack-recon/stackreconlib.py", line 1859, in db_query
+   cursor.execute(sqlquery)
+UnboundLocalError: local variable 'cursor' referenced before assignment
+                    """
             # do stuff sqlquery
             cursor.execute(sqlquery)
             return_list = cursor.fetchall()
@@ -1914,6 +1948,112 @@ class MysqlCtl(object):
             return_dict[xml_db["host"]]["credentials"].add(xml_db)
             pass
         # globalconfig["mysql"]=return_dict
+        return(return_dict)
+
+    def global_variables(self, mysql_host_dict):
+        """
+        pass a dict with
+
+        returns a dict of key, value pairs
+        """
+        return_dict = {}
+        query = "show global variables;"
+        config = {
+            'user': mysql_host_dict["username"],
+            'password': mysql_host_dict["password"],
+            'host': mysql_host_dict["host"],
+            'raise_on_warnings': True,
+        }
+
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+        except mysql.connector.Error, err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+                sys.exit(1)
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+                sys.exit(2)
+            else:
+                print(err)
+                sys.exit(3)
+
+        cursor.execute(query)
+        for (i, j) in cursor:
+            return_dict[i] = j
+        cnx.close()
+        return(return_dict)
+
+    def global_status(self, mysql_host_dict):
+        """
+        pass a dict with
+
+        returns a dict of key, value pairs
+        """
+        return_dict = {}
+        query = "show global status;"
+        config = {
+            'user': mysql_host_dict["username"],
+            'password': mysql_host_dict["password"],
+            'host': mysql_host_dict["host"],
+            'raise_on_warnings': True,
+        }
+
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+        except mysql.connector.Error, err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+                sys.exit(1)
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+                sys.exit(2)
+            else:
+                print(err)
+                sys.exit(3)
+
+        cursor.execute(query)
+        for (i, j) in cursor:
+            return_dict[i] = j
+        cnx.close()
+        return(return_dict)
+
+    def innodb_table_size(self, db_list):
+        return_dict = {}
+        query = ("SELECT "
+                 "SUM(data_length), "
+                 "SUM(index_length) "
+                 "FROM information_schema.TABLES "
+                 "WHERE engine = 'innodb' AND table_schema = '%s';" %
+                 db_list["dbname"]
+                 )
+        config = {
+            'user': db_list["username"],
+            'password': db_list["password"],
+            'host': db_list["host"],
+            'raise_on_warnings': True,
+        }
+        try:
+            cnx = mysql.connector.connect(**config)
+            cursor = cnx.cursor()
+        except mysql.connector.Error, err:
+            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                print("Something is wrong with your user name or password")
+                sys.exit(1)
+            elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                print("Database does not exist")
+                sys.exit(2)
+            else:
+                print(err)
+                sys.exit(3)
+
+        cursor.execute(query)
+        for (i, j) in cursor:
+            return_dict = {"data_size": i,
+                           "index_size": j,
+                           "data+index_size": i+j  }
         return(return_dict)
 
 
@@ -2130,20 +2270,25 @@ def memory_estimate(process_name, **kwargs):
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
-    lines = output.splitlines()
+    lines_list = string.split(output, '\n')
+    status["free_mem"] = int(lines_list[1].split()[3])
+    status["buffer_cache_used"] = int(lines_list[2].split()[3])
+    status["buffer_cache_free"] = int(lines_list[2].split()[2])
+    # print stuff[1].split()[1]
     # The calculation is using RSS, and free memory.
-    # There are buffers and cache used by the process, and that throws off the calculation
-    for line in lines:
-        result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-        if result:
-            status["free_mem"] = int(result.group(4))
-            continue
-        result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-        if result:
-            status["buffer_cache"] = int(result.group(4))
-            # print "1552 buffer_cache"
-            # print status["buffer_cache"]
-            break
+    # There are buffers and cache used by the process, and that throws off
+    #   the calculation
+    # for line in lines:
+    #     result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+    #     if result:
+    #         status["free_mem"] = int(result.group(4))
+    #         continue
+    #     result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
+    #     if result:
+    #         status["buffer_cache"] = int(result.group(4))
+    #         # print "1552 buffer_cache"
+    #         # print status["buffer_cache"]
+    #         break
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -2228,6 +2373,8 @@ table = [
 [ "row3col1", "row3col2", "row3col3"]
 ]
 
+    if HEADER=True then divide the first line from the following lines
+    if NOTABLE=True then no table, colon separated instead
     turn a dict in to a list with
     table = [(str(k), str(v)) for k, v in mydict.iteritems()]
     """
@@ -2239,6 +2386,7 @@ table = [
             print ": ".join(line)
     else:
         # Ugly workaround for unicode
+        first_line = True
         try:
             col_width = [max(len(str(x)) for x in col) for col in zip(*table)]
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
@@ -2247,6 +2395,10 @@ table = [
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x, col_width[i])
                                         for i, x in enumerate(line)) + " |"
+                if first_line is True and kwargs.get("HEADER") is True:
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                                            for i, x in enumerate(table[0])) + "-+"
+                    first_line = False
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
         except UnicodeEncodeError:
@@ -2257,6 +2409,10 @@ table = [
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'), col_width[i])
                                         for i, x in enumerate(line)) + " |"
+                if first_line is True and kwargs.get("HEADER") is True:
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                                            for i, x in enumerate(table[0])) + "-+"
+                    first_line = False
             print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
 
@@ -2268,3 +2424,130 @@ table = [
 ]
 print_table(table)
 """
+
+
+"""
+Bytes-to-human / human-to-bytes converter.
+Based on: http://goo.gl/kTQMs
+Working with Python 2.x and 3.x.
+
+Author: Giampaolo Rodola' <g.rodola [AT] gmail [DOT] com>
+License: MIT
+"""
+
+# see: http://goo.gl/kTQMs
+SYMBOLS = {
+    'customary'     : ('B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'),
+    'customary_ext' : ('byte', 'kilo', 'mega', 'giga', 'tera', 'peta', 'exa',
+                       'zetta', 'iotta'),
+    'iec'           : ('Bi', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi'),
+    'iec_ext'       : ('byte', 'kibi', 'mebi', 'gibi', 'tebi', 'pebi', 'exbi',
+                       'zebi', 'yobi'),
+}
+
+
+def bytes2human(n, format='%(value).1f %(symbol)s', symbols='customary'):
+    """
+    Convert n bytes into a human readable string based on format.
+    symbols can be either "customary", "customary_ext", "iec" or "iec_ext",
+    see: http://goo.gl/kTQMs
+
+      >>> bytes2human(0)
+      '0.0 B'
+      >>> bytes2human(0.9)
+      '0.0 B'
+      >>> bytes2human(1)
+      '1.0 B'
+      >>> bytes2human(1.9)
+      '1.0 B'
+      >>> bytes2human(1024)
+      '1.0 K'
+      >>> bytes2human(1048576)
+      '1.0 M'
+      >>> bytes2human(1099511627776127398123789121)
+      '909.5 Y'
+
+      >>> bytes2human(9856, symbols="customary")
+      '9.6 K'
+      >>> bytes2human(9856, symbols="customary_ext")
+      '9.6 kilo'
+      >>> bytes2human(9856, symbols="iec")
+      '9.6 Ki'
+      >>> bytes2human(9856, symbols="iec_ext")
+      '9.6 kibi'
+
+      >>> bytes2human(10000, "%(value).1f %(symbol)s/sec")
+      '9.8 K/sec'
+
+      >>> # precision can be adjusted by playing with %f operator
+      >>> bytes2human(10000, format="%(value).5f %(symbol)s")
+      '9.76562 K'
+    """
+    try:
+        n = int(n)  # fixme TypeError: int() argument must be a string or a number, not 'NoneType'
+    except TypeError:
+        sys.stderr.write("NOTICE: TypeError, int value expected.\n")
+        error_collection.append("NOTICE: TypeError, int value expected.\n")
+        return
+    if n < 0:
+        raise ValueError("n < 0")
+    symbols = SYMBOLS[symbols]
+    prefix = {}
+    for i, s in enumerate(symbols[1:]):
+        prefix[s] = 1 << (i+1)*10
+    for symbol in reversed(symbols[1:]):
+        if n >= prefix[symbol]:
+            value = float(n) / prefix[symbol]
+            return format % locals()
+    return format % dict(symbol=symbols[0], value=n)
+
+
+def human2bytes(s):
+    """
+    Attempts to guess the string format based on default symbols
+    set and return the corresponding bytes as an integer.
+    When unable to recognize the format ValueError is raised.
+
+      >>> human2bytes('0 B')
+      0
+      >>> human2bytes('1 K')
+      1024
+      >>> human2bytes('1 M')
+      1048576
+      >>> human2bytes('1 Gi')
+      1073741824
+      >>> human2bytes('1 tera')
+      1099511627776
+
+      >>> human2bytes('0.5kilo')
+      512
+      >>> human2bytes('0.1  byte')
+      0
+      >>> human2bytes('1 k')  # k is an alias for K
+      1024
+      >>> human2bytes('12 foo')
+      Traceback (most recent call last):
+          ...
+      ValueError: can't interpret '12 foo'
+    """
+    init = s
+    num = ""
+    while s and s[0:1].isdigit() or s[0:1] == '.':
+        num += s[0]
+        s = s[1:]
+    num = float(num)
+    letter = s.strip()
+    for name, sset in SYMBOLS.items():
+        if letter in sset:
+            break
+    else:
+        if letter == 'k':
+            # treat 'k' as an alias for 'K' as per: http://goo.gl/kTQMs
+            sset = SYMBOLS['customary']
+            letter = letter.upper()
+        else:
+            raise ValueError("can't interpret %r" % init)
+    prefix = {sset[0]:1}
+    for i, s in enumerate(sset[1:]):
+        prefix[s] = 1 << (i+1)*10
+    return int(num * prefix[letter])
