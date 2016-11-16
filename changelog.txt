@@ -1,3 +1,9 @@
+TO-DO List
+Add checks for eth0 or bond0 IP vs the database and cache IPs
+Add per server check for innodb data+index vs innodb buffer size
+MySQL max connections check
+mysql-recon
+
 2016-09-28
 Checks for cron job, should be cron.sh NOT cron.php
 Magento 2 support is complete

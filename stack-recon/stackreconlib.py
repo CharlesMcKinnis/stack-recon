@@ -61,7 +61,7 @@ cd stack-recon && git checkout -b dev origin/dev
 To look at the json captured:
 cat config_dump.json |python -m json.tool|less
 """
-STACK_LIB_VERSION = 2016092801
+STACK_LIB_VERSION = 2016111601
 error_collection = []
 
 
@@ -1855,7 +1855,7 @@ class MysqlCtl(object):
             try:
                 cnx = mysql.connector.connect(**config)
                 cursor = cnx.cursor()
-            except mysql.connector.Error as err:
+            except mysql.connector.Error, err:
                 if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                     print("Something is wrong with your user name or password")
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
@@ -1968,7 +1968,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         try:
             cnx = mysql.connector.connect(**config)
             cursor = cnx.cursor()
-        except mysql.connector.Error as err:
+        except mysql.connector.Error, err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
                 sys.exit(1)
@@ -2003,7 +2003,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         try:
             cnx = mysql.connector.connect(**config)
             cursor = cnx.cursor()
-        except mysql.connector.Error as err:
+        except mysql.connector.Error, err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
                 sys.exit(1)
@@ -2038,7 +2038,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         try:
             cnx = mysql.connector.connect(**config)
             cursor = cnx.cursor()
-        except mysql.connector.Error as err:
+        except mysql.connector.Error, err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 print("Something is wrong with your user name or password")
                 sys.exit(1)
