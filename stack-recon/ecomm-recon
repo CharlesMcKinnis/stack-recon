@@ -1546,28 +1546,32 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     #         # row.append(str(sugg_human_v))
     #         # row.append(notes)
 
-    row.append("Max_used_connections")
+    row.append("Max used conns")
     row.append(globalconfig["mysql"]["host_dict"][k]["status"]["Max_used_connections"])
-    row.append("max_connections")
+    row.append("Max allowed conns")
     row.append(globalconfig["mysql"]["host_dict"][k]["variables"]["max_connections"])
     table.append(row)
+    row = []
 
     # innodb buffer used percentage
     # innodb_buffer_pool_pages_free * 100 / innodb_buffer_pool_pages_total
     # globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
     row.append("innodb buffer pool size")
-    row.append(globalconfig["mysql"]["host_dict"][k]["variables"]["innodb_buffer_pool_size"])
+    row.append(stackreconlib.bytes2human(
+        globalconfig["mysql"]["host_dict"][k]["variables"]["innodb_buffer_pool_size"]))
     row.append("innodb data size")
-    globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
     #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
-    row.append(globalconfig["mysql"]["host_dict"][k]["innodb"]["data+index_size"])
+    row.append(stackreconlib.bytes2human(
+        globalconfig["mysql"]["host_dict"][k]["innodb"]["data+index_size"]))
     table.append(row)
+    row = []
 
-    row.append("innodb buffer pool used percentage")
-    row.append(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"])
+    row.append("innodb buffer pool used %")
+    row.append(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] + "%")
     row.append("")
     row.append("")
     table.append(row)
+    row = []
     # sum of db innodb data vs innodb_buffer_size
 
     if table:
