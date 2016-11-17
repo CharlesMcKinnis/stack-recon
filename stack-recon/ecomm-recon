@@ -1567,7 +1567,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     row = []
 
     row.append("innodb buffer pool used %")
-    row.append(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] + "%")
+    row.append(str(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"]) + "%")
     row.append("")
     row.append("")
     table.append(row)
