@@ -779,11 +779,18 @@ if "apache" in globalconfig:
 
         # memory profile
         if ("basename" in globalconfig["apache"] and
-                "maxprocesses" in globalconfig["apache"]):
+                "maxprocesses" in globalconfig["apache"] and
+                "vent" not in apache_dict.get("daemon", {}).get("Server MPM")):
+            # if event (vent) is the MPM, Apache is probably using php-fpm
             proc_name = globalconfig["apache"]["basename"]
             proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
             if result:
+                print ("This does not include memory allocated to kernel "
+                       "buffers and cache. You can clear buffers and cache "
+                       "with the command below, but this will impact system "
+                       "performance for a short time.")
+                print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
                 memory_print(result, proc_name, proc_max)
         print "\n"
 
