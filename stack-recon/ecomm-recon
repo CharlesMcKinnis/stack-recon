@@ -636,7 +636,8 @@ if not args.jsonfile:
     # mysql global variables and status
     for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
 
-        globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
+        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
+            globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
         return_dict = mysqlctl.global_variables(v)
         if return_dict:
@@ -666,6 +667,8 @@ if not args.jsonfile:
     # add per host innodb data size
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         host = globalconfig["mysql"]["db_list"][counter]["host"]
+        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("datasize"):
+            globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = 0
         globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = (
             int(globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]) +
             int(globalconfig["mysql"]["db_list"][counter]["data+index_size"])
