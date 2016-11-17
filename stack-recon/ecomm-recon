@@ -779,11 +779,18 @@ if "apache" in globalconfig:
 
         # memory profile
         if ("basename" in globalconfig["apache"] and
-                "maxprocesses" in globalconfig["apache"]):
+                "maxprocesses" in globalconfig["apache"] and
+                "vent" not in apache_dict.get("daemon", {}).get("Server MPM")):
+            # if event (vent) is the MPM, Apache is probably using php-fpm
             proc_name = globalconfig["apache"]["basename"]
             proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
             if result:
+                print ("This does not include memory allocated to kernel "
+                       "buffers and cache. You can clear buffers and cache "
+                       "with the command below, but this will impact system "
+                       "performance for a short time.")
+                print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
                 memory_print(result, proc_name, proc_max)
         print "\n"
 
@@ -814,6 +821,10 @@ if "phpfpm_meta" in globalconfig:
     print
     # memory profile
     print "php-fpm memory profile:"
+    print ("This does not include memory allocated to kernel buffers and "
+           "cache. You can clear buffers and cache with the command below, "
+           "but this will impact system performance for a short time.")
+    print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
     if (globalconfig.get("phpfpm_meta", {}).get("basename") and
             globalconfig.get("phpfpm_meta", {}).get("maxprocesses")):
         proc_name = globalconfig["phpfpm_meta"]["basename"]
@@ -1353,7 +1364,7 @@ print ("If there are NOTICEs in the notes and Magento is experiencing "
 MySQL global variables
 """
 base_values = {
-    "query_cache_type": "ON",
+    "query_cache_type": "OFF",
     "query_cache_size": "128M",
     "query_cache_limit": "4M",
     "tmp_table_size": "256M",
@@ -1380,6 +1391,11 @@ eval_type = {
     "innodb_buffer_pool_size": "bytes2human"
 }
 
+            # globalconfig["mysql"]["host_dict"][k]["status"] = {}
+            # update(globalconfig["mysql"]["host_dict"][k]["status"],
+            #        return_dict)
+
+
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
@@ -1389,94 +1405,92 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
             row = []
             notes = ""
             row.append(i)
-            if i in base_values:
-                NUMBERS = False
-                if eval_type[i] == "int":
-                    # If it is a number
-                    NUMBERS = True
-                    real_human_v = j
-                    sugg_human_v = base_values[i]
-                    real_bytes_v = False
-                    sugg_bytes_v = False
-                    if sugg_bytes_v > real_bytes_v:
-                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
-                        config_file_output = (config_file_output +
-                                              ("%s = %s\n" % (i.replace("_", "-"),
-                                                              base_values[i]
-                                                              )
-                                               ))
-                        notes = "NOTICE: This is may be low"
-                elif eval_type[i] == "bytes2human":
-                    real_bytes_v = int(j)
-                    real_human_v = stackreconlib.bytes2human(j)
-                    sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
-                    # This makes sure the format is consistent
-                    sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
-                    NUMBERS = True
-                    if sugg_bytes_v > real_bytes_v:
-                        sqloutput = (sqloutput +
-                                     ("set global %s=%s;\n" %
-                                      (i,
-                                       stackreconlib.human2bytes(base_values[i])
-                                       )
-                                      )
-                                     )
-                        config_file_output = (config_file_output +
-                                              ("%s = %s\n" %
-                                               (i.replace("_", "-"),
-                                                base_values[i])))
-                        notes = "NOTICE: This is may be low"
-                elif eval_type[i] == "string":
-                    real_human_v = j
-                    sugg_human_v = base_values[i]
-                    real_bytes_v = False
-                    sugg_bytes_v = False
-                    if sugg_human_v != real_human_v:
-                        sqloutput = (sqloutput +
-                                     "set global %s=%s;\n" %
-                                     (i, base_values[i]))
-                        config_file_output = (config_file_output +
-                                              ("%s = %s\n" %
-                                               (i.replace("_", "-"),
-                                                base_values[i])))
-                else:
-                    # "none"? or a catch all
-                    real_human_v = j
-                    sugg_human_v = base_values[i]
-                    real_bytes_v = False
-                    sugg_bytes_v = False
+            NUMBERS = False
+            if eval_type[i] == "int":
+                # If it is a number
+                NUMBERS = True
+                real_human_v = j
+                sugg_human_v = base_values[i]
+                real_bytes_v = False
+                sugg_bytes_v = False
+                if sugg_bytes_v > real_bytes_v:
+                    sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                    config_file_output = (config_file_output +
+                                          ("%s = %s\n" % (i.replace("_", "-"),
+                                                          base_values[i]
+                                                          )
+                                           ))
+                    notes = "NOTICE: This is may be low"
+            elif eval_type[i] == "bytes2human":
+                real_bytes_v = int(j)
+                real_human_v = stackreconlib.bytes2human(j)
+                sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
+                # This makes sure the format is consistent
+                sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
+                NUMBERS = True
+                if sugg_bytes_v > real_bytes_v:
+                    sqloutput = (sqloutput +
+                                 ("set global %s=%s;\n" %
+                                  (i,
+                                   stackreconlib.human2bytes(base_values[i])
+                                   )
+                                  )
+                                 )
+                    config_file_output = (config_file_output +
+                                          ("%s = %s\n" %
+                                           (i.replace("_", "-"),
+                                            base_values[i])))
+                    notes = "NOTICE: This is may be low"
+            elif eval_type[i] == "string":
+                real_human_v = j
+                sugg_human_v = base_values[i]
+                real_bytes_v = False
+                sugg_bytes_v = False
+                if sugg_human_v != real_human_v:
+                    sqloutput = (sqloutput +
+                                 "set global %s=%s;\n" %
+                                 (i, base_values[i]))
+                    config_file_output = (config_file_output +
+                                          ("%s = %s\n" %
+                                           (i.replace("_", "-"),
+                                            base_values[i])))
+            else:
+                # "none"? or a catch all
+                real_human_v = j
+                sugg_human_v = base_values[i]
+                real_bytes_v = False
+                sugg_bytes_v = False
 
-                # Situation specific error messages
-                if i == "query_cache_type":
-                    if real_human_v == "OFF":
-                        notes = (notes + "URGENT: Query cache is off ")
-                        error_collection.append("URGENT: Query cache is off ")
-                        sqloutput = (sqloutput + "# query_cache_type "
-                                     "cannot be changed live\n")
-                        # config_file_output = (config_file_output +
-                        #                       "query-cache-type = ON\n")
-                if i == "innodb_buffer_pool_size":
-                    if real_human_v == "128.0 M":
-                        notes = (notes + "URGENT: THIS IS TOO LOW! ")
-                        error_collection.append("URGENT: innodb_buffer_"
-                                                "pool_size is 128MB. "
-                                                "This is much too low.")
-                        sqloutput = (sqloutput + "# innodb_buffer_pool_size "
-                                     "cannot be changed live\n")
-                        config_file_output = (config_file_output +
-                                              "innodb-buffer-pool-size = ##G  "
-                                              "# change ## to value\n")
-                    notes = (notes + "For a dedicated DB server, this might be "
-                             "~1/2 of the DB server RAM")
-                    sugg_human_v = ""
-                elif i == "max_connections":
-                    notes = ("Automation default 750. Max value could be max "
-                             "clients of all web heads.")
+            # Situation specific error messages
+            if i == "query_cache_type":
+                # if real_human_v == "OFF":
+                #     notes = (notes + "URGENT: Query cache is off ")
+                #     error_collection.append("URGENT: Query cache is off ")
+                #     sqloutput = (sqloutput + "# query_cache_type "
+                #                  "cannot be changed live\n")
+                pass
+            if i == "innodb_buffer_pool_size":
+                if real_human_v == "128.0 M":
+                    notes = (notes + "URGENT: THIS IS TOO LOW! ")
+                    error_collection.append("URGENT: innodb_buffer_"
+                                            "pool_size is 128MB. "
+                                            "This is much too low.")
+                    sqloutput = (sqloutput + "# innodb_buffer_pool_size "
+                                 "cannot be changed live\n")
+                    config_file_output = (config_file_output +
+                                          "innodb-buffer-pool-size = ##G  "
+                                          "# change ## to value\n")
+                notes = (notes + "For a dedicated DB server, this might be "
+                         "~1/2 of the DB server RAM")
+                sugg_human_v = ""
+            elif i == "max_connections":
+                notes = ("Automation default 750. Max value could be max "
+                         "clients of all web heads.")
 
-                row.append(str(real_human_v))
-                row.append(str(sugg_human_v))
-                row.append(notes)
-                table.append(row)
+            row.append(str(real_human_v))
+            row.append(str(sugg_human_v))
+            row.append(notes)
+            table.append(row)
 
     if table:
         print
@@ -1494,33 +1508,27 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 MySQL global status
 """
 base_values = {
-    "query_cache_type": "ON",
-    "query_cache_size": "128M",
-    "query_cache_limit": "4M",
-    "tmp_table_size": "256M",
-    "max_heap_table_size": "256M",
-    "max_connections": 750,
-    "max_allowed_packet": "256M",
-    "key_buffer_size": "512M",
-    "myisam_sort_buffer_size": "128M",
-    "innodb_lock_wait_timeout": 1800,
-    # 29/2*1024*1014,  # This should be half the memory on the mysql server
-    "innodb_buffer_pool_size": "0B"
+    "Max_used_connections": 0,
 }
-eval_type = {
-    "query_cache_type": "string",
-    "query_cache_size": "bytes2human",
-    "query_cache_limit": "bytes2human",
-    "tmp_table_size": "bytes2human",
-    "max_heap_table_size": "bytes2human",
-    "max_connections": "int",
-    "max_allowed_packet": "bytes2human",
-    "key_buffer_size": "bytes2human",
-    "myisam_sort_buffer_size": "bytes2human",
-    "innodb_lock_wait_timeout": "int",
-    "innodb_buffer_pool_size": "bytes2human"
-}
+for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    table = [["variable", "current", "suggested", "notes"]]
+    sqloutput = ""
+    config_file_output = ""
+    for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
+        if i in base_values:
+            row = []
+            notes = ""
+            row.append(i)
+            NUMBERS = False
+            row.append(str(real_human_v))
+            row.append(str(sugg_human_v))
+            row.append(notes)
+            table.append(row)
 
+
+"""
+MySQL innodb database size
+"""
 # for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 #     print "%s: %r" % (k, v)
 
