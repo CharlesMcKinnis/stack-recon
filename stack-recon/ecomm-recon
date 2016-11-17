@@ -671,7 +671,7 @@ if not args.jsonfile:
             globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = 0
         globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = (
             int(globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]) +
-            int(globalconfig["mysql"]["db_list"][counter]["data+index_size"])
+            int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
         )
 
 else:
