@@ -653,9 +653,9 @@ if not args.jsonfile:
             # What if the values are empty? They should not be.
             # globalconfig["mysql"]["host_dict"][k]["innodb"]["Innodb_buffer_pool_used_percentage"]
             globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] = (
-                globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_free"] *
+                int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_free"]) *
                 100 /
-                globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_total"]
+                int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_total"])
                 )
 
     # mysql innodb table sizes
@@ -667,8 +667,8 @@ if not args.jsonfile:
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         host = globalconfig["mysql"]["db_list"][counter]["host"]
         globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = (
-            globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] +
-            globalconfig["mysql"]["db_list"][counter]["data+index_size"]
+            int(globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]) +
+            int(globalconfig["mysql"]["db_list"][counter]["data+index_size"])
         )
 
 else:
