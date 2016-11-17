@@ -636,6 +636,8 @@ if not args.jsonfile:
     # mysql global variables and status
     for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
 
+        globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
+
         return_dict = mysqlctl.global_variables(v)
         if return_dict:
             globalconfig["mysql"]["host_dict"][k]["variables"] = {}
@@ -647,12 +649,27 @@ if not args.jsonfile:
             globalconfig["mysql"]["host_dict"][k]["status"] = {}
             update(globalconfig["mysql"]["host_dict"][k]["status"],
                    return_dict)
+            # Innodb_buffer_pool_used_percentage calculated value
+            # What if the values are empty? They should not be.
+            # globalconfig["mysql"]["host_dict"][k]["innodb"]["Innodb_buffer_pool_used_percentage"]
+            globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] = (
+                globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_free"] *
+                100 /
+                globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_total"]
+                )
 
     # mysql innodb table sizes
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         return_dict = mysqlctl.innodb_table_size(db_list)
         globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
 
+    # add per host innodb data size
+    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+        host = globalconfig["mysql"]["db_list"][counter]["host"]
+        globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = (
+            globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] +
+            globalconfig["mysql"]["db_list"][counter]["data+index_size"]
+        )
 
 else:
     for i in globalconfig["errors"]:
@@ -1511,20 +1528,48 @@ base_values = {
     "Max_used_connections": 0,
 }
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    table = [["variable", "current", "suggested", "notes"]]
+    table = [["Variable", "value", "compare-to", "compare-value"]]
     sqloutput = ""
     config_file_output = ""
-    for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
-        if i in base_values:
-            row = []
-            notes = ""
-            row.append(i)
-            NUMBERS = False
-            row.append(str(real_human_v))
-            row.append(str(sugg_human_v))
-            row.append(notes)
-            table.append(row)
+    row = []
+    notes = ""
+    # for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
+    #     if i in base_values:
+    #         row = []
+    #         notes = ""
+    #         row.append(i)
+    #         NUMBERS = False
+    #         row.append(j)
+    #         # row.append(str(sugg_human_v))
+    #         # row.append(notes)
 
+    row.append("Max_used_connections")
+    row.append(globalconfig["mysql"]["host_dict"][k]["status"]["Max_used_connections"])
+    row.append("max_connections")
+    row.append(globalconfig["mysql"]["host_dict"][k]["variables"]["max_connections"])
+    table.append(row)
+
+    # innodb buffer used percentage
+    # innodb_buffer_pool_pages_free * 100 / innodb_buffer_pool_pages_total
+    # globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
+    row.append("innodb buffer pool size")
+    row.append(globalconfig["mysql"]["host_dict"][k]["variables"]["innodb_buffer_pool_size"])
+    row.append("innodb data size")
+    globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
+    row.append(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_size"])
+    table.append(row)
+
+    row.append("innodb buffer pool used percentage")
+    row.append(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"])
+    row.append("")
+    row.append("")
+    table.append(row)
+    # sum of db innodb data vs innodb_buffer_size
+
+    if table:
+        print
+        print "Host: %s" % v["host"]
+        stackreconlib.print_table(table, HEADER=True)
 
 """
 MySQL innodb database size
