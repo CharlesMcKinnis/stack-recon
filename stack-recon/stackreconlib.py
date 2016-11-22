@@ -61,11 +61,7 @@ cd stack-recon && git checkout -b dev origin/dev
 To look at the json captured:
 cat config_dump.json |python -m json.tool|less
 """
-<<<<<<< HEAD
-STACK_LIB_VERSION = 2016111601
-=======
 STACK_LIB_VERSION = 2016112201
->>>>>>> dev
 error_collection = []
 
 

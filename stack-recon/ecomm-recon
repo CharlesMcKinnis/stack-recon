@@ -58,11 +58,7 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
-<<<<<<< HEAD
-STACK_STATUS_VERSION = 2016111602
-=======
 STACK_STATUS_VERSION = 2016112201
->>>>>>> dev
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -647,12 +643,9 @@ if not args.jsonfile:
     # mysql global variables and status
     for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
 
-<<<<<<< HEAD
-=======
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
             globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
->>>>>>> dev
         return_dict = mysqlctl.global_variables(v)
         if return_dict:
             globalconfig["mysql"]["host_dict"][k]["variables"] = {}
@@ -664,10 +657,6 @@ if not args.jsonfile:
             globalconfig["mysql"]["host_dict"][k]["status"] = {}
             update(globalconfig["mysql"]["host_dict"][k]["status"],
                    return_dict)
-<<<<<<< HEAD
-
-    # mysql innodb table sizes
-=======
             # Innodb_buffer_pool_used_percentage calculated value
             # What if the values are empty? They should not be.
             # globalconfig["mysql"]["host_dict"][k]["innodb"]["Innodb_buffer_pool_used_percentage"]
@@ -679,13 +668,10 @@ if not args.jsonfile:
 
     # mysql innodb table sizes
     # for each database, get the total size of the innodb table sizes
->>>>>>> dev
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         return_dict = mysqlctl.innodb_table_size(db_list)
         globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
 
-<<<<<<< HEAD
-=======
     # add per host innodb data size
     # for each database, get the data+index size
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
@@ -696,7 +682,6 @@ if not args.jsonfile:
             int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
             int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
         )
->>>>>>> dev
 
 else:
     for i in globalconfig["errors"]:
@@ -1555,22 +1540,6 @@ base_values = {
     "Max_used_connections": 0,
 }
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-<<<<<<< HEAD
-    table = [["variable", "current", "suggested", "notes"]]
-    sqloutput = ""
-    config_file_output = ""
-    for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
-        if i in base_values:
-            row = []
-            notes = ""
-            row.append(i)
-            NUMBERS = False
-            row.append(str(real_human_v))
-            row.append(str(sugg_human_v))
-            row.append(notes)
-            table.append(row)
-
-=======
     table = [["Variable", "value", "compare-to", "compare-value"]]
     sqloutput = ""
     config_file_output = ""
@@ -1618,7 +1587,6 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
         print
         print "Host: %s" % v["host"]
         stackreconlib.print_table(table, HEADER=True)
->>>>>>> dev
 
 """
 MySQL innodb database size
