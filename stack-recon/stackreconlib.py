@@ -2144,19 +2144,108 @@ class AutoVivification(dict):
             return value
 
 
+# def importfile(filename, keyword_regex, **kwargs):
+#     """
+#     pass the filename of the base config file, and a keyword regular expression
+#         to identify the include directive.
+#     The regexp should include parantheses ( ) around the filename part of the match
+#     keywords: base_path = "/some/path"
+#     trailing / will be stripped
+#     kwargs["base_path"] will be added to filenames that do not include an
+#         absolute path. i.e. Apache includes
+#     Examples (the regexp is case insensitive):
+#     nginx
+#         wholeconfig = importfile(conffile, '\s*include\s+(\S+)')
+#     httpd
+#         wholeconfig = importfile(conffile, '\s*include\s+(\S+)', base_path="/etc/httpd")
+#     """
+#     # make the base_path incoming keyword a little more fault tolerant by
+#     #   removing the trailing slash
+#     if "base_path" in kwargs:
+#         base_path = kwargs["base_path"].rstrip("/")
+#     else:
+#         base_path = ""
+#     if "recurse_count" in kwargs:
+#         kwargs["recurse_count"] += 1
+#     else:
+#         kwargs["recurse_count"] = 0
+#     if kwargs["recurse_count"] > 20:
+#         # arbitrary number
+#         sys.stderr.write("Too many recursions while importing %s, the config "
+#                          "is probably a loop.\n" % filename)
+#         error_collection.append("Too many recursions while importing %s, the "
+#                                 "config is probably a loop.\n" % filename)
+#         sys.exit(1)
+# 
+#     def full_file_path(right_file, base_path):
+#         # If the right side of the full name doesn't have a leading slash, it
+#         #   is a relative path.
+#         # Add the base_path to the left and return the value
+#         # else just return the name
+#         if right_file[0] not in "/":
+#             return(os.path.join(base_path, right_file))
+#         else:
+#             return(right_file)  # this is the fix!
+#     # either an absolute path to a file, or absolute path to a glob
+#     files = glob.glob(full_file_path(filename, base_path))
+#     combined = ""
+#     # print "1655 %r" % full_file_path(filename, base_path)
+#     # print "1656 %r" % files
+#     for onefile in files:
+#         # for each file in the glob (may be just one file), open it
+#         # try:
+#         onefile_handle = open(onefile, 'r')
+#         # print "1659 onefile_handle %r" % onefile_handle
+#         # onefile should always be a file
+#         if os.path.isfile(onefile):
+#             combined += "## START " + onefile + "\n"
+#         # else:
+#         #     print "1664 file isn't a file? " % onefile
+#         # except:
+#         #     return()
+#         # go through the file, line by line
+#         # if it has an include, go follow it
+#         for line in onefile_handle:
+#             result = re.match(keyword_regex, line.strip(), re.IGNORECASE)
+#             # if it is an include, remark out the line,
+#             # figure out the full filename
+#             # and import it inline
+#             if result:
+#                 combined += "#" + line + "\n"
+#                 nestedfile = full_file_path(result.group(1), base_path)
+#                 combined += importfile(nestedfile, keyword_regex, **kwargs)
+#             else:
+#                 combined += line
+#         # END of the file import, if it was a file and not a glob, make the ending.
+#         # onefile should always be a file
+#         if os.path.isfile(onefile):
+#             combined += "## END " + onefile + "\n"
+#         onefile_handle.close()
+#         # print "#combined#"
+#         # print combined
+#         # print "#end#"
+#     return(combined)
+
+
 def importfile(filename, keyword_regex, **kwargs):
     """
-    pass the filename of the base config file, and a keyword regular expression to identify the include directive.
+    pass the filename of the base config file, and a keyword regular expression
+        to identify the include directive.
     The regexp should include parantheses ( ) around the filename part of the match
     keywords: base_path = "/some/path"
     trailing / will be stripped
-    kwargs["base_path"] will be added to filename that do not include and absolute path. i.e. Apache includes
+    kwargs["base_path"] will be added to filenames that do not include an
+        absolute path. i.e. Apache includes
     Examples (the regexp is case insensitive):
     nginx
         wholeconfig = importfile(conffile, '\s*include\s+(\S+)')
     httpd
         wholeconfig = importfile(conffile, '\s*include\s+(\S+)', base_path="/etc/httpd")
+
+    returns a list of config files and a single combine config in a dict
+    {"config_files_list": [], "combined": ""}
     """
+    compound_dict = {"config_files_list": [], "combined": ""}
     # make the base_path incoming keyword a little more fault tolerant by
     #   removing the trailing slash
     if "base_path" in kwargs:
@@ -2186,17 +2275,19 @@ def importfile(filename, keyword_regex, **kwargs):
             return(right_file)  # this is the fix!
     # either an absolute path to a file, or absolute path to a glob
     files = glob.glob(full_file_path(filename, base_path))
-    combined = ""
+    # compound_dict["combined"] = ""
     # print "1655 %r" % full_file_path(filename, base_path)
     # print "1656 %r" % files
     for onefile in files:
         # for each file in the glob (may be just one file), open it
         # try:
+        # config_files_list.append(onefile)
         onefile_handle = open(onefile, 'r')
+        compound_dict["config_files_list"].append(onefile)  # added
         # print "1659 onefile_handle %r" % onefile_handle
         # onefile should always be a file
         if os.path.isfile(onefile):
-            combined += "## START " + onefile + "\n"
+            compound_dict["combined"] += "## START " + onefile + "\n"
         # else:
         #     print "1664 file isn't a file? " % onefile
         # except:
@@ -2209,20 +2300,23 @@ def importfile(filename, keyword_regex, **kwargs):
             # figure out the full filename
             # and import it inline
             if result:
-                combined += "#" + line + "\n"
+                compound_dict["combined"] += "#" + line + "\n"
                 nestedfile = full_file_path(result.group(1), base_path)
-                combined += importfile(nestedfile, keyword_regex, **kwargs)
+                # compound_dict["config_files_list"].append(nestedfile)  # added
+                return_dict = importfile(nestedfile, keyword_regex, **kwargs)
+                compound_dict["combined"] += return_dict["combined"]
+                compound_dict["config_files_list"] = compound_dict["config_files_list"] + return_dict["config_files_list"]  # added
             else:
-                combined += line
+                compound_dict["combined"] += line
         # END of the file import, if it was a file and not a glob, make the ending.
         # onefile should always be a file
         if os.path.isfile(onefile):
-            combined += "## END " + onefile + "\n"
+            compound_dict["combined"] += "## END " + onefile + "\n"
         onefile_handle.close()
-        # print "#combined#"
-        # print combined
+        # print "#compound_dict["config_files_list"]#"
+        # print compound_dict["config_files_list"]
         # print "#end#"
-    return(combined)
+    return(compound_dict)
 
 
 def kwsearch(keywords, line, **kwargs):

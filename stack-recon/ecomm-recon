@@ -307,9 +307,11 @@ if not args.jsonfile:
                 # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as
                 #   a whole word, and is a non-capturing group by virtue of
                 #   the (?:)
-                wholeconfig = importfile(apache_conf_file,
+                return_dict = importfile(apache_conf_file,
                                          '\s*include(?:optional?)?\s+[\'"]?([^\s\'"]+)[\'"]?',
                                          base_path=apache_root_path)
+                wholeconfig = return_dict["combined"]
+                # print "file list: %r" % return_dict["config_files_list"]
                 if args.printwholeconfig and args.apache:
                     print(wholeconfig)
                 apache_config = apache.parse_config(wholeconfig)
@@ -368,7 +370,9 @@ if not args.jsonfile:
                 error_collection.append("Using config %s\n" % nginx_conf_file)
 
                 # configuration fetch and parse
-                wholeconfig = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+                return_dict = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+                wholeconfig = return_dict["combined"]
+                # print "file list: %r" % return_dict["config_files_list"]
                 if args.printwholeconfig and args.nginx:
                     print(wholeconfig)
                 nginx_config = nginx.parse_config(wholeconfig)
@@ -429,8 +433,10 @@ if not args.jsonfile:
                                              exe=daemons[daemon_name[0]]["exe"])
             phpfpm_conf_file = phpfpm.get_conf()
             if phpfpm_conf_file:
-                wholeconfig = importfile(phpfpm_conf_file,
+                return_dict = importfile(phpfpm_conf_file,
                                          '\s*include[\s=]+(\S+)')
+                wholeconfig = return_dict["combined"]
+                # print "file list: %r" % return_dict["config_files_list"]
                 if args.printwholeconfig and args.phpfpm:
                     print(wholeconfig)
 
@@ -660,17 +666,19 @@ if not args.jsonfile:
                 )
 
     # mysql innodb table sizes
+    # for each database, get the total size of the innodb table sizes
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         return_dict = mysqlctl.innodb_table_size(db_list)
         globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
 
     # add per host innodb data size
+    # for each database, get the data+index size
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         host = globalconfig["mysql"]["db_list"][counter]["host"]
-        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("datasize"):
-            globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"] = 0
+        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
+            globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
         globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
-            int(globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]) +
+            int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
             int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
         )
 
@@ -1566,7 +1574,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     table.append(row)
     row = []
 
-    row.append("innodb buffer pool used %")
+    row.append("innodb buffer pool in use %")
     row.append(str(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"]) + "%")
     row.append("")
     row.append("")
