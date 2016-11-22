@@ -31,7 +31,6 @@ localfqdn = socket.getfqdn()
 # using this as a bookmark in the IDE
 def APACHE_DATA_GATHER():
     pass
-print("Apache")
 ################################################
 # APACHE
 ################################################
@@ -70,13 +69,10 @@ if apache_exe:
 def NGINX_DATA_GATHER():
     pass
 # nginx.figlet()
-print("NGINX")
 ################################################
 # NGINX
 ################################################
-if "nginx" not in daemons:
-    print("nginx is not running")
-else:
+if "nginx" in daemons:
     nginx = stackreconlib.nginxCtl(daemons["nginx"],
                                    exe=daemons["nginx"]["exe"])
     nginx.figlet()
@@ -94,7 +90,6 @@ else:
 # using this as a bookmark in the IDE
 def PHP_FPM_DATA_GATHER():
     pass
-print("php-fpm")
 ################################################
 # PHP-FPM
 ################################################
