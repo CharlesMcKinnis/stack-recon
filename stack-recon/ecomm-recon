@@ -58,7 +58,7 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
-STACK_STATUS_VERSION = 2016111602
+STACK_STATUS_VERSION = 2016112201
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -246,8 +246,9 @@ if not args.jsonfile:
     # added "php-fpm-5.4", "php-fpm-5.5", "php-fpm-5.6", "php-fpm-7.0" for
     #   Amazon Linux
     daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event",
-                          "httpd.worker", "mysql", "mysqld", "php-fpm", "php5-fpm",
-                          "php-fpm-5.4", "php-fpm-5.5", "php-fpm-5.6", "php-fpm-7.0"])
+                          "httpd.worker", "mysql", "mysqld", "php-fpm",
+                          "php5-fpm", "php-fpm-5.4", "php-fpm-5.5",
+                          "php-fpm-5.6", "php-fpm-7.0"])
     for i in daemons:
         if daemons.get(i, {}).get("error"):
             sys.stderr.write(daemons[i]["error"] + "\n")
