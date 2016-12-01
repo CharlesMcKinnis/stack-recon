@@ -428,7 +428,7 @@ class apacheCtl(object):
                         configuration["sites"][-1]["access_log"] = stanzas[i]["customlog"][0]
                     elif stanzas[i]["customlog"][0][0] != "/":
                         configuration["sites"][-1]["access_log"] =(
-                            stanzas["config"]["serverroot"][0]+
+                            stanzas["config"]["serverroot"][0].rstrip('/')+"/"+
                             stanzas[i]["customlog"][0])
                 if "errorlog" in stanzas[i]:
                     # configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
@@ -436,7 +436,7 @@ class apacheCtl(object):
                         configuration["sites"][-1]["access_log"] = stanzas[i]["errorlog"][0]
                     elif stanzas[i]["errorlog"][0][0] != "/":
                         configuration["sites"][-1]["access_log"] =(
-                            stanzas["config"]["serverroot"][0]+
+                            stanzas["config"]["serverroot"][0].rstrip('/')+"/"+
                             stanzas[i]["errorlog"][0])
         update(stanzas, configuration)
         # there was a stanzas["config"] but that isn't what is referenced later
