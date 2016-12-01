@@ -433,9 +433,9 @@ class apacheCtl(object):
                 if "errorlog" in stanzas[i]:
                     # configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
                     if stanzas[i]["errorlog"][0][0] == "/":
-                        configuration["sites"][-1]["access_log"] = stanzas[i]["errorlog"][0]
+                        configuration["sites"][-1]["error_log"] = stanzas[i]["errorlog"][0]
                     elif stanzas[i]["errorlog"][0][0] != "/":
-                        configuration["sites"][-1]["access_log"] =(
+                        configuration["sites"][-1]["error_log"] =(
                             stanzas["config"]["serverroot"][0].rstrip('/')+"/"+
                             stanzas[i]["errorlog"][0])
         update(stanzas, configuration)
