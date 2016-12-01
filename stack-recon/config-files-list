@@ -5,13 +5,6 @@ from stackreconlib import (daemon_exe, importfile, )
 import socket
 
 VERSION = 2016112201
-
-"""
-Magento is a trademark of Varien. Neither I nor these scripts are affiliated
-with or endorsed by the Magento Project or its trademark owners.
-
-"""
-
 """
 The script will look for apache, nginx and php-fpm binaries in memory, and
 identify their configuration source. 
