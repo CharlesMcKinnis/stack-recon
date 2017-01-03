@@ -2387,39 +2387,15 @@ def memory_estimate(process_name, **kwargs):
     if not output:
         raise NameError("Fail: %s" % err)
     lines_list = string.split(output, '\n')
-    status["free_mem"] = int(lines_list[1].split()[3])
-    status["buffer_cache_used"] = int(lines_list[2].split()[2])
-    status["buffer_cache_free"] = int(lines_list[2].split()[3])
-    status["free+buffer"] = (status["free_mem"] +
-                             status["buffer_cache_used"] +
-                             status["buffer_cache_free"])
-    # print stuff[1].split()[1]
-    # The calculation is using RSS, and free memory.
-    # There are buffers and cache used by the process, and that throws off
-    #   the calculation
-    # for line in lines:
-    #     result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-    #     if result:
-    #         status["free_mem"] = int(result.group(4))
-    #         continue
-    #     result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-    #     if result:
-    #         status["buffer_cache"] = int(result.group(4))
-    #         # print "1552 buffer_cache"
-    #         # print status["buffer_cache"]
-    #         break
+    status["mem_free"] = int(lines_list[1].split()[3])
+    status["bc_used"] = int(lines_list[2].split()[2])
+    status["bc_free"] = int(lines_list[2].split()[3])
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
-    """
-    status["line_sum"]
-    rss_sum
-    vsz_sum
-    vsz-rss_sum
-    """
     status["line_count"] = len(output.splitlines())
     for line in output.splitlines():
         # status["line_count"] += 1
@@ -2435,7 +2411,7 @@ def memory_estimate(process_name, **kwargs):
         if int(line.split()[5]) > status["biggest"]:
             status["biggest"] = int(line.split()[5])
     status["proc_avg_size"] = status["rss_sum"] / status["line_count"]
-    status["rss+free+buffer"] = status["rss_sum"] + status["free+buffer"]
+    status["rss_sum+bc_free"] = status["rss_sum"] + status["bc_free"]
     return(status)
 
 
@@ -2445,34 +2421,36 @@ def memory_print(result, proc_name, proc_max):
             result["line_count"],
             proc_name,
             result["rss_sum"],
-            result["free_mem"]))
+            result["mem_free"]))
+    print("%d KB would be recovered if buffers and cache are flushed." %
+          result["buffer_cache_used"])
     print("Average memory per process: %d KB will use %d KB if max processes "
           "%d is reached." % (
             result["proc_avg_size"],
             int(result["rss_sum"] / result["line_count"] * proc_max),
             proc_max))
-    print("Largest process: %d KB will use %d KB if max processes is reached.\n"
+    print("Largest process is %d KB will use %d KB if max processes is reached.\n"
           % (
             result["biggest"],
             result["biggest"] * proc_max))
     print("What should I set max processes to?")
     print("The safe value would be to use the largest process, and commit 80%% "
-          "of memory: %d" % int((result["rss+free+buffer"]
+          "of memory: %d" % int((result["rss_sum+bc_free"]
                                  ) / result["biggest"] * .8))
     print
     print("Current maximum processes: %d" % proc_max)
     print("avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe")
     print("     %3d                %3d                %3d              %3d" % (
-        int(((result["rss+free+buffer"]) /
+        int(((result["rss_sum+bc_free"]) /
             (result["proc_avg_size"]))),
 
-        int(((result["rss+free+buffer"]) /
+        int(((result["rss_sum+bc_free"]) /
             (result["proc_avg_size"])) * .8),
 
-        int((result["rss+free+buffer"]) /
+        int((result["rss_sum+bc_free"]) /
             result["biggest"]),
 
-        int((result["rss+free+buffer"]) /
+        int((result["rss_sum+bc_free"]) /
             result["biggest"] * .8)
     ))
 
