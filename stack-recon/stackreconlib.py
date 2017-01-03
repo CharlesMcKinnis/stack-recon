@@ -2408,9 +2408,9 @@ def memory_estimate(process_name, **kwargs):
         #     if int(result.group(6)) > status["biggest"]:
         #         status["biggest"] = int(result.group(6))
         status["rss_sum"] += int(line.split()[5] * 1024)
-        status["vsz-rss_sum"] += (int(line.split()[4]) - int(line.split()[5]) * 1024)
-        if int(line.split()[5] * 1024) > status["biggest"]:
-            status["biggest"] = int(line.split()[5] * 1024)
+        status["vsz-rss_sum"] += (int(line.split()[4]) - (int(line.split()[5])) * 1024)
+        if (int(line.split()[5]) * 1024) > status["biggest"]:
+            status["biggest"] = int(line.split()[5]) * 1024
     status["proc_avg_size"] = status["rss_sum"] / status["line_count"]
     status["rss_sum+bc_free"] = status["rss_sum"] + status["bc_free"]
     return(status)
