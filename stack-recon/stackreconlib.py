@@ -2410,15 +2410,28 @@ def memory_estimate(process_name, **kwargs):
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
+    """
+    status["line_sum"]
+    rss_sum
+    vsz_sum
+    vsz-rss_sum
+    """
+    status["line_count"] = len(output.splitlines())
     for line in output.splitlines():
-        status["line_count"] += 1
-        result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+',
-                          line)
-        if result:
-            status["line_sum"] += int(result.group(6))
-            status["vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
-            if int(result.group(6)) > status["biggest"]:
-                status["biggest"] = int(result.group(6))
+        # status["line_count"] += 1
+        # result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+',
+        #                   line)
+        # if result:
+        #     status["line_sum"] += int(result.group(6))
+        #     status["vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
+        #     if int(result.group(6)) > status["biggest"]:
+        #         status["biggest"] = int(result.group(6))
+        status["rss_sum"] += int(line.split()[5])
+        status["vsz-rss_sum"] += (int(line.split()[4]) - int(line.split()[5]))
+        if int(line.split()[5]) > status["biggest"]:
+            status["biggest"] = int(line.split()[5])
+    status["proc_avg_size"] = status["rss_sum"] / status["line_count"]
+    status["rss+free+buffer"] = status["rss_sum"] + status["free+buffer"]
     return(status)
 
 
@@ -2427,12 +2440,12 @@ def memory_print(result, proc_name, proc_max):
           "%d KB of free memory." % (
             result["line_count"],
             proc_name,
-            result["line_sum"],
+            result["rss_sum"],
             result["free_mem"]))
     print("Average memory per process: %d KB will use %d KB if max processes "
           "%d is reached." % (
-            result["line_sum"] / result["line_count"],
-            int(result["line_sum"] / result["line_count"] * proc_max),
+            result["proc_avg_size"],
+            int(result["rss_sum"] / result["line_count"] * proc_max),
             proc_max))
     print("Largest process: %d KB will use %d KB if max processes is reached.\n"
           % (
@@ -2440,23 +2453,22 @@ def memory_print(result, proc_name, proc_max):
             result["biggest"] * proc_max))
     print("What should I set max processes to?")
     print("The safe value would be to use the largest process, and commit 80%% "
-          "of memory: %d" % int((result["line_sum"] +
-                                 result["free+buffer"]
+          "of memory: %d" % int((result["rss+free+buffer"]
                                  ) / result["biggest"] * .8))
     print
     print("Current maximum processes: %d" % proc_max)
     print("avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe")
     print("     %3d                %3d                %3d              %3d" % (
-        int(((result["line_sum"] + result["free+buffer"]) /
-            (result["line_sum"] / result["line_count"]))),
+        int(((result["rss+free+buffer"]) /
+            (result["proc_avg_size"]))),
 
-        int(((result["line_sum"] + result["free+buffer"]) /
-            (result["line_sum"] / result["line_count"])) * .8),
+        int(((result["rss+free+buffer"]) /
+            (result["proc_avg_size"])) * .8),
 
-        int((result["line_sum"] + result["free+buffer"]) /
+        int((result["rss+free+buffer"]) /
             result["biggest"]),
 
-        int((result["line_sum"] + result["free+buffer"]) /
+        int((result["rss+free+buffer"]) /
             result["biggest"] * .8)
     ))
 
