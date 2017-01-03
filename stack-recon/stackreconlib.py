@@ -2372,7 +2372,7 @@ def memory_estimate(process_name, **kwargs):
               "free_mem": 0,
               "buffer_cache": 0,
               "vsz-rss_sum": 0}
-    # echo 3 > /proc/sys/vm/drop_caches
+    """
     p = subprocess.Popen(
         "sync", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
@@ -2383,6 +2383,7 @@ def memory_estimate(process_name, **kwargs):
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
+    """
     """
    0          1             2          3         4          5           6
 0              total       used       free     shared    buffers     cached
