@@ -2366,75 +2366,96 @@ def memory_estimate(process_name, **kwargs):
     free_mem 1092636
     line_sum 61348
     """
-    status = {"line_sum": 0, "line_count": 0, "biggest": 0, "free_mem": 0,
-              "buffer_cache": 0, "php_vsz-rss_sum": 0}
-    # freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
-    conf = "free"
+    status = {"rss_sum": 0,
+              "line_count": 0,
+              "biggest": 0,
+              "free_mem": 0,
+              "buffer_cache": 0,
+              "vsz-rss_sum": 0}
+    """
+    p = subprocess.Popen(
+        "sync", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate()
+    f = open('/proc/sys/vm/drop_caches', 'w')
+    f.write('3')
+    f.close()
+    conf = "free -k"
+    p = subprocess.Popen(
+        conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate()
+    """
+    """
+   0          1             2          3         4          5           6
+0              total       used       free     shared    buffers     cached
+1 Mem:     148691936  147256456    1435480     134828    1351196    4670564
+2 -/+ buffers/cache:  141234696    7457240
+3 Swap:      2097148    1550284     546864
+    """
+    conf = "free -k"
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
     lines_list = string.split(output, '\n')
-    status["free_mem"] = int(lines_list[1].split()[3])
-    status["buffer_cache_used"] = int(lines_list[2].split()[3])
-    status["buffer_cache_free"] = int(lines_list[2].split()[2])
-    # print stuff[1].split()[1]
-    # The calculation is using RSS, and free memory.
-    # There are buffers and cache used by the process, and that throws off
-    #   the calculation
-    # for line in lines:
-    #     result = re.match('(Mem:)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-    #     if result:
-    #         status["free_mem"] = int(result.group(4))
-    #         continue
-    #     result = re.match('(\+/-\S+)\s+(\S+)\s+(\S+)\s+(\S+)', line)
-    #     if result:
-    #         status["buffer_cache"] = int(result.group(4))
-    #         # print "1552 buffer_cache"
-    #         # print status["buffer_cache"]
-    #         break
+    status["mem_free"] = int(lines_list[1].split()[3])
+    # bc means buffers and cache
+    status["bc_used"] = int(lines_list[2].split()[2])
+    status["bc_free"] = int(lines_list[2].split()[3])
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
+    status["line_count"] = len(output.splitlines())
     for line in output.splitlines():
-        status["line_count"] += 1
-        result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+', line)
-        if result:
-            status["line_sum"] += int(result.group(6))
-            status["php_vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
-            if int(result.group(6)) > status["biggest"]:
-                status["biggest"] = int(result.group(6))
+        status["rss_sum"] += int(line.split()[5])
+        status["vsz-rss_sum"] += (int(line.split()[4]) - (int(line.split()[5])))
+        if int(line.split()[5]) > status["biggest"]:
+            status["biggest"] = int(line.split()[5])
+    status["proc_avg_size"] = status["rss_sum"] / status["line_count"]
+    status["rss_sum+bc_free"] = status["rss_sum"] + status["bc_free"]
+    status["rss_sum+mem_free"] = status["rss_sum"] + status["mem_free"]
     return(status)
 
 
 def memory_print(result, proc_name, proc_max):
-    print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (
-        result["line_count"],
-        proc_name,
-        result["line_sum"],
-        result["free_mem"])
-    print "Average memory per process: %d KB will use %d KB if max processes %d is reached." % (
-        result["line_sum"] / result["line_count"],
-        int(result["line_sum"] / result["line_count"] * proc_max),
-        proc_max)
-    print "Largest process: %d KB will use %d KB if max processes is reached.\n" % (
-        result["biggest"],
-        result["biggest"] * proc_max)
-    print "What should I set max processes to?"
-    print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int((result["line_sum"] + result["free_mem"]) / result["biggest"] * .8)
+    print("%d %s processes are currently using %d KB of memory, and there is "
+          "%d KB of free memory." % (
+            result["line_count"],
+            proc_name,
+            result["rss_sum"],
+            result["mem_free"]))
+    print("Average memory per process: %d KB will use %d KB if max processes "
+          "%d is reached." % (
+            result["proc_avg_size"],
+            int(result["rss_sum"] / result["line_count"] * proc_max),
+            proc_max))
+    print("Largest process is %d KB and will use %d KB if max processes is reached.\n"
+          % (
+            result["biggest"],
+            result["biggest"] * proc_max))
+    print("What should I set max processes to?")
+    print("The safe value would be to use the largest process, and commit 80%% "
+          "of memory: %d" % int((result["rss_sum+bc_free"]
+                                 ) / result["biggest"] * .8))
     print
-    print "Current maximum processes: %d" % proc_max
-    print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
-    print "     %3d                %3d                %3d              %3d" % (
-        int(((result["line_sum"] + result["free_mem"]) / (result["line_sum"] / result["line_count"]))),
-        int(((result["line_sum"] + result["free_mem"]) / (result["line_sum"] / result["line_count"])) * .8),
-        int((result["line_sum"] + result["free_mem"]) / result["biggest"]),
-        int((result["line_sum"] + result["free_mem"]) / result["biggest"] * .8)
-    )
+    print("Current maximum processes: %d" % proc_max)
+    print("avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe")
+    print("     %3d                %3d                %3d              %3d" % (
+        int(((result["rss_sum+mem_free"]) /
+            (result["proc_avg_size"]))),
+
+        int(((result["rss_sum+mem_free"]) /
+            (result["proc_avg_size"])) * .8),
+
+        int((result["rss_sum+mem_free"]) /
+            result["biggest"]),
+
+        int((result["rss_sum+mem_free"]) /
+            result["biggest"] * .8)
+    ))
 
 
 def print_sites(localconfig):
@@ -2490,35 +2511,43 @@ table = [
             # print "debug x %d, col_width[i] %d" % (x, col_width[i])
             print ": ".join(line)
     else:
-        # Ugly workaround for unicode
+        # Ugly workaround for Unicode
         first_line = True
         try:
             col_width = [max(len(str(x)) for x in col) for col in zip(*table)]
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x, col_width[i])
                                         for i, x in enumerate(line)) + " |"
                 if first_line is True and kwargs.get("HEADER") is True:
-                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                             col_width[i])
                                             for i, x in enumerate(table[0])) + "-+"
                     first_line = False
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
         except UnicodeEncodeError:
-            col_width = [max(len(x.encode('utf-8')) for x in col) for col in zip(*table)]
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            col_width = [max(len(x.encode('utf-8')) for x in col)
+                         for col in zip(*table)]
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
-                print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'), col_width[i])
+                print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'),
+                                                         col_width[i])
                                         for i, x in enumerate(line)) + " |"
                 if first_line is True and kwargs.get("HEADER") is True:
-                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                             col_width[i])
                                             for i, x in enumerate(table[0])) + "-+"
                     first_line = False
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
 
 """
