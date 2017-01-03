@@ -2427,9 +2427,6 @@ def memory_print(result, proc_name, proc_max):
             proc_name,
             result["rss_sum"],
             result["mem_free"]))
-    # bc means buffers and cache
-    print("%d KB would be recovered if buffers and cache are flushed." %
-          result["bc_used"])
     print("Average memory per process: %d KB will use %d KB if max processes "
           "%d is reached." % (
             result["proc_avg_size"],
