@@ -2366,8 +2366,12 @@ def memory_estimate(process_name, **kwargs):
     free_mem 1092636
     line_sum 61348
     """
-    status = {"line_sum": 0, "line_count": 0, "biggest": 0, "free_mem": 0,
-              "buffer_cache": 0, "vsz-rss_sum": 0}
+    status = {"rss_sum": 0,
+              "line_count": 0,
+              "biggest": 0,
+              "free_mem": 0,
+              "buffer_cache": 0,
+              "vsz-rss_sum": 0}
     # freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
     conf = "free"
     """
