@@ -2367,7 +2367,7 @@ def memory_estimate(process_name, **kwargs):
     line_sum 61348
     """
     status = {"line_sum": 0, "line_count": 0, "biggest": 0, "free_mem": 0,
-              "buffer_cache": 0, "php_vsz-rss_sum": 0}
+              "buffer_cache": 0, "vsz-rss_sum": 0}
     # freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
     conf = "free"
     p = subprocess.Popen(
@@ -2405,7 +2405,7 @@ def memory_estimate(process_name, **kwargs):
         result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+', line)
         if result:
             status["line_sum"] += int(result.group(6))
-            status["php_vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
+            status["vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
             if int(result.group(6)) > status["biggest"]:
                 status["biggest"] = int(result.group(6))
     return(status)
