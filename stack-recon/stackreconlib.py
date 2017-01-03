@@ -2388,6 +2388,7 @@ def memory_estimate(process_name, **kwargs):
         raise NameError("Fail: %s" % err)
     lines_list = string.split(output, '\n')
     status["mem_free"] = int(lines_list[1].split()[3])
+    # bc means buffers and cache
     status["bc_used"] = int(lines_list[2].split()[2])
     status["bc_free"] = int(lines_list[2].split()[3])
     conf = "ps aux | grep %s" % process_name
@@ -2422,8 +2423,9 @@ def memory_print(result, proc_name, proc_max):
             proc_name,
             result["rss_sum"],
             result["mem_free"]))
+    # bc means buffers and cache
     print("%d KB would be recovered if buffers and cache are flushed." %
-          result["buffer_cache_used"])
+          result["bc_used"])
     print("Average memory per process: %d KB will use %d KB if max processes "
           "%d is reached." % (
             result["proc_avg_size"],
