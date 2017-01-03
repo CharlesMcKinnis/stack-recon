@@ -864,6 +864,7 @@ if "phpfpm_meta" in globalconfig:
         proc_max = int(globalconfig["phpfpm_meta"]["maxprocesses"])
         result = memory_estimate(proc_name)
         if result:
+            pp.pprint(result)
             memory_print(result, proc_name, proc_max)
 
 # globalconfig["nginx"]["maxclients"]

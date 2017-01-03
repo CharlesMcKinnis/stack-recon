@@ -2428,7 +2428,7 @@ def memory_print(result, proc_name, proc_max):
             result["line_count"],
             proc_name,
             result["line_sum"],
-            result["free+buffer"]))
+            result["free_mem"]))
     print("Average memory per process: %d KB will use %d KB if max processes "
           "%d is reached." % (
             result["line_sum"] / result["line_count"],
@@ -2449,11 +2449,15 @@ def memory_print(result, proc_name, proc_max):
     print("     %3d                %3d                %3d              %3d" % (
         int(((result["line_sum"] + result["free+buffer"]) /
             (result["line_sum"] / result["line_count"]))),
-        int(((result["line_sum"] +
-              result["free+buffer"]) / (result["line_sum"] /
-                                        result["line_count"])) * .8),
-        int((result["line_sum"] + result["free+buffer"]) / result["biggest"]),
-        int((result["line_sum"] + result["free+buffer"]) / result["biggest"] * .8)
+
+        int(((result["line_sum"] + result["free+buffer"]) /
+            (result["line_sum"] / result["line_count"])) * .8),
+
+        int((result["line_sum"] + result["free+buffer"]) /
+            result["biggest"]),
+
+        int((result["line_sum"] + result["free+buffer"]) /
+            result["biggest"] * .8)
     ))
 
 
