@@ -2432,7 +2432,7 @@ def memory_print(result, proc_name, proc_max):
             result["proc_avg_size"],
             int(result["rss_sum"] / result["line_count"] * proc_max),
             proc_max))
-    print("Largest process is %d KB will use %d KB if max processes is reached.\n"
+    print("Largest process is %d KB and will use %d KB if max processes is reached.\n"
           % (
             result["biggest"],
             result["biggest"] * proc_max))

@@ -816,11 +816,12 @@ if "apache" in globalconfig:
             result = memory_estimate(proc_name)
             if result:
                 print "! IMPORTANT !"
-                print ("These numbers include memory allocated to kernel "
-                       "buffers and cache. You must clear buffers and cache "
-                       "with the command below to use these numbers, but this "
+                print ("These numbers do not include memory allocated to "
+                       "kernel buffers and cache. You can use the command "
+                       "below to clear the buffers and cache , but this "
                        "may impact system performance for a short time.")
                 print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
+                print
                 memory_print(result, proc_name, proc_max)
         print "\n"
 
@@ -852,11 +853,12 @@ if "phpfpm_meta" in globalconfig:
     # memory profile
     print "php-fpm memory profile:"
     print "! IMPORTANT !"
-    print ("These numbers include memory allocated to kernel "
-           "buffers and cache. You must clear buffers and cache "
-           "with the command below to use these numbers, but this "
+    print ("These numbers do not include memory allocated to kernel "
+           "buffers and cache. You can use the command below to clear the "
+           "buffers and cache , but this "
            "may impact system performance for a short time.")
     print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
+    print
 
     if (globalconfig.get("phpfpm_meta", {}).get("basename") and
             globalconfig.get("phpfpm_meta", {}).get("maxprocesses")):
@@ -864,7 +866,7 @@ if "phpfpm_meta" in globalconfig:
         proc_max = int(globalconfig["phpfpm_meta"]["maxprocesses"])
         result = memory_estimate(proc_name)
         if result:
-            pp.pprint(result)
+            # pp.pprint(result)
             memory_print(result, proc_name, proc_max)
 
 # globalconfig["nginx"]["maxclients"]
