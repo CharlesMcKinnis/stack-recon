@@ -2416,6 +2416,7 @@ def memory_estimate(process_name, **kwargs):
             status["biggest"] = int(line.split()[5])
     status["proc_avg_size"] = status["rss_sum"] / status["line_count"]
     status["rss_sum+bc_free"] = status["rss_sum"] + status["bc_free"]
+    status["rss_sum+mem_free"] = status["rss_sum"] + status["mem_free"]
     return(status)
 
 
