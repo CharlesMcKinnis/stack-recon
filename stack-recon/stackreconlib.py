@@ -2372,8 +2372,17 @@ def memory_estimate(process_name, **kwargs):
               "free_mem": 0,
               "buffer_cache": 0,
               "vsz-rss_sum": 0}
-    # freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
-    conf = "free"
+    # echo 3 > /proc/sys/vm/drop_caches
+    p = subprocess.Popen(
+        "sync", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate()
+    f = open('/proc/sys/vm/drop_caches', 'w')
+    f.write('3')
+    f.close()
+    conf = "free -k"
+    p = subprocess.Popen(
+        conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, err = p.communicate()
     """
    0          1             2          3         4          5           6
 0              total       used       free     shared    buffers     cached
@@ -2381,6 +2390,7 @@ def memory_estimate(process_name, **kwargs):
 2 -/+ buffers/cache:  141234696    7457240
 3 Swap:      2097148    1550284     546864
     """
+    conf = "free -k"
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
@@ -2399,19 +2409,10 @@ def memory_estimate(process_name, **kwargs):
         raise NameError("Fail: %s" % err)
     status["line_count"] = len(output.splitlines())
     for line in output.splitlines():
-        # status["line_count"] += 1
-        # result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+',
-        #                   line)
-        # if result:
-        #     status["line_sum"] += int(result.group(6))
-        #     status["vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
-        #     if int(result.group(6)) > status["biggest"]:
-        #         status["biggest"] = int(result.group(6))
-        status["rss_sum"] += int(line.split()[5]) * 1024
-        status["vsz-rss_sum"] += ((int(line.split()[4]) -
-                                   (int(line.split()[5]))) * 1024)
-        if (int(line.split()[5]) * 1024) > status["biggest"]:
-            status["biggest"] = int(line.split()[5]) * 1024
+        status["rss_sum"] += int(line.split()[5])
+        status["vsz-rss_sum"] += (int(line.split()[4]) - (int(line.split()[5])))
+        if int(line.split()[5]) > status["biggest"]:
+            status["biggest"] = int(line.split()[5])
     status["proc_avg_size"] = status["rss_sum"] / status["line_count"]
     status["rss_sum+bc_free"] = status["rss_sum"] + status["bc_free"]
     return(status)
@@ -2444,16 +2445,16 @@ def memory_print(result, proc_name, proc_max):
     print("Current maximum processes: %d" % proc_max)
     print("avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe")
     print("     %3d                %3d                %3d              %3d" % (
-        int(((result["rss_sum+bc_free"]) /
+        int(((result["rss_sum+mem_free"]) /
             (result["proc_avg_size"]))),
 
-        int(((result["rss_sum+bc_free"]) /
+        int(((result["rss_sum+mem_free"]) /
             (result["proc_avg_size"])) * .8),
 
-        int((result["rss_sum+bc_free"]) /
+        int((result["rss_sum+mem_free"]) /
             result["biggest"]),
 
-        int((result["rss_sum+bc_free"]) /
+        int((result["rss_sum+mem_free"]) /
             result["biggest"] * .8)
     ))
 
