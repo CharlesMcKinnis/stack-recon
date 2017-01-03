@@ -2370,6 +2370,13 @@ def memory_estimate(process_name, **kwargs):
               "buffer_cache": 0, "vsz-rss_sum": 0}
     # freeMem=`free|egrep '^Mem:'|awk '{print $4}'`
     conf = "free"
+    """
+   0          1             2          3         4          5           6
+0              total       used       free     shared    buffers     cached
+1 Mem:     148691936  147256456    1435480     134828    1351196    4670564
+2 -/+ buffers/cache:  141234696    7457240
+3 Swap:      2097148    1550284     546864
+    """
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, err = p.communicate()
@@ -2377,8 +2384,11 @@ def memory_estimate(process_name, **kwargs):
         raise NameError("Fail: %s" % err)
     lines_list = string.split(output, '\n')
     status["free_mem"] = int(lines_list[1].split()[3])
-    status["buffer_cache_used"] = int(lines_list[2].split()[3])
-    status["buffer_cache_free"] = int(lines_list[2].split()[2])
+    status["buffer_cache_used"] = int(lines_list[2].split()[2])
+    status["buffer_cache_free"] = int(lines_list[2].split()[3])
+    status["free+buffer"] = (status["free_mem"] +
+                             status["buffer_cache_used"] +
+                             status["buffer_cache_free"])
     # print stuff[1].split()[1]
     # The calculation is using RSS, and free memory.
     # There are buffers and cache used by the process, and that throws off
@@ -2402,7 +2412,8 @@ def memory_estimate(process_name, **kwargs):
         raise NameError("Fail: %s" % err)
     for line in output.splitlines():
         status["line_count"] += 1
-        result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+', line)
+        result = re.match('\s*(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+',
+                          line)
         if result:
             status["line_sum"] += int(result.group(6))
             status["vsz-rss_sum"] += (int(result.group(5)) - int(result.group(6)))
@@ -2412,29 +2423,38 @@ def memory_estimate(process_name, **kwargs):
 
 
 def memory_print(result, proc_name, proc_max):
-    print "%d %s processes are currently using %d KB of memory, and there is %d KB of free memory." % (
-        result["line_count"],
-        proc_name,
-        result["line_sum"],
-        result["free_mem"])
-    print "Average memory per process: %d KB will use %d KB if max processes %d is reached." % (
-        result["line_sum"] / result["line_count"],
-        int(result["line_sum"] / result["line_count"] * proc_max),
-        proc_max)
-    print "Largest process: %d KB will use %d KB if max processes is reached.\n" % (
-        result["biggest"],
-        result["biggest"] * proc_max)
-    print "What should I set max processes to?"
-    print "The safe value would be to use the largest process, and commit 80%% of memory: %d" % int((result["line_sum"] + result["free_mem"]) / result["biggest"] * .8)
+    print("%d %s processes are currently using %d KB of memory, and there is "
+          "%d KB of free memory." % (
+            result["line_count"],
+            proc_name,
+            result["line_sum"],
+            result["free+buffer"]))
+    print("Average memory per process: %d KB will use %d KB if max processes "
+          "%d is reached." % (
+            result["line_sum"] / result["line_count"],
+            int(result["line_sum"] / result["line_count"] * proc_max),
+            proc_max))
+    print("Largest process: %d KB will use %d KB if max processes is reached.\n"
+          % (
+            result["biggest"],
+            result["biggest"] * proc_max))
+    print("What should I set max processes to?")
+    print("The safe value would be to use the largest process, and commit 80%% "
+          "of memory: %d" % int((result["line_sum"] +
+                                 result["free+buffer"]
+                                 ) / result["biggest"] * .8))
     print
-    print "Current maximum processes: %d" % proc_max
-    print "avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe"
-    print "     %3d                %3d                %3d              %3d" % (
-        int(((result["line_sum"] + result["free_mem"]) / (result["line_sum"] / result["line_count"]))),
-        int(((result["line_sum"] + result["free_mem"]) / (result["line_sum"] / result["line_count"])) * .8),
-        int((result["line_sum"] + result["free_mem"]) / result["biggest"]),
-        int((result["line_sum"] + result["free_mem"]) / result["biggest"] * .8)
-    )
+    print("Current maximum processes: %d" % proc_max)
+    print("avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe")
+    print("     %3d                %3d                %3d              %3d" % (
+        int(((result["line_sum"] + result["free+buffer"]) /
+            (result["line_sum"] / result["line_count"]))),
+        int(((result["line_sum"] +
+              result["free+buffer"]) / (result["line_sum"] /
+                                        result["line_count"])) * .8),
+        int((result["line_sum"] + result["free+buffer"]) / result["biggest"]),
+        int((result["line_sum"] + result["free+buffer"]) / result["biggest"] * .8)
+    ))
 
 
 def print_sites(localconfig):
@@ -2490,35 +2510,43 @@ table = [
             # print "debug x %d, col_width[i] %d" % (x, col_width[i])
             print ": ".join(line)
     else:
-        # Ugly workaround for unicode
+        # Ugly workaround for Unicode
         first_line = True
         try:
             col_width = [max(len(str(x)) for x in col) for col in zip(*table)]
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
                 print "| " + " | ".join("{0:{1}}".format(x, col_width[i])
                                         for i, x in enumerate(line)) + " |"
                 if first_line is True and kwargs.get("HEADER") is True:
-                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                             col_width[i])
                                             for i, x in enumerate(table[0])) + "-+"
                     first_line = False
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
         except UnicodeEncodeError:
-            col_width = [max(len(x.encode('utf-8')) for x in col) for col in zip(*table)]
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            col_width = [max(len(x.encode('utf-8')) for x in col)
+                         for col in zip(*table)]
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
-                print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'), col_width[i])
+                print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'),
+                                                         col_width[i])
                                         for i, x in enumerate(line)) + " |"
                 if first_line is True and kwargs.get("HEADER") is True:
-                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                             col_width[i])
                                             for i, x in enumerate(table[0])) + "-+"
                     first_line = False
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i], col_width[i])
+            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                                                     col_width[i])
                                     for i, x in enumerate(table[0])) + "-+"
 
 """

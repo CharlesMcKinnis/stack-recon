@@ -815,10 +815,11 @@ if "apache" in globalconfig:
             proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
             if result:
-                print ("This does not include memory allocated to kernel "
-                       "buffers and cache. You can clear buffers and cache "
-                       "with the command below, but this will impact system "
-                       "performance for a short time.")
+                print "! IMPORTANT !"
+                print ("These numbers include memory allocated to kernel "
+                       "buffers and cache. You must clear buffers and cache "
+                       "with the command below to use these numbers, but this "
+                       "may impact system performance for a short time.")
                 print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
                 memory_print(result, proc_name, proc_max)
         print "\n"
@@ -850,10 +851,13 @@ if "phpfpm_meta" in globalconfig:
     print
     # memory profile
     print "php-fpm memory profile:"
-    print ("This does not include memory allocated to kernel buffers and "
-           "cache. You can clear buffers and cache with the command below, "
-           "but this will impact system performance for a short time.")
+    print "! IMPORTANT !"
+    print ("These numbers include memory allocated to kernel "
+           "buffers and cache. You must clear buffers and cache "
+           "with the command below to use these numbers, but this "
+           "may impact system performance for a short time.")
     print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
+
     if (globalconfig.get("phpfpm_meta", {}).get("basename") and
             globalconfig.get("phpfpm_meta", {}).get("maxprocesses")):
         proc_name = globalconfig["phpfpm_meta"]["basename"]
