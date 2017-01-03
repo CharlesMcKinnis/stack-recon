@@ -1449,7 +1449,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                                                           base_values[i]
                                                           )
                                            ))
-                    notes = "NOTICE: This is may be low"
+                    notes = "NOTICE: This may be low"
             elif eval_type[i] == "bytes2human":
                 real_bytes_v = int(j)
                 real_human_v = stackreconlib.bytes2human(j)
@@ -1469,7 +1469,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
                                           ("%s = %s\n" %
                                            (i.replace("_", "-"),
                                             base_values[i])))
-                    notes = "NOTICE: This is may be low"
+                    notes = "NOTICE: This may be low"
             elif eval_type[i] == "string":
                 real_human_v = j
                 sugg_human_v = base_values[i]
