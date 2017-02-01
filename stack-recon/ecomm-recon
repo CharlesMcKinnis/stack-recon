@@ -1168,7 +1168,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 #   in Mage 1
                 print "Cache types (similar to cache_option_table)"
                 table = []
-                for k2, v2 in env_php.get("cache_types").iteritems():
+                for k2, v2 in env_php.get("cache_types", {}).iteritems():
                     if k2 == "full_page" and v2 == "0":
                         print ("The full_page value being set to 0 indicates "
                                "Full Page Cache (FPC) is disabled, even if it "
