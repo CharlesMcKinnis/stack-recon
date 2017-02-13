@@ -493,7 +493,6 @@ if not args.jsonfile:
                 doc_roots.add(doc_root)
             globalconfig["doc_roots"] = list(doc_roots)
         elif args.magentopath:
-            print "magento path %r" % args.magentopath
             globalconfig["doc_roots"] = [args.magentopath]
 
         if "magento" not in globalconfig:
