@@ -167,8 +167,7 @@ if ARGPARSE:
                         "of tables.",
                         action="store_true")
     parser.add_argument("--magentopath",
-                        help="Output data will be colon separated instead of " +
-                        "tables.",
+                        help="Path to Magento",
                         )
     """
     parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
@@ -621,6 +620,21 @@ if not args.jsonfile:
                 #              {"host": v.get("host"),
                 #               "password": v.get("password"),
                 #               "username": v.get("username")}}
+        v = doc_root_dict.get("local_xml", {}).get("db_read", {})
+        if v:
+            if ({"host": v.get("host"),
+                 "dbname": v.get("dbname"),
+                 "password": v.get("password"),
+                 "username": v.get("username")} not in db_list):
+                db_list.append({"host": v.get("host"),
+                                "dbname": v.get("dbname"),
+                                "password": v.get("password"),
+                                "username": v.get("username")})
+                update(host_dict,
+                       {v.get("host"):
+                        {"host": v.get("host"),
+                         "password": v.get("password"),
+                         "username": v.get("username")}})
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
         for k, v in env_db.iteritems():
