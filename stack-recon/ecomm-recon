@@ -493,6 +493,7 @@ if not args.jsonfile:
                 doc_roots.add(doc_root)
             globalconfig["doc_roots"] = list(doc_roots)
         elif args.magentopath:
+            print "magento path %r" % args.magentopath
             globalconfig["doc_roots"] = [args.magentopath]
 
         if "magento" not in globalconfig:
@@ -934,6 +935,26 @@ if globalconfig.get("magento", {}).get("doc_root"):
                     if len(table):
                         print_table(table, NOTABLE=args.notable)
                     print
+
+                # read only database
+                local_db_read = local_xml.get("db_read", {})
+                if local_db_read:
+                    skip = ["pdoType", "initStatements", "model", "type"]
+                    if doc_root_dict.get("local_xml", {}).get("db"):
+                        print "Read-Only Database settings"
+                        table = []
+                        for k2, v2 in local_db.iteritems():
+                            if k2 in skip:
+                                continue
+                            try:
+                                if v2:
+                                    table.append([k2, v2])
+                                # print "%s: %s" % (k2, v2)
+                            except UnicodeEncodeError:
+                                pass
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                        print
 
                 # Mage 1 SESSION CACHE settings
                 # walk through the keys and values in
