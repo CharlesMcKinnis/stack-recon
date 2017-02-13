@@ -1232,6 +1232,17 @@ class MagentoCtl(object):
                                                xml_config_node,
                                                xml_config_section))
 
+        # READ ONLY DATABASE
+        section = "db_read"
+        xml_parent_path = 'global/resources'
+        xml_config_node = 'db/table_prefix'
+        xml_config_section = 'default_read/connection'
+        update(local_xml, self.parse_local_xml(tree,
+                                               section,
+                                               xml_parent_path,
+                                               xml_config_node,
+                                               xml_config_section))
+
         # SESSION CACHE
         section = "session_cache"
         xml_parent_path = 'global'

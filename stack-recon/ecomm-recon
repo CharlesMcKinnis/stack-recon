@@ -167,8 +167,7 @@ if ARGPARSE:
                         "of tables.",
                         action="store_true")
     parser.add_argument("--magentopath",
-                        help="Output data will be colon separated instead of " +
-                        "tables.",
+                        help="Path to Magento",
                         )
     """
     parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
@@ -621,6 +620,22 @@ if not args.jsonfile:
                 #              {"host": v.get("host"),
                 #               "password": v.get("password"),
                 #               "username": v.get("username")}}
+        v = doc_root_dict.get("local_xml", {}).get("db_read", {})
+        if v:
+            print "found db_read %r" % v
+            if ({"host": v.get("host"),
+                 "dbname": v.get("dbname"),
+                 "password": v.get("password"),
+                 "username": v.get("username")} not in db_list):
+                db_list.append({"host": v.get("host"),
+                                "dbname": v.get("dbname"),
+                                "password": v.get("password"),
+                                "username": v.get("username")})
+                update(host_dict,
+                       {v.get("host"):
+                        {"host": v.get("host"),
+                         "password": v.get("password"),
+                         "username": v.get("username")}})
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
         for k, v in env_db.iteritems():
@@ -920,6 +935,26 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         print_table(table, NOTABLE=args.notable)
                     print
 
+                # read only database
+                local_db_read = local_xml.get("db_read", {})
+                if local_db_read:
+                    skip = ["pdoType", "initStatements", "model", "type"]
+                    if doc_root_dict.get("local_xml", {}).get("db"):
+                        print "Read-Only Database settings"
+                        table = []
+                        for k2, v2 in local_db_read.iteritems():
+                            if k2 in skip:
+                                continue
+                            try:
+                                if v2:
+                                    table.append([k2, v2])
+                                # print "%s: %s" % (k2, v2)
+                            except UnicodeEncodeError:
+                                pass
+                        if len(table):
+                            print_table(table, NOTABLE=args.notable)
+                        print
+
                 # Mage 1 SESSION CACHE settings
                 # walk through the keys and values in
                 #   globalconfig["magento"]["doc_root"][doc_root]["local_xml"]["session_cache"]["session_save"]
@@ -1168,7 +1203,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 #   in Mage 1
                 print "Cache types (similar to cache_option_table)"
                 table = []
-                for k2, v2 in env_php.get("cache_types").iteritems():
+                for k2, v2 in env_php.get("cache_types", {}).iteritems():
                     if k2 == "full_page" and v2 == "0":
                         print ("The full_page value being set to 0 indicates "
                                "Full Page Cache (FPC) is disabled, even if it "
