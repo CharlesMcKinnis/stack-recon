@@ -943,7 +943,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                     if doc_root_dict.get("local_xml", {}).get("db"):
                         print "Read-Only Database settings"
                         table = []
-                        for k2, v2 in local_db.iteritems():
+                        for k2, v2 in local_db_read.iteritems():
                             if k2 in skip:
                                 continue
                             try:
