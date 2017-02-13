@@ -622,6 +622,7 @@ if not args.jsonfile:
                 #               "username": v.get("username")}}
         v = doc_root_dict.get("local_xml", {}).get("db_read", {})
         if v:
+            print "found db_read %r" % v
             if ({"host": v.get("host"),
                  "dbname": v.get("dbname"),
                  "password": v.get("password"),
