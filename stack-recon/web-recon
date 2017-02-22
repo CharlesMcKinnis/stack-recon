@@ -18,12 +18,6 @@ try:
     import json
     JSON = True
 except ImportError:
-    # sys.stderr.write("Data export omitted, module json and simplejson are "
-    #                  "not installed\n")
-    # sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: "
-    #                  "yum install python-simplejson")
-    # error_collection.append("Data export omitted because the json module is "
-    #                         "not installed\n")
     JSON = False
 try:
     import argparse
@@ -32,17 +26,6 @@ except ImportError:
     ARGPARSE = False
     sys.stderr.write("This program is more robust if python argparse "
                      "installed.\n")
-    # error_collection.append("This program is more robust if python "
-    #                         "argparse installed.\n")
-# try:
-#     import mysql.connector
-#     MYSQL = True
-# except ImportError:
-#     MYSQL = False
-#     sys.stderr.write("This program will be more robust if mysql.connector "
-#                      "installed.\n")
-#     error_collection.append("This program will be more robust if "
-#                             "mysql.connector installed.\n")
 
 STACK_STATUS_VERSION = 2017022201
 
