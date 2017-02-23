@@ -93,15 +93,21 @@ if ARGPARSE:
                         "daemon(s). Requires additional daemon switches.",
                         action="store_true")
     parser.add_argument("--apache",
-                        help="Daemon specific switch for other options " +
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
                         "(printwholeconfig)",
                         action="store_true")
     parser.add_argument("--nginx",
-                        help="Daemon specific switch for other options " +
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
                         "(printwholeconfig)",
                         action="store_true")
     parser.add_argument("--phpfpm",
-                        help="Daemon specific switch for other options " +
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
                         "(printwholeconfig)",
                         action="store_true")
     parser.add_argument("--printglobalconfig",

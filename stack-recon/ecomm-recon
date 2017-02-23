@@ -141,15 +141,21 @@ if ARGPARSE:
                         "daemon(s). Requires additional daemon switches.",
                         action="store_true")
     parser.add_argument("--apache",
-                        help="Daemon specific switch for other options " +
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
                         "(printwholeconfig)",
                         action="store_true")
     parser.add_argument("--nginx",
-                        help="Daemon specific switch for other options " +
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
                         "(printwholeconfig)",
                         action="store_true")
     parser.add_argument("--phpfpm",
-                        help="Daemon specific switch for other options " +
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
                         "(printwholeconfig)",
                         action="store_true")
     parser.add_argument("--printglobalconfig",
@@ -170,7 +176,9 @@ if ARGPARSE:
                         help="Path to Magento",
                         )
     """
-    parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
+    parser.add_argument("--nopassword",
+                        help="Omits passwords from screen output and json " +
+                        "capture.",
                         action="store_true")
     """
 
@@ -216,9 +224,21 @@ try:
 except:
     args.notable = True
 
-skip_apache = False
-skip_nginx = False
-skip_phpfpm = False
+if args.apache or args.nginx or args.phpfpm:
+    skip_apache = True
+    skip_nginx = True
+    skip_phpfpm = True
+    if args.apache:
+        skip_apache = False
+    if args.nginx:
+        skip_nginx = False
+    if args.phpfpm:
+        skip_phpfpm = False
+else:
+    skip_apache = False
+    skip_nginx = False
+    skip_phpfpm = False
+
 globalconfig = {}
 
 if args.jsonfile and JSON is True:
