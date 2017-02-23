@@ -748,7 +748,8 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
-    nginx.figlet()
+    if not args.nofiglet:
+        nginx.figlet()
     nginx_dict = globalconfig.get("nginx", {})
     if nginx_dict.get("version"):
         print nginx_dict.get("version")
@@ -798,7 +799,8 @@ def APACHE_PRINT():
 # APACHE
 ################################################
 if "apache" in globalconfig:
-    apache.figlet()
+    if not args.nofiglet:
+        apache.figlet()
     apache_dict = globalconfig.get("apache", {})
     if apache_dict.get("version"):
         print "Apache version: %s" % apache_dict.get("version")
@@ -853,7 +855,8 @@ def PHP_FPM_PRINT():
 # for real numbers for calculation, I'll need to sum them all
 
 if "phpfpm_meta" in globalconfig:
-    phpfpm.figlet()
+    if not args.nofiglet:
+        phpfpm.figlet()
     if globalconfig.get("phpfpm_meta", {}).get("version"):
         print ("php-fpm version: %s" %
                globalconfig.get("phpfpm_meta", {}).get("version"))
@@ -895,7 +898,8 @@ def MAGENTO_PRINT():
 ################################################
 
 if globalconfig.get("magento", {}).get("doc_root"):
-    magento.figlet()
+    if not args.nofiglet:
+        magento.figlet()
     print "\nMagento versions installed:"
     if globalconfig.get("magento", {}).get("doc_root"):
         for key, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
@@ -1356,7 +1360,8 @@ def MEMCACHE_PRINT():
     pass
 # sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
-    memcache.figlet()
+    if not args.nofiglet:
+        memcache.figlet()
     # pp.pprint(globalconfig.get("memcache"))
     for instance, instance_dict in globalconfig.get("memcache").iteritems():
         print "Server: %s" % instance
@@ -1387,7 +1392,8 @@ if globalconfig.get("memcache"):
 def REDIS_PRINT():
     pass
 if globalconfig.get("redis"):
-    redis.figlet()
+    if not args.nofiglet:
+        redis.figlet()
     for instance, instance_dict in globalconfig.get("redis").iteritems():
         print "Server: %s" % instance
 
@@ -1418,7 +1424,8 @@ print
 def MYSQL_PRINT():
     pass
 if globalconfig.get("mysql"):
-    mysqlctl.figlet()
+    if not args.nofiglet:
+        mysqlctl.figlet()
     # pp = pprint.PrettyPrinter(indent=4)
     # pp.pprint(globalconfig["mysql"])
 

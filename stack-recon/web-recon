@@ -432,7 +432,8 @@ def NGINX_PRINT():
 ################################################
 # maxclients or number of processes is "worker_processes"
 if "nginx" in globalconfig:
-    nginx.figlet()
+    if not args.nofiglet:
+        nginx.figlet()
     nginx_dict = globalconfig.get("nginx", {})
     if nginx_dict.get("version"):
         print nginx_dict.get("version")
@@ -468,7 +469,8 @@ def APACHE_PRINT():
 # APACHE
 ################################################
 if "apache" in globalconfig:
-    apache.figlet()
+    if not args.nofiglet:
+        apache.figlet()
     apache_dict = globalconfig.get("apache", {})
     if apache_dict.get("version"):
         print "Apache version: %s" % apache_dict.get("version")
@@ -523,7 +525,8 @@ def PHP_FPM_PRINT():
 # for real numbers for calculation, I'll need to sum them all
 
 if "phpfpm_meta" in globalconfig:
-    phpfpm.figlet()
+    if not args.nofiglet:
+        phpfpm.figlet()
     if globalconfig.get("phpfpm_meta", {}).get("version"):
         print ("php-fpm version: %s" %
                globalconfig.get("phpfpm_meta", {}).get("version"))
