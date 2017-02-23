@@ -155,11 +155,22 @@ try:
 except:
     args.notable = True
 
-skip_apache = False
-skip_nginx = False
-skip_phpfpm = False
-globalconfig = {}
+if args.apache or args.nginx or args.phpfpm:
+    skip_apache = True
+    skip_nginx = True
+    skip_phpfpm = True
+    if args.apache:
+        skip_apache = False
+    if args.nginx:
+        skip_nginx = False
+    if args.phpfpm:
+        skip_phpfpm = False
+else:
+    skip_apache = False
+    skip_nginx = False
+    skip_phpfpm = False
 
+globalconfig = {}
 
 if not args.jsonfile:
     # these are the daemon executable names we are looking for
