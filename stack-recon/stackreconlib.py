@@ -2449,7 +2449,7 @@ def memory_print(result, proc_name, proc_max):
             result["biggest"] * proc_max))
     print("What should I set max processes to?")
     print("The safe value would be to use the largest process, and commit 80%% "
-          "of memory: %d" % int((result["rss_sum+bc_free"]
+          "of memory: %d" % int((result["rss_sum+mem_free"]
                                  ) / result["biggest"] * .8))
     print
     print("Current maximum processes: %d" % proc_max)

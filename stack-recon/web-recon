@@ -1,0 +1,575 @@
+#!/usr/bin/env python
+
+# from ecommstacklib import *
+import stackreconlib
+from stackreconlib import (error_collection,
+                           daemon_exe, importfile, print_sites,
+                           memory_estimate, memory_print)
+import sys
+try:
+    import xml.etree.ElementTree as ET
+except ImportError:
+    import cElementTree as ET
+import pprint
+import socket
+import decimal
+# import collections
+try:
+    import json
+    JSON = True
+except ImportError:
+    JSON = False
+try:
+    import argparse
+    ARGPARSE = True
+except ImportError:
+    ARGPARSE = False
+    sys.stderr.write("This program is more robust if python argparse "
+                     "installed.\n")
+
+STACK_STATUS_VERSION = 2017022201
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
+
+"""
+git clone https://github.com/CharlesMcKinnis/stack-recon.git
+#dev branch
+cd stack-recon && git checkout -b dev origin/dev
+./ecomm-recon 2>&1 |tee report-`date +%b%d-%H%M`.txt|less
+
+To look at the json captured:
+cat config_dump.json |python -m json.tool|less
+"""
+
+"""
+The script will look for apache, nginx and php-fpm binaries in memory, and
+identify their configuration source. Using the web server config, the document
+root and domain information is collected and displayed php-fpm configuration
+is collected and displayed.
+"""
+
+
+class argsAlt(object):
+    pass
+
+pp = pprint.PrettyPrinter(indent=4)
+
+# The argparse module is not installed on many systems. This way, it will
+#   work regardless
+if ARGPARSE:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "-j", "--jsonfile",
+                        help="Name of a config dump json file. Skips " +
+                        "detection and uses file values.",
+                        )
+    parser.add_argument("-s", "--silent",
+                        help="No output, not even stderr.",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose",
+                        help="Additional output, mostly to stderr.",
+                        action="store_true")
+    parser.add_argument("-F", "--nofiglet",
+                        help="Omits big text (figlet) banners. Banners do " +
+                        "not require figlet to be installed.",
+                        action="store_true")
+    # parser.add_argument("--plaintext", help="ANSI control characters are "
+    #   "omitted for colors and screen clear/home.",
+    #                     action="store_true")
+    parser.add_argument("-f", "--force",
+                        help="If config_dump.json already exists, overwrite " +
+                        "it. Default: do not overwrite.",
+                        action="store_true")
+    parser.add_argument("-o", "--output",
+                        help="Name of json file to place saved config in. " +
+                        "Default: ./config_dump.json",
+                        default="./config_dump.json")
+    parser.add_argument("--printwholeconfig",
+                        help="Print the concat (whole) config of a " +
+                        "daemon(s). Requires additional daemon switches.",
+                        action="store_true")
+    parser.add_argument("--apache",
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
+                        "(printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--nginx",
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
+                        "(printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--phpfpm",
+                        help="Limit info gathered from web daemon to " +
+                        "specific daemon. " +
+                        "Daemon specific switch for other options " +
+                        "(printwholeconfig)",
+                        action="store_true")
+    parser.add_argument("--printglobalconfig",
+                        help="Pretty print the globalconfig dict",
+                        action="store_true")
+    parser.add_argument("--printjson",
+                        help="Pretty print the globalconfig json",
+                        action="store_true")
+
+    """
+    parser.add_argument("--nopassword", help="Omits passwords from screen output and json capture.",
+                        action="store_true")
+    """
+
+    args = parser.parse_args()
+
+    # if (args.silent or args.batch) and not args.runtime:
+    #     args.runtime = 30
+    #     pass
+    # if args.batch:
+    #     args.plaintext = True
+    # if args.batch:
+    #     pass
+else:
+    args = argsAlt()
+    args.jsonfile = None
+    args.silent = None
+    args.verbose = None
+    args.nofiglet = None
+    args.force = None
+    args.printwholeconfig = None
+    args.printglobalconfig = None
+    args.apache = None
+    args.nginx = None
+    args.phpfpm = None
+    args.output = "./config_dump.json"
+    args.printjson = None
+    # args.nopassword = None
+    """
+    defaults:
+        save a config_dump
+        do not show verbose messages
+        show figlet banners
+        do not overwrite config_dump.json
+        json filename, default config_dump.json
+    """
+
+# Because RHEL 5 :p
+try:
+    test = ".".format()
+except:
+    args.notable = True
+
+if args.apache or args.nginx or args.phpfpm:
+    skip_apache = True
+    skip_nginx = True
+    skip_phpfpm = True
+    if args.apache:
+        skip_apache = False
+    if args.nginx:
+        skip_nginx = False
+    if args.phpfpm:
+        skip_phpfpm = False
+else:
+    skip_apache = False
+    skip_nginx = False
+    skip_phpfpm = False
+
+globalconfig = {}
+
+if not args.jsonfile:
+    # these are the daemon executable names we are looking for
+    # added "php-fpm-5.4", "php-fpm-5.5", "php-fpm-5.6", "php-fpm-7.0" for
+    #   Amazon Linux
+    daemons = daemon_exe(["httpd", "apache2", "nginx", "bash", "httpd.event",
+                          "httpd.worker", "mysql", "mysqld", "php-fpm",
+                          "php5-fpm", "php-fpm-5.4", "php-fpm-5.5",
+                          "php-fpm-5.6", "php-fpm-7.0"])
+    for i in daemons:
+        if daemons.get(i, {}).get("error"):
+            sys.stderr.write(daemons[i]["error"] + "\n")
+            error_collection.append(daemons[i]["error"] + "\n")
+    localfqdn = socket.getfqdn()
+    globalconfig = {"version": STACK_STATUS_VERSION, "fqdn": localfqdn}
+    globalconfig["daemons"] = daemons
+
+    """
+     ____    _  _____  _       ____    _  _____ _   _ _____ ____
+    |  _ \  / \|_   _|/ \     / ___|  / \|_   _| | | | ____|  _ \
+    | | | |/ _ \ | | / _ \   | |  _  / _ \ | | | |_| |  _| | |_) |
+    | |_| / ___ \| |/ ___ \  | |_| |/ ___ \| | |  _  | |___|  _ <
+    |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\
+    """
+    class DATA_GATHER(object):
+        pass
+    if skip_apache is not True:
+        # using this as a bookmark in the IDE
+        def APACHE_DATA_GATHER():
+            pass
+        sys.stderr.write("apache data gather\n")
+        ################################################
+        # APACHE
+        ################################################
+        apache_exe = ""
+        # what if they have multiple apache daemons on different MPMs?
+        alt_daemon_names = ["apache2", "httpd", "httpd.event", "httpd.worker"]
+        daemon_name = list(set(alt_daemon_names).intersection(daemons.keys()))
+        # # print "324 alt daemon names %r" % alt_daemon_names
+        # print "325 web daemon %r" % daemon_name[0]
+        # print "326 daemons %r" % daemons.keys()
+        # print "Version(s) of Apache is running %r. Using %s\n" % (daemon_name, daemon_name[0])
+        if len(daemon_name) > 1:
+            sys.stderr.write("More than one version of Apache is running %r. "
+                             "Using %s\n" %
+                             (daemon_name, daemon_name[0]))
+            error_collection.append("More than one version of Apache is "
+                                    "running %r. Using %s\n" %
+                                    (daemon_name, daemon_name[0]))
+            pass
+        elif len(daemon_name) == 1:
+            apache_basename = daemons[daemon_name[0]]["basename"]
+            apache_exe = daemons[daemon_name[0]]["exe"]
+            apache = stackreconlib.apacheCtl(daemons[daemon_name[0]], exe=daemons[daemon_name[0]]["exe"])
+        else:
+            sys.stderr.write("Apache is not running\n")
+            error_collection.append("Apache is not running\n")
+
+        if apache_exe:
+            apache_conf_file = apache.get_conf()
+            apache_root_path = apache.get_root()
+            apache_mpm = apache.get_mpm()
+            if apache_conf_file and apache_root_path:
+                sys.stderr.write("Using config %s\n" % apache_conf_file)
+                error_collection.append("Using config %s\n" % apache_conf_file)
+                # (?:OPTIONAL?)?  the word OPTIONAL may or may not be there as
+                #   a whole word, and is a non-capturing group by virtue of
+                #   the (?:)
+                return_dict = importfile(apache_conf_file,
+                                         '\s*include(?:optional?)?\s+[\'"]?([^\s\'"]+)[\'"]?',
+                                         base_path=apache_root_path)
+                wholeconfig = return_dict["combined"]
+                # print "file list: %r" % return_dict["config_files_list"]
+                if args.printwholeconfig and args.apache:
+                    print(wholeconfig)
+                apache_config = apache.parse_config(wholeconfig)
+
+                if "apache" not in globalconfig:
+                    globalconfig["apache"] = {}
+                globalconfig["apache"] = apache_config
+                globalconfig["apache"]["version"] = apache.get_version()
+                """
+                globalconfig[apache][sites]: [
+                    {
+                    'domains': ['domain.com', 'www.domain.com new.domain.com'],
+                    'config_file': '/etc/httpd/conf.d/ssl.conf',
+                    'doc_root': '/var/www/html',
+                    'listening': ['192.168.100.248:443']
+                    }, {
+                    'domains': ['adomain.com', 'www.domain.com new.domain.com'],
+                    'config_file': '/etc/httpd/conf/httpd.conf',
+                    'doc_root': '/var/www/html',
+                    'listening': ['*:80']
+                    }, {
+                    'config_file': '/etc/httpd/conf.d/ssl.conf',
+                    'listening': ['_default_:443']
+                    }, {
+                    'config_file': '/etc/httpd/conf/httpd.conf',
+                    'listening': ['_default_:80']
+                    }, {
+                    'doc_root': '/var/www/html'
+                    }]
+                """
+
+                daemon_config = apache.get_conf_parameters()
+                if daemon_config:
+                    if "daemon" not in globalconfig["apache"]:
+                        globalconfig["apache"]["daemon"] = daemon_config
+                    globalconfig["apache"]["basename"] = apache_basename
+                    globalconfig["apache"]["exe"] = daemons[apache_basename]["exe"]
+                    globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
+
+    # using this as a bookmark in the IDE
+    def NGINX_DATA_GATHER():
+        pass
+    if skip_nginx is not True:
+        sys.stderr.write("nginx data gather\n")
+        ################################################
+        # NGINX
+        ################################################
+        if "nginx" not in daemons:
+            sys.stderr.write("nginx is not running\n")
+            error_collection.append("nginx is not running\n")
+        else:
+            nginx = stackreconlib.nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
+            nginx_conf_file = nginx.get_conf()
+            if nginx_conf_file:
+                sys.stderr.write("Using config %s\n" % nginx_conf_file)
+                error_collection.append("Using config %s\n" % nginx_conf_file)
+
+                # configuration fetch and parse
+                return_dict = importfile(nginx_conf_file, '\s*include\s+(\S+);')
+                wholeconfig = return_dict["combined"]
+                # print "file list: %r" % return_dict["config_files_list"]
+                if args.printwholeconfig and args.nginx:
+                    print(wholeconfig)
+                nginx_config = nginx.parse_config(wholeconfig)
+
+                if "nginx" not in globalconfig:
+                    globalconfig["nginx"] = {}
+                globalconfig["nginx"] = nginx_config
+                globalconfig["nginx"]["version"] = nginx.get_version()
+                """
+                {
+                'domains': ['www.domain.com'],
+                'config_file': '/etc/nginx/conf.d/production.domain.com.conf',
+                'doc_root': '/var/www/vhosts/production.domain.com/webroot',
+                'listening': ['443 default ssl']
+                }
+
+                """
+
+                daemon_config = nginx.get_conf_parameters()
+                if daemon_config:
+                    if "daemon" not in globalconfig["nginx"]:
+                        globalconfig["nginx"]["daemon"] = daemon_config
+                    globalconfig["nginx"]["basename"] = "nginx"
+                    globalconfig["nginx"]["exe"] = daemons["nginx"]["exe"]
+                    globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
+
+    # using this as a bookmark in the IDE
+    def PHP_FPM_DATA_GATHER():
+        pass
+    if skip_phpfpm is not True:
+        sys.stderr.write("php-fpm data gather\n")
+        ################################################
+        # PHP-FPM
+        ################################################
+
+        daemon_exe = ""  # to fix not defined
+        # php-fpm executable name is different between distros and versions.
+        # daemon_exe catches them all, but then we need to narrow down the
+        #   names for this specific daemon
+        alt_daemon_names = ["php-fpm", "php5-fpm", "php-fpm-5.4", "php-fpm-5.5",
+                            "php-fpm-5.6", "php-fpm-7.0"]
+        daemon_name = list(set(alt_daemon_names).intersection(daemons.keys()))
+        # print "324 alt daemon names %r" % alt_daemon_names
+        # print "325 web daemon %r" % daemon_name[0]
+        # print "326 daemons %r" % daemons.keys()
+        # print "Version(s) of Apache is running %r. Using %s\n" % (daemon_name,
+        #                                                           daemon_name[0])
+        if len(daemon_name) > 1:
+            # print "More than one version of Apache is running."
+            sys.stderr.write("More than one version of php-fpm is running %r. "
+                             "Using %s\n" % (daemon_name, daemon_name[0]))
+            error_collection.append("More than one version of php-fpm is "
+                                    "running %r. Using %s\n" %
+                                    (daemon_name, daemon_name[0]))
+            pass
+        elif len(daemon_name) == 1:
+            phpfpm = stackreconlib.phpfpmCtl(daemons[daemon_name[0]],
+                                             exe=daemons[daemon_name[0]]["exe"])
+            phpfpm_conf_file = phpfpm.get_conf()
+            if phpfpm_conf_file:
+                return_dict = importfile(phpfpm_conf_file,
+                                         '\s*include[\s=]+(\S+)')
+                wholeconfig = return_dict["combined"]
+                # print "file list: %r" % return_dict["config_files_list"]
+                if args.printwholeconfig and args.phpfpm:
+                    print(wholeconfig)
+
+                phpfpm_config = phpfpm.parse_config(wholeconfig)
+
+                if daemon_name[0] not in globalconfig:
+                    globalconfig[daemon_name[0]] = {}
+                globalconfig[daemon_name[0]] = phpfpm_config
+                globalconfig[daemon_name[0]]["version"] = phpfpm.get_version()
+                globalconfig[daemon_name[0]]["basename"] = daemon_name[0]
+                globalconfig[daemon_name[0]]["exe"] = daemons[daemon_name[0]]["exe"]
+                globalconfig[daemon_name[0]]["cmd"] = daemons[daemon_name[0]]["cmd"]
+
+                if "phpfpm_meta" not in globalconfig:
+                    globalconfig["phpfpm_meta"] = {}
+                globalconfig["phpfpm_meta"] = globalconfig[daemon_name[0]]
+                globalconfig["phpfpm_meta"]["version"] = globalconfig[daemon_name[0]]["version"]
+                globalconfig["phpfpm_meta"]["basename"] = globalconfig[daemon_name[0]]["basename"]
+                globalconfig["phpfpm_meta"]["exe"] = globalconfig[daemon_name[0]]["exe"]
+                globalconfig["phpfpm_meta"]["cmd"] = globalconfig[daemon_name[0]]["cmd"]
+        else:
+            sys.stderr.write("php-fpm is not running\n")
+            error_collection.append("php-fpm is not running\n")
+
+else:
+    for i in globalconfig["errors"]:
+        sys.stdout.write(i)
+"""
+{'/var/www/html':
+    {
+        'Mage.php': '/var/www/html/app/Mage.php',
+        'mage_version':
+        {
+            'major': '1',
+            'number': '',
+            'patch': '0',
+            'stability': '',
+            'edition': 'EDITION_COMMUNITY',
+            'version': '1.9.1.0',
+            'minor': '9',
+            'revision': '1'},
+       'magento_version': 'Magento 1.9.1.0 EDITION_COMMUNITY',
+       'magento_path': '/var/www/html'
+    }
+}
+"""
+
+
+# using this as a bookmark in the IDE
+class OUTPUT(object):
+    pass
+"""
+  ___  _   _ _____ ____  _   _ _____
+ / _ \| | | |_   _|  _ \| | | |_   _|
+| | | | | | | | | | |_) | | | | | |
+| |_| | |_| | | | |  __/| |_| | | |
+ \___/ \___/  |_| |_|    \___/  |_|
+"""
+################################################
+# Output body for checking values below
+################################################
+
+print "FQDN: %s" % localfqdn
+
+
+# if not args.silent:
+def NGINX_PRINT():
+    pass
+# sys.stderr.write("nginx data print\n")
+################################################
+# NGINX
+################################################
+# maxclients or number of processes is "worker_processes"
+if "nginx" in globalconfig:
+    if not args.nofiglet:
+        nginx.figlet()
+    nginx_dict = globalconfig.get("nginx", {})
+    if nginx_dict.get("version"):
+        print nginx_dict.get("version")
+    else:
+        print "No nginx version?"
+    if nginx_dict.get("sites"):
+        print "nginx sites:"
+        """
+
+        "sites" : [
+            blah :{
+                'domains': [
+                    'example.com', 'www.example.com new.example.com'
+                    ],
+                'config_file': '/etc/httpd/conf/httpd.conf',
+                'doc_root': '/var/www/html',
+                'listening': [
+                    '*:80'
+                    ]
+            }
+        ]
+        """
+        if globalconfig.get("nginx", {}).get("error"):
+            sys.stderr.write("Errors: \n%s\n" % nginx_dict["error"])
+            error_collection.append("Errors: \n%s\n" % nginx_dict["error"])
+
+        print_sites(globalconfig["nginx"]["sites"])
+
+
+def APACHE_PRINT():
+    pass
+################################################
+# APACHE
+################################################
+if "apache" in globalconfig:
+    if not args.nofiglet:
+        apache.figlet()
+    apache_dict = globalconfig.get("apache", {})
+    if apache_dict.get("version"):
+        print "Apache version: %s" % apache_dict.get("version")
+    else:
+        print "No apache version?"
+    if apache_dict.get("daemon", {}).get("Server MPM"):
+        print ("Apache server MPM: %s\n" %
+               apache_dict.get("daemon", {}).get("Server MPM"))
+    else:
+        print "No apache server MPM?\n"
+    if globalconfig.get("apache", {}).get("sites"):
+        print "Apache sites:"
+        """
+        28 Oct 2015
+        {'domains':
+        ['example.com', 'www.example.com new.example.com'],
+        'config_file': '/etc/httpd/conf/httpd.conf',
+        'doc_root': '/var/www/html',
+        'listening': ['*:80']}
+        """
+        print_sites(globalconfig["apache"]["sites"])
+
+        # memory profile
+        if ("basename" in globalconfig["apache"] and
+                "maxprocesses" in globalconfig["apache"] and
+                "vent" not in apache_dict.get("daemon", {}).get("Server MPM")):
+            # if event (vent) is the MPM, Apache is probably using php-fpm
+            proc_name = globalconfig["apache"]["basename"]
+            proc_max = globalconfig["apache"]["maxprocesses"]
+            result = memory_estimate(proc_name)
+            if result:
+                print "! IMPORTANT !"
+                print ("These numbers do not include memory allocated to "
+                       "kernel buffers and cache. You can use the command "
+                       "below to clear the buffers and cache , but this "
+                       "may impact system performance for a short time.")
+                print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
+                print
+                memory_print(result, proc_name, proc_max)
+        print "\n"
+
+
+# globalconfig["nginx"]["maxclients"]
+
+def PHP_FPM_PRINT():
+    pass
+# sys.stderr.write("php-fpm data print\n")
+################################################
+# PHP-FPM
+################################################
+# maxclients is per stanza, and is pm.max_children
+# for real numbers for calculation, I'll need to sum them all
+
+if "phpfpm_meta" in globalconfig:
+    if not args.nofiglet:
+        phpfpm.figlet()
+    if globalconfig.get("phpfpm_meta", {}).get("version"):
+        print ("php-fpm version: %s" %
+               globalconfig.get("phpfpm_meta", {}).get("version"))
+    else:
+        print "No php version?"
+    print "php-fpm pools:"
+    for one in globalconfig["phpfpm_meta"]:
+        if type(globalconfig["phpfpm_meta"][one]) is dict:
+            print "%s" % (one,)
+
+    print
+    # memory profile
+    print "php-fpm memory profile:"
+    print "! IMPORTANT !"
+    print ("These numbers do not include memory allocated to kernel "
+           "buffers and cache. You can use the command below to clear the "
+           "buffers and cache , but this "
+           "may impact system performance for a short time.")
+    print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
+    print
+
+    if (globalconfig.get("phpfpm_meta", {}).get("basename") and
+            globalconfig.get("phpfpm_meta", {}).get("maxprocesses")):
+        proc_name = globalconfig["phpfpm_meta"]["basename"]
+        proc_max = int(globalconfig["phpfpm_meta"]["maxprocesses"])
+        result = memory_estimate(proc_name)
+        if result:
+            # pp.pprint(result)
+            memory_print(result, proc_name, proc_max)
