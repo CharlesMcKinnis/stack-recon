@@ -4,6 +4,7 @@ import glob
 import subprocess
 import sys
 import os
+from inspect import currentframe, getframeinfo
 try:
     import mysql.connector
     from mysql.connector import errorcode
@@ -1879,7 +1880,11 @@ class MysqlCtl(object):
                 cursor = cnx.cursor()
             except mysql.connector.Error, err:
                 if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                    print("Something is wrong with your user name or password")
+                    frameinfo = getframeinfo(currentframe())
+                    print("Something is wrong with your user name or password, "
+                          "line %s" %
+                          (frameinfo.lineno))
+                    print(config)
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
                 else:
@@ -1992,7 +1997,12 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cursor = cnx.cursor()
         except mysql.connector.Error, err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
+                frameinfo = getframeinfo(currentframe())
+                print("Something is wrong with your user name or password, "
+                      "line %s" %
+                      (frameinfo.lineno))
+                print(config)
+
                 sys.exit(1)
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
@@ -2027,7 +2037,11 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cursor = cnx.cursor()
         except mysql.connector.Error, err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
+                frameinfo = getframeinfo(currentframe())
+                print("Something is wrong with your user name or password, "
+                      "line %s" %
+                      (frameinfo.lineno))
+                print(config)
                 sys.exit(1)
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
@@ -2062,7 +2076,11 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cursor = cnx.cursor()
         except mysql.connector.Error, err:
             if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
+                frameinfo = getframeinfo(currentframe())
+                print("Something is wrong with your user name or password, "
+                      "line %s" %
+                      (frameinfo.lineno))
+                print(config)
                 sys.exit(1)
             elif err.errno == errorcode.ER_BAD_DB_ERROR:
                 print("Database does not exist")
