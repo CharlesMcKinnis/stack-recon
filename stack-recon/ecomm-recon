@@ -632,8 +632,8 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                if not host_dict:
-                    print "636 no host_dict"
+                if not v.get("host"):
+                    print "636 no v.get('host')"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -654,8 +654,8 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                if not host_dict:
-                    print "656 no host_dict"
+                if not v.get("host"):
+                    print "656 v.get('host')"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -672,8 +672,8 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                if not host_dict:
-                    print "674 no host_dict"
+                if not v.get("host"):
+                    print "674 no v.get('host')"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
