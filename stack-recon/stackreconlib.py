@@ -2033,29 +2033,30 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             'raise_on_warnings': True,
         }
 
-        try:
-            cnx = mysql.connector.connect(**config)
-            cursor = cnx.cursor()
-        except mysql.connector.Error, err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                frameinfo = getframeinfo(currentframe())
-                print("Something is wrong with your user name or password, "
-                      "line %s" %
-                      (frameinfo.lineno))
-                print(config)
-                sys.exit(1)
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
-                sys.exit(2)
-            else:
-                print(err)
-                sys.exit(3)
-
-        cursor.execute(query)
-        for (i, j) in cursor:
-            return_dict[i] = j
-        cnx.close()
-        return(return_dict)
+        if config["host"] and config["password"] and config["user"]:
+            try:
+                cnx = mysql.connector.connect(**config)
+                cursor = cnx.cursor()
+            except mysql.connector.Error, err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    frameinfo = getframeinfo(currentframe())
+                    print("Something is wrong with your user name or password, "
+                          "line %s" %
+                          (frameinfo.lineno))
+                    print(config)
+                    sys.exit(1)
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
+                    sys.exit(2)
+                else:
+                    print(err)
+                    sys.exit(3)
+    
+            cursor.execute(query)
+            for (i, j) in cursor:
+                return_dict[i] = j
+            cnx.close()
+            return(return_dict)
 
     def innodb_table_size(self, db_list):
         return_dict = {}
