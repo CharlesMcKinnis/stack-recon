@@ -2098,7 +2098,11 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                 return_dict = {"data_size": i,
                                "index_size": j,
                                "data+index_size": i+j  }
-            return(return_dict)
+        else:
+            return_dict = {"data_size": 0,
+                           "index_size": 0,
+                           "data+index_size": 0  }
+        return(return_dict)
 
 
 def socket_client(host, port, string, **kwargs):
