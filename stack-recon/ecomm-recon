@@ -632,6 +632,8 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
+                if not v.get("host"):
+                    print "636 no host"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
