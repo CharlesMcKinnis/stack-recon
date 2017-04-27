@@ -1501,7 +1501,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
     config_file_output = ""
-    for i, j in globalconfig["mysql"]["host_dict"][k]["variables"].iteritems():
+    for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).iteritems():
         if i in base_values:
             row = []
             notes = ""
