@@ -632,8 +632,6 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
-                if not v.get("host"):
-                    print "636 no host"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -680,7 +678,8 @@ if not args.jsonfile:
 
     # mysql global variables and status
     for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
-
+        if not k:
+            print "682 no k"
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
             globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
