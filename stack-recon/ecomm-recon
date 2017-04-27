@@ -685,8 +685,6 @@ if not args.jsonfile:
 
     # mysql global variables and status
     for k, v in globalconfig.get("mysql", {}).get("host_dict").iteritems():
-        if not k:
-            print "682 no k"
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
             globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
@@ -1506,8 +1504,6 @@ eval_type = {
 
 
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    # if not k:
-    #     continue
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
     config_file_output = ""
@@ -1622,8 +1618,6 @@ base_values = {
     "Max_used_connections": 0,
 }
 for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    # if not k:
-    #     continue
     table = [["Variable", "value", "compare-to", "compare-value"]]
     sqloutput = ""
     config_file_output = ""
