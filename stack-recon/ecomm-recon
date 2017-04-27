@@ -1628,9 +1628,9 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     #         # row.append(notes)
 
     row.append("Max used conns")
-    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("status", {}).get("Max_used_connections", {}))
+    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("status", {}).get("Max_used_connections", 0))
     row.append("Max allowed conns")
-    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("max_connections", {}))
+    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("max_connections", 0))
     table.append(row)
     row = []
 
