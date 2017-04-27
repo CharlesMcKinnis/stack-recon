@@ -714,6 +714,8 @@ if not args.jsonfile:
         host = globalconfig["mysql"]["db_list"][counter]["host"]
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
             globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
+        if not globalconfig.get("mysql", {}).get("db_list", {}).get(counter, {}).get("innodb", {}).get("data+index_size"):
+            globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
         globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
             int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
             int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])

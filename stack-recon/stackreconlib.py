@@ -2051,7 +2051,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                 else:
                     print(err)
                     sys.exit(3)
-    
+
             cursor.execute(query)
             for (i, j) in cursor:
                 return_dict[i] = j
