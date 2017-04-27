@@ -18,6 +18,7 @@ import subprocess
 import sys
 import os
 import string
+from inspect import currentframe, getframeinfo
 # import yaml
 # import fnmatch
 try:
@@ -622,7 +623,7 @@ if not args.jsonfile:
         # doc_root["local_xml"]["db"]
         # local.xml db
         v = doc_root_dict.get("local_xml", {}).get("db", {})
-        if v:
+        if v and v.get("host"):
             if ({"host": v.get("host"),
                  "dbname": v.get("dbname"),
                  "password": v.get("password"),
@@ -631,6 +632,8 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
+                if not v.get("host"):
+                    print "636 no v.get('host')"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -641,8 +644,8 @@ if not args.jsonfile:
                 #               "password": v.get("password"),
                 #               "username": v.get("username")}}
         v = doc_root_dict.get("local_xml", {}).get("db_read", {})
-        if v:
-            print "found db_read %r" % v
+        if v and v.get("host"):
+            print "found db_read %r in doc_root %s" % (v, doc_root)
             if ({"host": v.get("host"),
                  "dbname": v.get("dbname"),
                  "password": v.get("password"),
@@ -651,6 +654,8 @@ if not args.jsonfile:
                                 "dbname": v.get("dbname"),
                                 "password": v.get("password"),
                                 "username": v.get("username")})
+                if not v.get("host"):
+                    print "656 v.get('host')"
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -659,25 +664,27 @@ if not args.jsonfile:
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
         for k, v in env_db.iteritems():
-            if ({"host": v.get("host"),
-                 "dbname": v.get("dbname"),
-                 "password": v.get("password"),
-                 "username": v.get("username")} not in db_list):
-                db_list.append({"host": v.get("host"),
-                                "dbname": v.get("dbname"),
-                                "password": v.get("password"),
-                                "username": v.get("username")})
-                update(host_dict,
-                       {v.get("host"):
-                        {"host": v.get("host"),
-                         "password": v.get("password"),
-                         "username": v.get("username")}})
+            if v.get("host"):
+                if ({"host": v.get("host"),
+                     "dbname": v.get("dbname"),
+                     "password": v.get("password"),
+                     "username": v.get("username")} not in db_list):
+                    db_list.append({"host": v.get("host"),
+                                    "dbname": v.get("dbname"),
+                                    "password": v.get("password"),
+                                    "username": v.get("username")})
+                    if not v.get("host"):
+                        print "674 no v.get('host')"
+                    update(host_dict,
+                           {v.get("host"):
+                            {"host": v.get("host"),
+                             "password": v.get("password"),
+                             "username": v.get("username")}})
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
 
     # mysql global variables and status
-    for k, v in globalconfig.get("mysql", {}).get("host_dict", {}).iteritems():
-
+    for k, v in globalconfig.get("mysql", {}).get("host_dict").iteritems():
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
             globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
@@ -713,6 +720,8 @@ if not args.jsonfile:
         host = globalconfig["mysql"]["db_list"][counter]["host"]
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
             globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
+        if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
+            globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
         globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
             int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
             int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
@@ -1498,7 +1507,7 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     table = [["variable", "current", "suggested", "notes"]]
     sqloutput = ""
     config_file_output = ""
-    for i, j in globalconfig["mysql"]["host_dict"][k]["variables"].iteritems():
+    for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).iteritems():
         if i in base_values:
             row = []
             notes = ""
@@ -1625,9 +1634,9 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     #         # row.append(notes)
 
     row.append("Max used conns")
-    row.append(globalconfig["mysql"]["host_dict"][k]["status"]["Max_used_connections"])
+    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("status", {}).get("Max_used_connections", 0))
     row.append("Max allowed conns")
-    row.append(globalconfig["mysql"]["host_dict"][k]["variables"]["max_connections"])
+    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("max_connections", 0))
     table.append(row)
     row = []
 
@@ -1636,16 +1645,16 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     # globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
     row.append("innodb buffer pool size")
     row.append(stackreconlib.bytes2human(
-        globalconfig["mysql"]["host_dict"][k]["variables"]["innodb_buffer_pool_size"]))
+        globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0)))
     row.append("innodb data size")
     #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
     row.append(stackreconlib.bytes2human(
-        globalconfig["mysql"]["host_dict"][k]["innodb"]["data+index_size"]))
+        globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)))
     table.append(row)
     row = []
 
     row.append("innodb buffer pool in use %")
-    row.append(str(globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"]) + "%")
+    row.append(str(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("buffer_pool_used_percentage", 0)) + "%")
     row.append("")
     row.append("")
     table.append(row)
