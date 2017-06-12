@@ -497,6 +497,8 @@ if not args.jsonfile:
         # get a list of unique document roots
         if args.localxml:
             doc_root, magento_xml = os.path.split(args.localxml)
+            if "magento" not in globalconfig:
+                globalconfig["magento"] = {"doc_root": {}}
             if doc_root not in globalconfig["magento"]["doc_root"]:
                 globalconfig["magento"]["doc_root"][doc_root] = {"local_xml": {"filename": args.localxml}}
                 # Mage 1 specific
