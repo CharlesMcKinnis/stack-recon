@@ -174,6 +174,9 @@ if ARGPARSE:
                         "of tables.",
                         action="store_true")
     parser.add_argument("--magentopath",
+                        help="Location of a local.xml file",
+                        )
+    parser.add_argument("--localxml",
                         help="Path to Magento",
                         )
     """
@@ -209,6 +212,7 @@ else:
     args.nomagento = None
     args.notable = None
     args.magentopath = None
+    args.localxml = None
     # args.nopassword = None
     """
     defaults:
@@ -251,7 +255,7 @@ if args.jsonfile and JSON is True:
         error_collection.append("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
 
-if args.magentopath:
+if args.magentopath or args.localxml:
     skip_apache = True
     skip_nginx = True
     skip_phpfpm = True
@@ -491,43 +495,51 @@ if not args.jsonfile:
         # Magento
         ################################################
         # get a list of unique document roots
-        if not args.magentopath:
-            doc_roots = set()
-            for apache_site in globalconfig.get("apache", {}).get("sites", {}):
-                if "doc_root" in apache_site:
-                    # reason for strip trailing slash is because paths will
-                    # appear twice if two identical paths are docroot,
-                    # and Magento find will run twice too
-                    doc_roots.add(apache_site["doc_root"].rstrip('/'))
-            for nginx_site in globalconfig.get("nginx", {}).get("sites", {}):
-                if "doc_root" in nginx_site:
-                    doc_roots.add(nginx_site["doc_root"].rstrip('/'))
-            more_doc_roots = []
-            for doc_root in doc_roots:
-                pass
-                magento_path, magento_path_dir = os.path.split(doc_root)
-                # This is to improve Magento 2 discovery
-                if magento_path_dir == "pub":
-                    # append magento_path to doc_root
-                    more_doc_roots.append(magento_path.rstrip('/'))
-            for doc_root in more_doc_roots:
-                doc_roots.add(doc_root)
-            globalconfig["doc_roots"] = list(doc_roots)
-        elif args.magentopath:
-            globalconfig["doc_roots"] = [args.magentopath]
+        if args.localxml:
+            doc_root, magento_xml = os.path.split(args.localxml)
+            if doc_root not in globalconfig["magento"]["doc_root"]:
+                globalconfig["magento"]["doc_root"][doc_root] = {"local_xml": {"filename": args.localxml}}
+                # Mage 1 specific
+                local_xml = args.localxml
+        else:
+            if not args.magentopath:
+                doc_roots = set()
+                for apache_site in globalconfig.get("apache", {}).get("sites", {}):
+                    if "doc_root" in apache_site:
+                        # reason for strip trailing slash is because paths will
+                        # appear twice if two identical paths are docroot,
+                        # and Magento find will run twice too
+                        doc_roots.add(apache_site["doc_root"].rstrip('/'))
+                for nginx_site in globalconfig.get("nginx", {}).get("sites", {}):
+                    if "doc_root" in nginx_site:
+                        doc_roots.add(nginx_site["doc_root"].rstrip('/'))
+                more_doc_roots = []
+                for doc_root in doc_roots:
+                    pass
+                    magento_path, magento_path_dir = os.path.split(doc_root)
+                    # This is to improve Magento 2 discovery
+                    if magento_path_dir == "pub":
+                        # append magento_path to doc_root
+                        more_doc_roots.append(magento_path.rstrip('/'))
+                for doc_root in more_doc_roots:
+                    doc_roots.add(doc_root)
+                globalconfig["doc_roots"] = list(doc_roots)
+            elif args.magentopath:
+                globalconfig["doc_roots"] = [args.magentopath]
 
-        if "magento" not in globalconfig:
-            globalconfig["magento"] = {"doc_root": {}}
+            if "magento" not in globalconfig:
+                globalconfig["magento"] = {"doc_root": {}}
 
-        # find mage.php and bin/magento files in document roots
-        mage_files = magento.find_magento(globalconfig["doc_roots"])
-        # print "454 %r" % mage_files
-        # get Magento information from the Mage.php and bin/magento files
-        # not config info, just version
-        for doc_root_path, mage_php_file in mage_files.iteritems():
-            # globalconfig["magento"]["doc_root"][doc_root_path] = {}
-            globalconfig["magento"]["doc_root"][doc_root_path] = magento.mage_file_info(mage_php_file)
+            # find mage.php and bin/magento files in document roots
+            mage_files = magento.find_magento(globalconfig["doc_roots"])
+            # print "454 %r" % mage_files
+            # get Magento information from the Mage.php and bin/magento files
+            # not config info, just version
+            for doc_root_path, mage_php_file in mage_files.iteritems():
+                # globalconfig["magento"]["doc_root"][doc_root_path] = {}
+                globalconfig["magento"]["doc_root"][doc_root_path] = magento.mage_file_info(mage_php_file)
 
+        # for each docroot, try to parse local.xml
         for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
             # Do not erase it, if it exists!
             if doc_root not in globalconfig["magento"]["doc_root"]:
