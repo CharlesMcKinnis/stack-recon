@@ -500,8 +500,8 @@ if not args.jsonfile:
             if "magento" not in globalconfig:
                 globalconfig["magento"] = {"doc_root": {}}
             if doc_root not in globalconfig["magento"]["doc_root"]:
-                globalconfig["magento"]["doc_root"][doc_root] = {"local_xml": {"filename": args.localxml,
-                                                                               "magento_path": doc_root}}
+                globalconfig["magento"]["doc_root"][doc_root] = {"local_xml": {"filename": args.localxml},
+                                                                 "magento_path": doc_root}
                 # Mage 1 specific
                 local_xml = args.localxml
         else:
