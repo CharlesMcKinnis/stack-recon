@@ -751,9 +751,10 @@ if not args.jsonfile:
     # for each database, get the total size of the innodb table sizes
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         return_dict = mysqlctl.innodb_table_size(db_list)
-        if "innodb" not in globalconfig["mysql"]["db_list"][counter]:
-            globalconfig["mysql"]["db_list"][counter]["innodb"] = {}
-        update(globalconfig["mysql"]["db_list"][counter]["innodb"], return_dict)
+        if return_dict:
+            if "innodb" not in globalconfig["mysql"]["db_list"][counter]:
+                globalconfig["mysql"]["db_list"][counter]["innodb"] = {}
+            update(globalconfig["mysql"]["db_list"][counter]["innodb"], return_dict)
 
     # add per host innodb data size
     # for each database, get the data+index size
