@@ -983,7 +983,8 @@ if globalconfig.get("magento", {}).get("doc_root"):
     if globalconfig.get("magento", {}).get("doc_root"):
         for key, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
             print "-" * 60
-            print "Magento path: %s" % key
+            if not args.localxml:
+                print "Magento path: %s" % key
 
             # Mage 1
             if "local_xml" in doc_root_dict:
@@ -991,7 +992,8 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 local_xml = doc_root_dict.get("local_xml")
 
                 print "local.xml: %s" % local_xml.get("filename", "n/a")
-                print "Version: %s" % doc_root_dict.get("magento_version", "n/a")
+                if not args.localxml:
+                    print "Version: %s" % doc_root_dict.get("magento_version", "n/a")
                 # Insert a WARNING here if the php version is a mismatch?
                 print
                 # Mage 1 DATABASE settings
