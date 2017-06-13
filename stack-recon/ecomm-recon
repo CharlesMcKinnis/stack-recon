@@ -760,14 +760,15 @@ if not args.jsonfile:
     # for each database, get the data+index size
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         host = globalconfig["mysql"]["db_list"][counter]["host"]
-        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
-            globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
-        if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
-            globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
-        globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
-            int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
-            int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
-        )
+        if globalconfig.get("mysql").get("host_dict").get(host).get("innodb"):
+            if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
+                globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
+            if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
+                globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
+            globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
+                int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
+                int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
+            )
 
     globalconfig["errors"] = error_collection
     json_str = json.dumps(globalconfig, cls=DecimalEncoder)
