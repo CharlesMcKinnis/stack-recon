@@ -2003,15 +2003,15 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
-                    return()
+                    return(None)
                     sys.exit(1)
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
-                    return()
+                    return(None)
                     sys.exit(2)
                 else:
                     print(err)
-                    return()
+                    return(None)
                     sys.exit(3)
 
             cursor.execute(query)
@@ -2046,15 +2046,15 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
-                    return()
+                    return(None)
                     sys.exit(1)
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
-                    return()
+                    return(None)
                     sys.exit(2)
                 else:
                     print(err)
-                    return()
+                    return(None)
                     sys.exit(3)
 
             cursor.execute(query)
@@ -2090,15 +2090,15 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
-                    return()
+                    return(None)
                     sys.exit(1)
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
-                    return()
+                    return(None)
                     sys.exit(2)
                 else:
                     print(err)
-                    return()
+                    return(None)
                     sys.exit(3)
 
             cursor.execute(query)

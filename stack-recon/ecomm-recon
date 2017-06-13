@@ -653,7 +653,7 @@ if not args.jsonfile:
     # globalconfig["mysql"] = mysql_config
 
     # This would be better as a function in the stackreconlib
-
+    # build a list of databases from the magento information
     doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
     db_list = []
     host_dict = {}
@@ -727,7 +727,7 @@ if not args.jsonfile:
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
             globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
-        return_dict = mysqlctl.global_variables(v) # stopping here
+        return_dict = mysqlctl.global_variables(v)  # stopping here
         if return_dict:
             globalconfig["mysql"]["host_dict"][k]["variables"] = {}
             update(globalconfig["mysql"]["host_dict"][k]["variables"],
