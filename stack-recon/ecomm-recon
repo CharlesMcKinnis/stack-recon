@@ -1737,6 +1737,8 @@ for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
     row = []
     # There is only one column, but it is a tuple, so unroll it
 
+    if not db_list.get("innodb"):
+        continue
     data_size = db_list.get("innodb").get("data_size", 0)
     index_size = db_list.get("innodb").get("index_size", 0)
     size = db_list.get("innodb").get("data+index_size", 0)
