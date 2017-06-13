@@ -1801,6 +1801,13 @@ print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
 
 def cron_php_check():
     pass
+print """
+  ___ _ __ ___  _ __
+ / __| '__/ _ \| '_ \\
+| (__| | | (_) | | | |
+ \___|_|  \___/|_| |_|
+
+"""
 # Check for cron.php in crontab
 # get a list of users
 command = ["/usr/bin/getent", "passwd"]
