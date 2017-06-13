@@ -1726,39 +1726,40 @@ MySQL innodb database size
 # for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 #     print "%s: %r" % (k, v)
 
-table = [["Server", "DB Name", "data length", "index length", "total size"]]
-for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
-    config = {
-        'user': db_list["username"],
-        'password': db_list["password"],
-        'host': db_list["host"],
-        'raise_on_warnings': True,
-    }
-    row = []
-    # There is only one column, but it is a tuple, so unroll it
-
-    if not db_list.get("innodb"):
-        continue
-    data_size = db_list.get("innodb").get("data_size", 0)
-    index_size = db_list.get("innodb").get("index_size", 0)
-    size = db_list.get("innodb").get("data+index_size", 0)
-    # print ("DB Name: %s, Size: %s" %
-    #        (db_list["dbname"],
-    #         stackreconlib.bytes2human(size)))
-    # total_size = total_size + size
-    row.append(db_list["host"])
-    row.append(db_list["dbname"])
-    row.append(stackreconlib.bytes2human(data_size))
-    row.append(stackreconlib.bytes2human(index_size))
-    row.append(stackreconlib.bytes2human(size))
-    table.append(row)
-if table:
-    print
-    print "Database size of innoDB tables, total per DB"
-    stackreconlib.print_table(table, HEADER=True)
-    print ("The global variable for innodb_buffer_pool_size should be larger "
-           "than the database sizes above.")
-    print ("If a database isn't in use, don't consider its size.")
+if globalconfig.get("mysql").get("db_list"):
+    table = [["Server", "DB Name", "data length", "index length", "total size"]]
+    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+        config = {
+            'user': db_list["username"],
+            'password': db_list["password"],
+            'host': db_list["host"],
+            'raise_on_warnings': True,
+        }
+        row = []
+        # There is only one column, but it is a tuple, so unroll it
+    
+        if not db_list.get("innodb"):
+            continue
+        data_size = db_list.get("innodb").get("data_size", 0)
+        index_size = db_list.get("innodb").get("index_size", 0)
+        size = db_list.get("innodb").get("data+index_size", 0)
+        # print ("DB Name: %s, Size: %s" %
+        #        (db_list["dbname"],
+        #         stackreconlib.bytes2human(size)))
+        # total_size = total_size + size
+        row.append(db_list["host"])
+        row.append(db_list["dbname"])
+        row.append(stackreconlib.bytes2human(data_size))
+        row.append(stackreconlib.bytes2human(index_size))
+        row.append(stackreconlib.bytes2human(size))
+        table.append(row)
+    if table:
+        print
+        print "Database size of innoDB tables, total per DB"
+        stackreconlib.print_table(table, HEADER=True)
+        print ("The global variable for innodb_buffer_pool_size should be larger "
+               "than the database sizes above.")
+        print ("If a database isn't in use, don't consider its size.")
 
 
 def system_specs():
