@@ -174,6 +174,9 @@ if ARGPARSE:
                         "of tables.",
                         action="store_true")
     parser.add_argument("--magentopath",
+                        help="Location of a local.xml file",
+                        )
+    parser.add_argument("--localxml",
                         help="Path to Magento",
                         )
     """
@@ -209,6 +212,7 @@ else:
     args.nomagento = None
     args.notable = None
     args.magentopath = None
+    args.localxml = None
     # args.nopassword = None
     """
     defaults:
@@ -251,7 +255,7 @@ if args.jsonfile and JSON is True:
         error_collection.append("The file %s does not exist.\n" % args.jsonfile)
         sys.exit(1)
 
-if args.magentopath:
+if args.magentopath or args.localxml:
     skip_apache = True
     skip_nginx = True
     skip_phpfpm = True
@@ -491,43 +495,54 @@ if not args.jsonfile:
         # Magento
         ################################################
         # get a list of unique document roots
-        if not args.magentopath:
-            doc_roots = set()
-            for apache_site in globalconfig.get("apache", {}).get("sites", {}):
-                if "doc_root" in apache_site:
-                    # reason for strip trailing slash is because paths will
-                    # appear twice if two identical paths are docroot,
-                    # and Magento find will run twice too
-                    doc_roots.add(apache_site["doc_root"].rstrip('/'))
-            for nginx_site in globalconfig.get("nginx", {}).get("sites", {}):
-                if "doc_root" in nginx_site:
-                    doc_roots.add(nginx_site["doc_root"].rstrip('/'))
-            more_doc_roots = []
-            for doc_root in doc_roots:
-                pass
-                magento_path, magento_path_dir = os.path.split(doc_root)
-                # This is to improve Magento 2 discovery
-                if magento_path_dir == "pub":
-                    # append magento_path to doc_root
-                    more_doc_roots.append(magento_path.rstrip('/'))
-            for doc_root in more_doc_roots:
-                doc_roots.add(doc_root)
-            globalconfig["doc_roots"] = list(doc_roots)
-        elif args.magentopath:
-            globalconfig["doc_roots"] = [args.magentopath]
+        if args.localxml:
+            doc_root, magento_xml = os.path.split(args.localxml)
+            if "magento" not in globalconfig:
+                globalconfig["magento"] = {"doc_root": {}}
+            if doc_root not in globalconfig["magento"]["doc_root"]:
+                globalconfig["magento"]["doc_root"][doc_root] = {"local_xml": {"filename": args.localxml},
+                                                                 "magento_path": doc_root}
+                # Mage 1 specific
+                local_xml = args.localxml
+        else:
+            if not args.magentopath:
+                doc_roots = set()
+                for apache_site in globalconfig.get("apache", {}).get("sites", {}):
+                    if "doc_root" in apache_site:
+                        # reason for strip trailing slash is because paths will
+                        # appear twice if two identical paths are docroot,
+                        # and Magento find will run twice too
+                        doc_roots.add(apache_site["doc_root"].rstrip('/'))
+                for nginx_site in globalconfig.get("nginx", {}).get("sites", {}):
+                    if "doc_root" in nginx_site:
+                        doc_roots.add(nginx_site["doc_root"].rstrip('/'))
+                more_doc_roots = []
+                for doc_root in doc_roots:
+                    pass
+                    magento_path, magento_path_dir = os.path.split(doc_root)
+                    # This is to improve Magento 2 discovery
+                    if magento_path_dir == "pub":
+                        # append magento_path to doc_root
+                        more_doc_roots.append(magento_path.rstrip('/'))
+                for doc_root in more_doc_roots:
+                    doc_roots.add(doc_root)
+                globalconfig["doc_roots"] = list(doc_roots)
+            elif args.magentopath:
+                globalconfig["doc_roots"] = [args.magentopath]
 
-        if "magento" not in globalconfig:
-            globalconfig["magento"] = {"doc_root": {}}
+            if "magento" not in globalconfig:
+                globalconfig["magento"] = {"doc_root": {}}
 
-        # find mage.php and bin/magento files in document roots
-        mage_files = magento.find_magento(globalconfig["doc_roots"])
-        # print "454 %r" % mage_files
-        # get Magento information from the Mage.php and bin/magento files
-        # not config info, just version
-        for doc_root_path, mage_php_file in mage_files.iteritems():
-            # globalconfig["magento"]["doc_root"][doc_root_path] = {}
-            globalconfig["magento"]["doc_root"][doc_root_path] = magento.mage_file_info(mage_php_file)
+            # find mage.php and bin/magento files in document roots
+            mage_files = magento.find_magento(globalconfig["doc_roots"])
+            # print "454 %r" % mage_files
+            # get Magento information from the Mage.php and bin/magento files
+            # not config info, just version
+            for doc_root_path, mage_php_file in mage_files.iteritems():
+                # globalconfig["magento"]["doc_root"][doc_root_path] = {}
+                globalconfig["magento"]["doc_root"][doc_root_path] = magento.mage_file_info(mage_php_file)
 
+        # for each docroot, try to parse local.xml
         for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
             # Do not erase it, if it exists!
             if doc_root not in globalconfig["magento"]["doc_root"]:
@@ -569,6 +584,14 @@ if not args.jsonfile:
                 # pp.pprint(env_php)
                 # print "========================="
 
+        globalconfig["errors"] = error_collection
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
+
         def MEMCACHE_DATA_GATHER():
             pass
         sys.stderr.write("memcache data gather\n")
@@ -582,6 +605,14 @@ if not args.jsonfile:
         if memcache_instances:
             update(globalconfig["memcache"],
                    memcache.get_all_statuses(memcache_instances))
+
+        globalconfig["errors"] = error_collection
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
 
         def REDIS_DATA_GATHER():
             pass
@@ -601,6 +632,14 @@ if not args.jsonfile:
         # print "483 redis instances"
         # pp.pprint(redis.get_all_statuses(redis_instances))
 
+        globalconfig["errors"] = error_collection
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
+
     def MYSQL_DATA_GATHER():
             pass
     sys.stderr.write("mysql data gather\n")
@@ -614,7 +653,7 @@ if not args.jsonfile:
     # globalconfig["mysql"] = mysql_config
 
     # This would be better as a function in the stackreconlib
-
+    # build a list of databases from the magento information
     doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
     db_list = []
     host_dict = {}
@@ -688,7 +727,7 @@ if not args.jsonfile:
         if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
             globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
 
-        return_dict = mysqlctl.global_variables(v)
+        return_dict = mysqlctl.global_variables(v)  # stopping here
         if return_dict:
             globalconfig["mysql"]["host_dict"][k]["variables"] = {}
             update(globalconfig["mysql"]["host_dict"][k]["variables"],
@@ -712,20 +751,32 @@ if not args.jsonfile:
     # for each database, get the total size of the innodb table sizes
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         return_dict = mysqlctl.innodb_table_size(db_list)
-        globalconfig["mysql"]["db_list"][counter]["innodb"] = return_dict
+        if return_dict:
+            if "innodb" not in globalconfig["mysql"]["db_list"][counter]:
+                globalconfig["mysql"]["db_list"][counter]["innodb"] = {}
+            update(globalconfig["mysql"]["db_list"][counter]["innodb"], return_dict)
 
     # add per host innodb data size
     # for each database, get the data+index size
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         host = globalconfig["mysql"]["db_list"][counter]["host"]
-        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
-            globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
-        if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
-            globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
-        globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
-            int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
-            int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
-        )
+        if globalconfig.get("mysql").get("host_dict").get(host).get("innodb"):
+            if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
+                globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
+            if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
+                globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
+            globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
+                int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
+                int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
+            )
+
+    globalconfig["errors"] = error_collection
+    json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+    # with open(args.output,'w') as outfile:
+    #     outfile.write( json_str )
+    outfile = open(args.output, 'w')
+    outfile.write(json_str)
+    outfile.close()
 
 else:
     for i in globalconfig["errors"]:
@@ -926,6 +977,7 @@ def MAGENTO_PRINT():
 # Magento
 ################################################
 
+# if globalconfig.get("magento", {}).get("doc_root") and not args.localxml:
 if globalconfig.get("magento", {}).get("doc_root"):
     if not args.nofiglet:
         magento.figlet()
@@ -933,15 +985,17 @@ if globalconfig.get("magento", {}).get("doc_root"):
     if globalconfig.get("magento", {}).get("doc_root"):
         for key, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
             print "-" * 60
-            print "Magento path: %s" % key
+            if not args.localxml:
+                print "Magento path: %s" % key
 
             # Mage 1
             if "local_xml" in doc_root_dict:
 
                 local_xml = doc_root_dict.get("local_xml")
 
-                print "local.xml: %s" % local_xml["filename"]
-                print "Version: %s" % doc_root_dict["magento_version"]
+                print "local.xml: %s" % local_xml.get("filename", "n/a")
+                if not args.localxml:
+                    print "Version: %s" % doc_root_dict.get("magento_version", "n/a")
                 # Insert a WARNING here if the php version is a mismatch?
                 print
                 # Mage 1 DATABASE settings
@@ -1683,9 +1737,11 @@ for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
     row = []
     # There is only one column, but it is a tuple, so unroll it
 
-    data_size = db_list["innodb"]["data_size"]
-    index_size = db_list["innodb"]["index_size"]
-    size = db_list["innodb"]["data+index_size"]
+    if not db_list.get("innodb"):
+        continue
+    data_size = db_list.get("innodb").get("data_size", 0)
+    index_size = db_list.get("innodb").get("index_size", 0)
+    size = db_list.get("innodb").get("data+index_size", 0)
     # print ("DB Name: %s, Size: %s" %
     #        (db_list["dbname"],
     #         stackreconlib.bytes2human(size)))
@@ -1745,6 +1801,12 @@ print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
 
 def cron_php_check():
     pass
+print """
+  ___ _ __ ___  _ __
+ / __| '__/ _ \| '_ \\
+| (__| | | (_) | | | |
+ \___|_|  \___/|_| |_|
+"""
 # Check for cron.php in crontab
 # get a list of users
 command = ["/usr/bin/getent", "passwd"]
