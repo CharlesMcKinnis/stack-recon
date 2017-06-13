@@ -975,7 +975,8 @@ def MAGENTO_PRINT():
 # Magento
 ################################################
 
-if globalconfig.get("magento", {}).get("doc_root") and not args.localxml:
+# if globalconfig.get("magento", {}).get("doc_root") and not args.localxml:
+if globalconfig.get("magento", {}).get("doc_root"):
     if not args.nofiglet:
         magento.figlet()
     print "\nMagento versions installed:"
@@ -989,8 +990,8 @@ if globalconfig.get("magento", {}).get("doc_root") and not args.localxml:
 
                 local_xml = doc_root_dict.get("local_xml")
 
-                print "local.xml: %s" % local_xml["filename"]
-                print "Version: %s" % doc_root_dict["magento_version"]
+                print "local.xml: %s" % local_xml.get("filename", "n/a")
+                print "Version: %s" % doc_root_dict.get("magento_version", "n/a")
                 # Insert a WARNING here if the php version is a mismatch?
                 print
                 # Mage 1 DATABASE settings
