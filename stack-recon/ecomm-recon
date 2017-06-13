@@ -584,6 +584,14 @@ if not args.jsonfile:
                 # pp.pprint(env_php)
                 # print "========================="
 
+        globalconfig["errors"] = error_collection
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
+
         def MEMCACHE_DATA_GATHER():
             pass
         sys.stderr.write("memcache data gather\n")
@@ -597,6 +605,14 @@ if not args.jsonfile:
         if memcache_instances:
             update(globalconfig["memcache"],
                    memcache.get_all_statuses(memcache_instances))
+
+        globalconfig["errors"] = error_collection
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
 
         def REDIS_DATA_GATHER():
             pass
@@ -615,6 +631,14 @@ if not args.jsonfile:
             update(globalconfig["redis"], redis.get_all_statuses(redis_instances))
         # print "483 redis instances"
         # pp.pprint(redis.get_all_statuses(redis_instances))
+
+        globalconfig["errors"] = error_collection
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
 
     def MYSQL_DATA_GATHER():
             pass
@@ -741,6 +765,14 @@ if not args.jsonfile:
             int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
             int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
         )
+
+    globalconfig["errors"] = error_collection
+    json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+    # with open(args.output,'w') as outfile:
+    #     outfile.write( json_str )
+    outfile = open(args.output, 'w')
+    outfile.write(json_str)
+    outfile.close()
 
 else:
     for i in globalconfig["errors"]:
