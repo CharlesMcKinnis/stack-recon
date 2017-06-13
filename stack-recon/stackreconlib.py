@@ -2003,13 +2003,15 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
-
+                    return()
                     sys.exit(1)
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
+                    return()
                     sys.exit(2)
                 else:
                     print(err)
+                    return()
                     sys.exit(3)
 
             cursor.execute(query)
@@ -2044,12 +2046,15 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
+                    return()
                     sys.exit(1)
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
+                    return()
                     sys.exit(2)
                 else:
                     print(err)
+                    return()
                     sys.exit(3)
 
             cursor.execute(query)
