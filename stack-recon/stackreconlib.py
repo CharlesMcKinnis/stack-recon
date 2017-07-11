@@ -1885,8 +1885,10 @@ class MysqlCtl(object):
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
+                    return({})
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
+                    return({})
                 else:
                     print(err)
                     # sys.exit(1)  # fixme
