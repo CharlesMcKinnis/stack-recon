@@ -1227,8 +1227,10 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         if len(table):
                             print_table(table, NOTABLE=args.notable)
                             print
+                        else:
+                            print
 
-                # Mage 2 FULL PAGE CACHE (FPC)
+                # Mage 2 DEFAULT CACHE (FPC)
                 if "cache" in env_php:
                     env_cache = env_php.get("cache", {}).get("frontend", {}).get("default", {})
                     env_cache_options = env_cache.get("backend_options", {})
