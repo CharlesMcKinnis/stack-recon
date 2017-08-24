@@ -1923,7 +1923,8 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             # print " password: %s" % var_password
         # print
         # return(output)
-        return(return_list)
+            return(return_list)
+        return(None)
 
     def parse_key_value(self, queried_table):
         lines = queried_table.splitlines()
