@@ -1672,9 +1672,9 @@ if IMPORT_MYSQL_CONNECTOR:
             print "Configuration file options to change or update"
             print config_file_output
 
-"""
-MySQL global status
-"""
+    """
+    MySQL global status
+    """
     base_values = {
         "Max_used_connections": 0,
     }
