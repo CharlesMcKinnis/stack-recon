@@ -8,10 +8,10 @@ from inspect import currentframe, getframeinfo
 try:
     import mysql.connector
     from mysql.connector import errorcode
-    MYSQL_CONNECTOR = True
+    IMPORT_MYSQL_CONNECTOR = True
 except SyntaxError:
     print "Error importing mysql library"
-    MYSQL_CONNECTOR = False
+    IMPORT_MYSQL_CONNECTOR = False
 import string
 from xml.parsers.expat import ExpatError
 # import platform
@@ -1389,7 +1389,7 @@ class MagentoCtl(object):
             db_cache_table(doc_root,
                             doc_root_dict.get("local_xml", {}).get("db", {}))
         """
-        if MYSQL_CONNECTOR is False:
+        if IMPORT_MYSQL_CONNECTOR is False:
             return
         mysql = MysqlCtl()
         # Some of these aren't used yet, BUT WILL BE. DO NOT REMOVE THEM
