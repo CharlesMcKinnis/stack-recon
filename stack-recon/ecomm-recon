@@ -5,15 +5,11 @@ import stackreconlib
 from stackreconlib import (error_collection,
                            daemon_exe, importfile, update, print_sites,
                            memory_estimate, memory_print, print_table)
-
 try:
     import mysql.connector
     from mysql.connector import errorcode
     IMPORT_MYSQL_CONNECTOR = True
 except SyntaxError:
-    print "Error importing mysql library"
-    IMPORT_MYSQL_CONNECTOR = False
-except:
     print "Error importing mysql library"
     IMPORT_MYSQL_CONNECTOR = False
 import re
@@ -1698,14 +1694,14 @@ if IMPORT_MYSQL_CONNECTOR:
         #         row.append(j)
         #         # row.append(str(sugg_human_v))
         #         # row.append(notes)
-    
+
         row.append("Max used conns")
         row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("status", {}).get("Max_used_connections", 0))
         row.append("Max allowed conns")
         row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("max_connections", 0))
         table.append(row)
         row = []
-    
+
         # innodb buffer used percentage
         # innodb_buffer_pool_pages_free * 100 / innodb_buffer_pool_pages_total
         # globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
@@ -1718,7 +1714,7 @@ if IMPORT_MYSQL_CONNECTOR:
             globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)))
         table.append(row)
         row = []
-    
+
         row.append("innodb buffer pool in use %")
         row.append(str(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("buffer_pool_used_percentage", 0)) + "%")
         row.append("")
@@ -1726,18 +1722,18 @@ if IMPORT_MYSQL_CONNECTOR:
         table.append(row)
         row = []
         # sum of db innodb data vs innodb_buffer_size
-    
+
         if table:
             print
             print "Host: %s" % v["host"]
             stackreconlib.print_table(table, HEADER=True)
-    
+
     """
     MySQL innodb database size
     """
     # for k, v in globalconfig["mysql"]["host_dict"].iteritems():
     #     print "%s: %r" % (k, v)
-    
+
     table = [["Server", "DB Name", "data length", "index length", "total size"]]
     for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
         config = {
@@ -1748,7 +1744,7 @@ if IMPORT_MYSQL_CONNECTOR:
         }
         row = []
         # There is only one column, but it is a tuple, so unroll it
-    
+
         if not db_list.get("innodb"):
             continue
         data_size = db_list.get("innodb").get("data_size", 0)
