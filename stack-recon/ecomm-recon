@@ -1563,119 +1563,118 @@ eval_type = {
             # update(globalconfig["mysql"]["host_dict"][k]["status"],
             #        return_dict)
 
+if IMPORT_MYSQL_CONNECTOR:
+    for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+        table = [["variable", "current", "suggested", "notes"]]
+        sqloutput = ""
+        config_file_output = ""
+        for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).iteritems():
+            if i in base_values:
+                row = []
+                notes = ""
+                row.append(i)
+                NUMBERS = False
+                if eval_type[i] == "int":
+                    # If it is a number
+                    NUMBERS = True
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" % (i.replace("_", "-"),
+                                                              base_values[i]
+                                                              )
+                                               ))
+                        notes = "NOTICE: This may be low"
+                elif eval_type[i] == "bytes2human":
+                    real_bytes_v = int(j)
+                    real_human_v = stackreconlib.bytes2human(j)
+                    sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
+                    # This makes sure the format is consistent
+                    sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
+                    NUMBERS = True
+                    if sugg_bytes_v > real_bytes_v:
+                        sqloutput = (sqloutput +
+                                     ("set global %s=%s;\n" %
+                                      (i,
+                                       stackreconlib.human2bytes(base_values[i])
+                                       )
+                                      )
+                                     )
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" %
+                                               (i.replace("_", "-"),
+                                                base_values[i])))
+                        notes = "NOTICE: This may be low"
+                elif eval_type[i] == "string":
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
+                    if sugg_human_v != real_human_v:
+                        sqloutput = (sqloutput +
+                                     "set global %s=%s;\n" %
+                                     (i, base_values[i]))
+                        config_file_output = (config_file_output +
+                                              ("%s = %s\n" %
+                                               (i.replace("_", "-"),
+                                                base_values[i])))
+                else:
+                    # "none"? or a catch all
+                    real_human_v = j
+                    sugg_human_v = base_values[i]
+                    real_bytes_v = False
+                    sugg_bytes_v = False
 
-for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    table = [["variable", "current", "suggested", "notes"]]
-    sqloutput = ""
-    config_file_output = ""
-    for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).iteritems():
-        if i in base_values:
-            row = []
-            notes = ""
-            row.append(i)
-            NUMBERS = False
-            if eval_type[i] == "int":
-                # If it is a number
-                NUMBERS = True
-                real_human_v = j
-                sugg_human_v = base_values[i]
-                real_bytes_v = False
-                sugg_bytes_v = False
-                if sugg_bytes_v > real_bytes_v:
-                    sqloutput = sqloutput + "set global %s=%s;\n" % (i, base_values[i])
-                    config_file_output = (config_file_output +
-                                          ("%s = %s\n" % (i.replace("_", "-"),
-                                                          base_values[i]
-                                                          )
-                                           ))
-                    notes = "NOTICE: This may be low"
-            elif eval_type[i] == "bytes2human":
-                real_bytes_v = int(j)
-                real_human_v = stackreconlib.bytes2human(j)
-                sugg_bytes_v = stackreconlib.human2bytes(base_values[i])
-                # This makes sure the format is consistent
-                sugg_human_v = stackreconlib.bytes2human(stackreconlib.human2bytes(base_values[i]))
-                NUMBERS = True
-                if sugg_bytes_v > real_bytes_v:
-                    sqloutput = (sqloutput +
-                                 ("set global %s=%s;\n" %
-                                  (i,
-                                   stackreconlib.human2bytes(base_values[i])
-                                   )
-                                  )
-                                 )
-                    config_file_output = (config_file_output +
-                                          ("%s = %s\n" %
-                                           (i.replace("_", "-"),
-                                            base_values[i])))
-                    notes = "NOTICE: This may be low"
-            elif eval_type[i] == "string":
-                real_human_v = j
-                sugg_human_v = base_values[i]
-                real_bytes_v = False
-                sugg_bytes_v = False
-                if sugg_human_v != real_human_v:
-                    sqloutput = (sqloutput +
-                                 "set global %s=%s;\n" %
-                                 (i, base_values[i]))
-                    config_file_output = (config_file_output +
-                                          ("%s = %s\n" %
-                                           (i.replace("_", "-"),
-                                            base_values[i])))
-            else:
-                # "none"? or a catch all
-                real_human_v = j
-                sugg_human_v = base_values[i]
-                real_bytes_v = False
-                sugg_bytes_v = False
+                # Situation specific error messages
+                if i == "query_cache_type":
+                    # if real_human_v == "OFF":
+                    #     notes = (notes + "URGENT: Query cache is off ")
+                    #     error_collection.append("URGENT: Query cache is off ")
+                    #     sqloutput = (sqloutput + "# query_cache_type "
+                    #                  "cannot be changed live\n")
+                    pass
+                if i == "innodb_buffer_pool_size":
+                    if real_human_v == "128.0 M":
+                        notes = (notes + "URGENT: THIS IS TOO LOW! ")
+                        error_collection.append("URGENT: innodb_buffer_"
+                                                "pool_size is 128MB. "
+                                                "This is much too low.")
+                        sqloutput = (sqloutput + "# innodb_buffer_pool_size "
+                                     "cannot be changed live\n")
+                        config_file_output = (config_file_output +
+                                              "innodb-buffer-pool-size = ##G  "
+                                              "# change ## to value\n")
+                    notes = (notes + "For a dedicated DB server, this might be "
+                             "~1/2 of the DB server RAM")
+                    sugg_human_v = ""
+                elif i == "max_connections":
+                    notes = ("Automation default 750. Max value could be max "
+                             "clients of all web heads.")
 
-            # Situation specific error messages
-            if i == "query_cache_type":
-                # if real_human_v == "OFF":
-                #     notes = (notes + "URGENT: Query cache is off ")
-                #     error_collection.append("URGENT: Query cache is off ")
-                #     sqloutput = (sqloutput + "# query_cache_type "
-                #                  "cannot be changed live\n")
-                pass
-            if i == "innodb_buffer_pool_size":
-                if real_human_v == "128.0 M":
-                    notes = (notes + "URGENT: THIS IS TOO LOW! ")
-                    error_collection.append("URGENT: innodb_buffer_"
-                                            "pool_size is 128MB. "
-                                            "This is much too low.")
-                    sqloutput = (sqloutput + "# innodb_buffer_pool_size "
-                                 "cannot be changed live\n")
-                    config_file_output = (config_file_output +
-                                          "innodb-buffer-pool-size = ##G  "
-                                          "# change ## to value\n")
-                notes = (notes + "For a dedicated DB server, this might be "
-                         "~1/2 of the DB server RAM")
-                sugg_human_v = ""
-            elif i == "max_connections":
-                notes = ("Automation default 750. Max value could be max "
-                         "clients of all web heads.")
+                row.append(str(real_human_v))
+                row.append(str(sugg_human_v))
+                row.append(notes)
+                table.append(row)
 
-            row.append(str(real_human_v))
-            row.append(str(sugg_human_v))
-            row.append(notes)
-            table.append(row)
-
-    if table:
-        print
-        print "Host: %s" % v["host"]
-        stackreconlib.print_table(table, HEADER=True)
-    if sqloutput:
-        print ("SQL Commands to change running values (some may return an "
-               "error if they cannot be changed live)")
-        print sqloutput
-    if config_file_output:
-        print "Configuration file options to change or update"
-        print config_file_output
+        if table:
+            print
+            print "Host: %s" % v["host"]
+            stackreconlib.print_table(table, HEADER=True)
+        if sqloutput:
+            print ("SQL Commands to change running values (some may return an "
+                   "error if they cannot be changed live)")
+            print sqloutput
+        if config_file_output:
+            print "Configuration file options to change or update"
+            print config_file_output
 
 """
 MySQL global status
 """
-if IMPORT_MYSQL_CONNECTOR:
     base_values = {
         "Max_used_connections": 0,
     }
