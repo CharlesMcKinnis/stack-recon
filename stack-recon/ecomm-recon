@@ -8,10 +8,10 @@ from stackreconlib import (error_collection,
 try:
     import mysql.connector
     from mysql.connector import errorcode
-    # MYSQL_CONNECTOR = True
+    MYSQL_CONNECTOR = True
 except SyntaxError:
     print "Error importing mysql library"
-    # MYSQL_CONNECTOR = False
+    MYSQL_CONNECTOR = False
 import re
 # import glob
 import subprocess
@@ -33,12 +33,12 @@ try:
     import json
     JSON = True
 except ImportError:
-    # sys.stderr.write("Data export omitted, module json and simplejson are "
-    #                  "not installed\n")
-    # sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: "
-    #                  "yum install python-simplejson")
-    # error_collection.append("Data export omitted because the json module is "
-    #                         "not installed\n")
+    sys.stderr.write("Data export omitted, module json and simplejson are "
+                     "not installed\n")
+    sys.stderr.write("This is most common on RHEL 5 with python 2.4. run: "
+                     "yum install python-simplejson")
+    error_collection.append("Data export omitted because the json module is "
+                            "not installed\n")
     JSON = False
 try:
     import argparse
@@ -61,12 +61,12 @@ except ImportError:
 
 STACK_STATUS_VERSION = 2016112201
 
-
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, decimal.Decimal):
-            return float(o)
-        return super(DecimalEncoder, self).default(o)
+if JSON:
+    class DecimalEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, decimal.Decimal):
+                return float(o)
+            return super(DecimalEncoder, self).default(o)
 
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated
@@ -585,12 +585,13 @@ if not args.jsonfile:
                 # print "========================="
 
         globalconfig["errors"] = error_collection
-        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-        # with open(args.output,'w') as outfile:
-        #     outfile.write( json_str )
-        outfile = open(args.output, 'w')
-        outfile.write(json_str)
-        outfile.close()
+        if JSON:
+            json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+            # with open(args.output,'w') as outfile:
+            #     outfile.write( json_str )
+            outfile = open(args.output, 'w')
+            outfile.write(json_str)
+            outfile.close()
 
         def MEMCACHE_DATA_GATHER():
             pass
@@ -607,12 +608,13 @@ if not args.jsonfile:
                    memcache.get_all_statuses(memcache_instances))
 
         globalconfig["errors"] = error_collection
-        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-        # with open(args.output,'w') as outfile:
-        #     outfile.write( json_str )
-        outfile = open(args.output, 'w')
-        outfile.write(json_str)
-        outfile.close()
+        if JSON:
+            json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+            # with open(args.output,'w') as outfile:
+            #     outfile.write( json_str )
+            outfile = open(args.output, 'w')
+            outfile.write(json_str)
+            outfile.close()
 
         def REDIS_DATA_GATHER():
             pass
@@ -633,12 +635,13 @@ if not args.jsonfile:
         # pp.pprint(redis.get_all_statuses(redis_instances))
 
         globalconfig["errors"] = error_collection
-        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-        # with open(args.output,'w') as outfile:
-        #     outfile.write( json_str )
-        outfile = open(args.output, 'w')
-        outfile.write(json_str)
-        outfile.close()
+        if JSON:
+            json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+            # with open(args.output,'w') as outfile:
+            #     outfile.write( json_str )
+            outfile = open(args.output, 'w')
+            outfile.write(json_str)
+            outfile.close()
 
     def MYSQL_DATA_GATHER():
             pass
@@ -722,61 +725,64 @@ if not args.jsonfile:
         globalconfig["mysql"]["db_list"] = db_list
         globalconfig["mysql"]["host_dict"] = host_dict
 
-    # mysql global variables and status
-    for k, v in globalconfig.get("mysql", {}).get("host_dict").iteritems():
-        if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
-            globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
+    if MYSQL_CONNECTOR:
+        # mysql global variables and status
+        for k, v in globalconfig.get("mysql", {}).get("host_dict").iteritems():
+            if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
+                globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
+    
+    
+            return_dict = mysqlctl.global_variables(v)  # stopping here
+            if return_dict:
+                globalconfig["mysql"]["host_dict"][k]["variables"] = {}
+                update(globalconfig["mysql"]["host_dict"][k]["variables"],
+                       return_dict)
+    
+            return_dict = mysqlctl.global_status(v)
+            if return_dict:
+                globalconfig["mysql"]["host_dict"][k]["status"] = {}
+                update(globalconfig["mysql"]["host_dict"][k]["status"],
+                       return_dict)
+                # Innodb_buffer_pool_used_percentage calculated value
+                # What if the values are empty? They should not be.
+                # globalconfig["mysql"]["host_dict"][k]["innodb"]["Innodb_buffer_pool_used_percentage"]
+                globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] = (
+                    int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_free"]) *
+                    100 /
+                    int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_total"])
+                    )
 
-        return_dict = mysqlctl.global_variables(v)  # stopping here
-        if return_dict:
-            globalconfig["mysql"]["host_dict"][k]["variables"] = {}
-            update(globalconfig["mysql"]["host_dict"][k]["variables"],
-                   return_dict)
+        # mysql innodb table sizes
+        # for each database, get the total size of the innodb table sizes
+        for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+            return_dict = mysqlctl.innodb_table_size(db_list)
+            if return_dict:
+                if "innodb" not in globalconfig["mysql"]["db_list"][counter]:
+                    globalconfig["mysql"]["db_list"][counter]["innodb"] = {}
+                update(globalconfig["mysql"]["db_list"][counter]["innodb"], return_dict)
 
-        return_dict = mysqlctl.global_status(v)
-        if return_dict:
-            globalconfig["mysql"]["host_dict"][k]["status"] = {}
-            update(globalconfig["mysql"]["host_dict"][k]["status"],
-                   return_dict)
-            # Innodb_buffer_pool_used_percentage calculated value
-            # What if the values are empty? They should not be.
-            # globalconfig["mysql"]["host_dict"][k]["innodb"]["Innodb_buffer_pool_used_percentage"]
-            globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] = (
-                int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_free"]) *
-                100 /
-                int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_total"])
+        # add per host innodb data size
+        # for each database, get the data+index size
+        for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+            host = globalconfig["mysql"]["db_list"][counter]["host"]
+            if globalconfig.get("mysql").get("host_dict").get(host).get("innodb"):
+                if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
+                    globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
+                if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
+                    globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
+                globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
+                    int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
+                    int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
                 )
 
-    # mysql innodb table sizes
-    # for each database, get the total size of the innodb table sizes
-    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
-        return_dict = mysqlctl.innodb_table_size(db_list)
-        if return_dict:
-            if "innodb" not in globalconfig["mysql"]["db_list"][counter]:
-                globalconfig["mysql"]["db_list"][counter]["innodb"] = {}
-            update(globalconfig["mysql"]["db_list"][counter]["innodb"], return_dict)
-
-    # add per host innodb data size
-    # for each database, get the data+index size
-    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
-        host = globalconfig["mysql"]["db_list"][counter]["host"]
-        if globalconfig.get("mysql").get("host_dict").get(host).get("innodb"):
-            if not globalconfig.get("mysql", {}).get("host_dict", {}).get(host, {}).get("innodb", {}).get("data+index_size"):
-                globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = 0
-            if not globalconfig.get("mysql", {}).get("db_list", {})[counter].get("innodb", {}).get("data+index_size"):
-                globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"] = 0
-            globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"] = (
-                int(globalconfig["mysql"]["host_dict"][host]["innodb"]["data+index_size"]) +
-                int(globalconfig["mysql"]["db_list"][counter]["innodb"]["data+index_size"])
-            )
-
     globalconfig["errors"] = error_collection
-    json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-    # with open(args.output,'w') as outfile:
-    #     outfile.write( json_str )
-    outfile = open(args.output, 'w')
-    outfile.write(json_str)
-    outfile.close()
+    if JSON:
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
 
 else:
     for i in globalconfig["errors"]:
@@ -1859,12 +1865,13 @@ if ((not os.path.isfile(args.output) or
      args.force) and not args.jsonfile and JSON is True):
 
     globalconfig["errors"] = error_collection
-    json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-    # with open(args.output,'w') as outfile:
-    #     outfile.write( json_str )
-    outfile = open(args.output, 'w')
-    outfile.write(json_str)
-    outfile.close()
+    if JSON:
+        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        # with open(args.output,'w') as outfile:
+        #     outfile.write( json_str )
+        outfile = open(args.output, 'w')
+        outfile.write(json_str)
+        outfile.close()
 
 if args.printglobalconfig:
     print """
