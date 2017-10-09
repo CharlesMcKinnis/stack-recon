@@ -5,6 +5,7 @@ import stackreconlib
 from stackreconlib import (error_collection,
                            daemon_exe, importfile, update, print_sites,
                            memory_estimate, memory_print, print_table)
+
 try:
     import mysql.connector
     from mysql.connector import errorcode
@@ -730,14 +731,13 @@ if not args.jsonfile:
         for k, v in globalconfig.get("mysql", {}).get("host_dict").iteritems():
             if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
                 globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
-    
-    
+
             return_dict = mysqlctl.global_variables(v)  # stopping here
             if return_dict:
                 globalconfig["mysql"]["host_dict"][k]["variables"] = {}
                 update(globalconfig["mysql"]["host_dict"][k]["variables"],
                        return_dict)
-    
+
             return_dict = mysqlctl.global_status(v)
             if return_dict:
                 globalconfig["mysql"]["host_dict"][k]["status"] = {}
@@ -1676,97 +1676,98 @@ for k, v in globalconfig["mysql"]["host_dict"].iteritems():
 """
 MySQL global status
 """
-base_values = {
-    "Max_used_connections": 0,
-}
-for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-    table = [["Variable", "value", "compare-to", "compare-value"]]
-    sqloutput = ""
-    config_file_output = ""
-    row = []
-    notes = ""
-    # for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
-    #     if i in base_values:
-    #         row = []
-    #         notes = ""
-    #         row.append(i)
-    #         NUMBERS = False
-    #         row.append(j)
-    #         # row.append(str(sugg_human_v))
-    #         # row.append(notes)
-
-    row.append("Max used conns")
-    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("status", {}).get("Max_used_connections", 0))
-    row.append("Max allowed conns")
-    row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("max_connections", 0))
-    table.append(row)
-    row = []
-
-    # innodb buffer used percentage
-    # innodb_buffer_pool_pages_free * 100 / innodb_buffer_pool_pages_total
-    # globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
-    row.append("innodb buffer pool size")
-    row.append(stackreconlib.bytes2human(
-        globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0)))
-    row.append("innodb data size")
-    #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
-    row.append(stackreconlib.bytes2human(
-        globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)))
-    table.append(row)
-    row = []
-
-    row.append("innodb buffer pool in use %")
-    row.append(str(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("buffer_pool_used_percentage", 0)) + "%")
-    row.append("")
-    row.append("")
-    table.append(row)
-    row = []
-    # sum of db innodb data vs innodb_buffer_size
-
+if MYSQL_CONNECTOR:
+    base_values = {
+        "Max_used_connections": 0,
+    }
+    for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+        table = [["Variable", "value", "compare-to", "compare-value"]]
+        sqloutput = ""
+        config_file_output = ""
+        row = []
+        notes = ""
+        # for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
+        #     if i in base_values:
+        #         row = []
+        #         notes = ""
+        #         row.append(i)
+        #         NUMBERS = False
+        #         row.append(j)
+        #         # row.append(str(sugg_human_v))
+        #         # row.append(notes)
+    
+        row.append("Max used conns")
+        row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("status", {}).get("Max_used_connections", 0))
+        row.append("Max allowed conns")
+        row.append(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("max_connections", 0))
+        table.append(row)
+        row = []
+    
+        # innodb buffer used percentage
+        # innodb_buffer_pool_pages_free * 100 / innodb_buffer_pool_pages_total
+        # globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
+        row.append("innodb buffer pool size")
+        row.append(stackreconlib.bytes2human(
+            globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0)))
+        row.append("innodb data size")
+        #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
+        row.append(stackreconlib.bytes2human(
+            globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)))
+        table.append(row)
+        row = []
+    
+        row.append("innodb buffer pool in use %")
+        row.append(str(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("buffer_pool_used_percentage", 0)) + "%")
+        row.append("")
+        row.append("")
+        table.append(row)
+        row = []
+        # sum of db innodb data vs innodb_buffer_size
+    
+        if table:
+            print
+            print "Host: %s" % v["host"]
+            stackreconlib.print_table(table, HEADER=True)
+    
+    """
+    MySQL innodb database size
+    """
+    # for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    #     print "%s: %r" % (k, v)
+    
+    table = [["Server", "DB Name", "data length", "index length", "total size"]]
+    for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
+        config = {
+            'user': db_list["username"],
+            'password': db_list["password"],
+            'host': db_list["host"],
+            'raise_on_warnings': True,
+        }
+        row = []
+        # There is only one column, but it is a tuple, so unroll it
+    
+        if not db_list.get("innodb"):
+            continue
+        data_size = db_list.get("innodb").get("data_size", 0)
+        index_size = db_list.get("innodb").get("index_size", 0)
+        size = db_list.get("innodb").get("data+index_size", 0)
+        # print ("DB Name: %s, Size: %s" %
+        #        (db_list["dbname"],
+        #         stackreconlib.bytes2human(size)))
+        # total_size = total_size + size
+        row.append(db_list["host"])
+        row.append(db_list["dbname"])
+        row.append(stackreconlib.bytes2human(data_size))
+        row.append(stackreconlib.bytes2human(index_size))
+        row.append(stackreconlib.bytes2human(size))
+        table.append(row)
     if table:
         print
-        print "Host: %s" % v["host"]
+        print "Database size of innoDB tables, total per DB"
         stackreconlib.print_table(table, HEADER=True)
-
-"""
-MySQL innodb database size
-"""
-# for k, v in globalconfig["mysql"]["host_dict"].iteritems():
-#     print "%s: %r" % (k, v)
-
-table = [["Server", "DB Name", "data length", "index length", "total size"]]
-for counter, db_list in enumerate(globalconfig["mysql"]["db_list"]):
-    config = {
-        'user': db_list["username"],
-        'password': db_list["password"],
-        'host': db_list["host"],
-        'raise_on_warnings': True,
-    }
-    row = []
-    # There is only one column, but it is a tuple, so unroll it
-
-    if not db_list.get("innodb"):
-        continue
-    data_size = db_list.get("innodb").get("data_size", 0)
-    index_size = db_list.get("innodb").get("index_size", 0)
-    size = db_list.get("innodb").get("data+index_size", 0)
-    # print ("DB Name: %s, Size: %s" %
-    #        (db_list["dbname"],
-    #         stackreconlib.bytes2human(size)))
-    # total_size = total_size + size
-    row.append(db_list["host"])
-    row.append(db_list["dbname"])
-    row.append(stackreconlib.bytes2human(data_size))
-    row.append(stackreconlib.bytes2human(index_size))
-    row.append(stackreconlib.bytes2human(size))
-    table.append(row)
-if table:
-    print
-    print "Database size of innoDB tables, total per DB"
-    stackreconlib.print_table(table, HEADER=True)
-    print ("The global variable for innodb_buffer_pool_size should be larger "
-           "than the database sizes above.")
-    print ("If a database isn't in use, don't consider its size.")
+        print ("The global variable for innodb_buffer_pool_size should be larger "
+               "than the database sizes above.")
+        print ("If a database isn't in use, don't consider its size.")
 
 
 def system_specs():
