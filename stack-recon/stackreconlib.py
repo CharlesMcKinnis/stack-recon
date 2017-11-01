@@ -2106,9 +2106,16 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
 
             cursor.execute(query)
             for (i, j) in cursor:
+                # If there were no tables, there are no rows returned
+                # No rows will cause an error, so set it to 0 instead
+                if not i:
+                    i = 0
+                if not j:
+                    j = 0
                 return_dict = {"data_size": i,
                                "index_size": j,
-                               "data+index_size": i+j  }
+                               "data+index_size": i+j}
+
             return(return_dict)
 
 
