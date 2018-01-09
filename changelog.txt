@@ -1,0 +1,98 @@
+TO-DO List
+Add checks for eth0 or bond0 IP vs the database and cache IPs
+Add per server check for innodb data+index vs innodb buffer size
+MySQL max connections check
+mysql-recon
+
+2016-09-28
+Checks for cron job, should be cron.sh NOT cron.php
+Magento 2 support is complete
+MySQL is now queried with mysql-connector instead of the mysql binary on the client machines
+
+2016-09-08
+The project name changed from ecommStackStatus to stackrecon to better reflect its capabilities. 
+The classic ecommStackStatus will be ecomm-recon and Apache, Nginx and PHP capabilities will be available as web-recon.
+The library is now named stackreconlib. This should make it easier to separate it and create a pip library in the future.
+
+Magento 2 support is coming along. I added version parsing today.
+
+* TODO things to add
+php shell/indexer.php --status
+
+We could get information similar to MySQL Buddy and display it, to name a few:
+long_query_time
+query_cache_size
+join_buffer_size
+table_open_cache
+innodb_buffer_pool_size
+innodb_buffer_pool_instances
+innodb_log_buffer_size
+query_cache_limit
+* Magento report numbers for reports in the last 24-48 hours with date and time
+* name json file by hostname and date+time
+* I would like to load all xml in app/etc/ and overwrite values with local.xml so the config is complete
+* Varnish detection and cache health
+# ps -ef|grep [v]arnish
+root     11893     1  0 Nov25 ?        00:05:35 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+varnish  11894 11893  2 Nov25 ?        02:45:04 /usr/sbin/varnishd -P /var/run/varnish.pid -a :80 -f /etc/varnish/default.vcl -T 192.168.100.168:6082 -t 120 -w 50,1000,120 -u varnish -g varnish -p cli_buffer=16384 -S /etc/varnish/secret -s malloc,10G
+* Add mysql branch to globalconfig, and parse "show variables;"
+proposed structure:
+mysql: {
+    HOSTNAME: {
+        port: "", # Do I need this? It is nearly always 3306
+        username: "",
+        password: "",
+        variables: {
+            `show variables` # parsed to key:value pairs
+        }
+    }
+}
+* MySQL max_connections, max_used_connections
+* MySQL query cache, example values: query_cache_type=1, query_cache_size=256M, query_cache_limit=16M
+* Check Magento for the Shoplift SUPEE-5344 vulnerability
+find /var/www -wholename '*/app/code/core/Mage/Core/Controller/Request/Http.php' | xargs grep -L _internallyForwarded
+If it returns results, assuming Magento is in /var/www, it is vulnerable.
+-L Suppress normal output; instead print the name of each input file from which no output would normally have been printed.  The scanning will stop on the first match.
+Check doc_root/app/code/core/Mage/Core/Controller/Request/Http.php
+If it doesn't have _internallyForwarded it is probably vulnerable to shoplift
+* Check Magento for SUPEE-7405
+* check php opcache
+i.e.
+Re-enabled PHP opcache in /etc/php.d/10-opcache.ini:
+opcache.enable=1
+Changed the "0" to a "1" on that line.
+Stop nginx, restart php-fpm, start nginx.
+* check mysql
+* magento_root/shell/indexer.php --status
+i.e.
+2560M
+2024M
+Category Flat Data:                 Pending
+Product Flat Data:                  Pending
+Stock Status:                       Pending
+Catalog product price:              Pending
+Category URL Rewrites:              Pending
+Product URL Rewrites:               Pending
+URL Redirects:                      Pending
+Catalog Category/Product Index:     Pending
+Catalog Search Index:               Pending
+Default Values (MANAdev):           Pending
+Dynamic Categories:                 Running
+Tag Aggregation Data:               Pending
+SEO Schemas (MANAdev):              Pending
+Product Attributes:                 Pending
+SEO URL Rewrites (MANAdev):         Pending
+
+DONE
+* also need to check, if session cache is using redis - DONE
+app/etc/modules/Cm_RedisSessions.xml
+value of <active> to true
+* add hostname in globalconfig
+* Parse this session_cache syntax for redis
+Session Cache engine: unknown
+Session Cache: redis
+session_save: redis
+session_save_path: tcp://192.168.100.200:6379?weight=2&timeout=2.5
+From local.xml:
+        <session_save><![CDATA[redis]]></session_save>
+        <session_save_path><![CDATA[tcp://192.168.100.200:6379?weight=2&timeout=2.5]]></session_save_path>

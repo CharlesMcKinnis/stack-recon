@@ -1,5 +1,5 @@
-# EcommStatusTuning
-Python to collect daemon and application configuration information
+# StackRecon
+Python to collect web daemon, eCommerce application configuration, and supporting MySQL and no-sql daemon information.
 
 # Information pooled as of June 2, 2016
 Information is dynamically discovered, instead of using static names or paths. It is saved to a json file, so it is easy to save the raw information for cross reference.
