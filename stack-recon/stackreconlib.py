@@ -2066,6 +2066,65 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cnx.close()
             return(return_dict)
 
+    def find_big_tables(self, mysql_host_dict):
+        """
+        pass a dict with
+
+        returns a dict of key, value pairs
+        """
+        return_dict = {}
+        query = """SELECT table_name AS "Tables",  round(((data_length + index_length) / 1024 / 1024), 2) "Size in MB"  FROM information_schema.TABLES 
+WHERE round(((data_length + index_length) / 1024 / 1024) ,2) > 1000 AND ( 
+table_name LIKE '%dataflow_batch%' OR
+table_name LIKE '%enterprise_logging_%' OR
+table_name LIKE '%enterprise_support_%' OR
+table_name LIKE '%index_event' OR
+table_name LIKE '%index_process_event' OR
+table_name LIKE '%log_%' OR
+table_name LIKE '%report_event' OR
+table_name LIKE '%report_viewed_product_index' OR
+table_name LIKE '%sales_flat_quote_%' OR
+table_name LIKE '%_cl' OR
+table_name LIKE '%catalog_category_flat_store_%' OR
+table_name LIKE '%catalog_product_flat_%' OR
+table_name LIKE '%report%' )
+ORDER BY (data_length + index_length) ;"""
+        config = {
+            'user': mysql_host_dict["username"],
+            'password': mysql_host_dict["password"],
+            'host': mysql_host_dict["host"],
+            'raise_on_warnings': True,
+        }
+
+        if config["host"] and config["password"] and config["user"]:
+            try:
+                cnx = mysql.connector.connect(**config)
+                cursor = cnx.cursor()
+            except mysql.connector.Error, err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    frameinfo = getframeinfo(currentframe())
+                    print("Something is wrong with your user name or password, "
+                          "line %s" %
+                          (frameinfo.lineno))
+                    print(config)
+                    return(None)
+                    sys.exit(1)
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
+                    return(None)
+                    sys.exit(2)
+                else:
+                    print(err)
+                    return(None)
+                    sys.exit(3)
+
+            cursor.execute(query)
+            for (i, j) in cursor:
+                return_dict[i] = j
+            cnx.close()
+            return(return_dict)
+
+
     def innodb_table_size(self, db_list):
         return_dict = {}
         query = ("SELECT "
