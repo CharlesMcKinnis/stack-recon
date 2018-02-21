@@ -1765,7 +1765,7 @@ if IMPORT_MYSQL_CONNECTOR:
         # notes = ""
 
         # print 'mysql_host_dict.get("big_tables")', mysql_host_dict.get("big_tables")
-        for values in mysql_host_dict.get("big_tables"):
+        for values in mysql_host_dict.get("big_tables", []):
             row = []
             # print "values", values
             row.append(values["database"])
