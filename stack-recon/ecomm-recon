@@ -1753,7 +1753,7 @@ if IMPORT_MYSQL_CONNECTOR:
         row = []
         # notes = ""
 
-        for values in globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("big_tables", []):
+        for values in globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("big_tables", []).iter():
             row = []
             print "values", values
             row.append(values["database"])
