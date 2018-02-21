@@ -2077,7 +2077,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         query = ("""SELECT table_schema AS 'Database', table_name AS 'Table', 
 round(((data_length + index_length) / 1024 / 1024), 2) AS 'Size_in_MB'
 FROM information_schema.TABLES 
-WHERE round(((data_length + index_length) / 1024 / 1024) ,2) > \%s AND ( 
+WHERE round(((data_length + index_length) / 1024 / 1024) ,2) > 1000 AND ( 
 table_name LIKE '%dataflow_batch%' OR
 table_name LIKE '%enterprise_logging_%' OR
 table_name LIKE '%enterprise_support_%' OR
