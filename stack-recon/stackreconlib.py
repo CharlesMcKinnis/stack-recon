@@ -8,10 +8,10 @@ from inspect import currentframe, getframeinfo
 try:
     import mysql.connector
     from mysql.connector import errorcode
-    MYSQL_CONNECTOR = True
+    IMPORT_MYSQL_CONNECTOR = True
 except SyntaxError:
     print "Error importing mysql library"
-    MYSQL_CONNECTOR = False
+    IMPORT_MYSQL_CONNECTOR = False
 import string
 from xml.parsers.expat import ExpatError
 # import platform
@@ -1389,7 +1389,7 @@ class MagentoCtl(object):
             db_cache_table(doc_root,
                             doc_root_dict.get("local_xml", {}).get("db", {}))
         """
-        if MYSQL_CONNECTOR is False:
+        if IMPORT_MYSQL_CONNECTOR is False:
             return
         mysql = MysqlCtl()
         # Some of these aren't used yet, BUT WILL BE. DO NOT REMOVE THEM
@@ -1885,14 +1885,16 @@ class MysqlCtl(object):
                           "line %s" %
                           (frameinfo.lineno))
                     print(config)
+                    return({})
                 elif err.errno == errorcode.ER_BAD_DB_ERROR:
                     print("Database does not exist")
+                    return({})
                 else:
                     print(err)
                     # sys.exit(1)  # fixme
                     sys.stderr.write("WARNING MySQL: %s.\n" % err)
                     error_collection.append("WARNING MySQL: %s.\n" % err)
-                    return
+                    return({})
                     """
 Traceback (most recent call last):
  File "./ecomm-recon", line 515, in <module>
@@ -1921,7 +1923,8 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             # print " password: %s" % var_password
         # print
         # return(output)
-        return(return_list)
+            return(return_list)
+        return(None)
 
     def parse_key_value(self, queried_table):
         lines = queried_table.splitlines()
@@ -2063,6 +2066,71 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cnx.close()
             return(return_dict)
 
+    def find_big_tables(self, mysql_host_dict, size_threshold_in_mb):
+        """
+        pass a dict with
+
+        returns a dict of key, value pairs
+        """
+        return_list_dict = []
+        size_threshold_in_mb = size_threshold_in_mb.encode('utf-8')
+        query = ("""SELECT table_schema AS 'Database', table_name AS 'Table', 
+round(((data_length + index_length) / 1024 / 1024), 2) AS 'Size_in_MB'
+FROM information_schema.TABLES 
+WHERE round(((data_length + index_length) / 1024 / 1024) ,2) > 1000 AND ( 
+table_name LIKE '%dataflow_batch%' OR
+table_name LIKE '%enterprise_logging_%' OR
+table_name LIKE '%enterprise_support_%' OR
+table_name LIKE '%index_event' OR
+table_name LIKE '%index_process_event' OR
+table_name LIKE '%log_%' OR
+table_name LIKE '%report_event' OR
+table_name LIKE '%report_viewed_product_index' OR
+table_name LIKE '%sales_flat_quote_%' OR
+table_name LIKE '%_cl' OR
+table_name LIKE '%catalog_category_flat_store_%' OR
+table_name LIKE '%catalog_product_flat_%' OR
+table_name LIKE '%report%' )
+ORDER BY (data_length + index_length) ;""")
+        config = {
+            'user': mysql_host_dict["username"],
+            'password': mysql_host_dict["password"],
+            'host': mysql_host_dict["host"],
+            'raise_on_warnings': True,
+        }
+
+        if config["host"] and config["password"] and config["user"]:
+            try:
+                cnx = mysql.connector.connect(**config)
+                cursor = cnx.cursor()
+            except mysql.connector.Error, err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    frameinfo = getframeinfo(currentframe())
+                    print("Something is wrong with your user name or password, "
+                          "line %s" %
+                          (frameinfo.lineno))
+                    print(config)
+                    return(None)
+                    sys.exit(1)
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
+                    return(None)
+                    sys.exit(2)
+                else:
+                    print(err)
+                    return(None)
+                    sys.exit(3)
+
+            cursor.execute(query, size_threshold_in_mb)
+            return_list_dict = []
+            for (h, i, j) in cursor:
+                # print "h", h, "i", i, "j", j
+                return_list_dict.append({"database": h, "table": i, "size_in_mb": j})
+            cnx.close()
+            # print "return_list_dict", return_list_dict
+            return(return_list_dict)
+
+
     def innodb_table_size(self, db_list):
         return_dict = {}
         query = ("SELECT "
@@ -2103,9 +2171,16 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
 
             cursor.execute(query)
             for (i, j) in cursor:
+                # If there were no tables, there are no rows returned
+                # No rows will cause an error, so set it to 0 instead
+                if not i:
+                    i = 0
+                if not j:
+                    j = 0
                 return_dict = {"data_size": i,
                                "index_size": j,
-                               "data+index_size": i+j  }
+                               "data+index_size": i+j}
+
             return(return_dict)
 
 
