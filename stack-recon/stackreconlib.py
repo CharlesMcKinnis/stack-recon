@@ -2126,7 +2126,7 @@ ORDER BY (data_length + index_length) ;""")
                 print "h", h, "i", i, "j", j
                 return_list_dict.append({"database": h, "table": i, "size_in_mb": j})
             cnx.close()
-            return(return_dict)
+            return(return_list_dict)
 
 
     def innodb_table_size(self, db_list):
