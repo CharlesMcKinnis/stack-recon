@@ -2074,7 +2074,9 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         """
         return_dict = {}
         size_threshold_in_mb = size_threshold_in_mb.encode('utf-8')
-        query = """SELECT table_schema AS "Database", table_name AS "Table",  round(((data_length + index_length) / 1024 / 1024), 2) "Size_in_MB"  FROM information_schema.TABLES 
+        query = ("""SELECT table_schema AS 'Database', table_name AS 'Table', 
+round(((data_length + index_length) / 1024 / 1024), 2) AS 'Size_in_MB'
+FROM information_schema.TABLES 
 WHERE round(((data_length + index_length) / 1024 / 1024) ,2) > %s AND ( 
 table_name LIKE '%dataflow_batch%' OR
 table_name LIKE '%enterprise_logging_%' OR
@@ -2089,7 +2091,7 @@ table_name LIKE '%_cl' OR
 table_name LIKE '%catalog_category_flat_store_%' OR
 table_name LIKE '%catalog_product_flat_%' OR
 table_name LIKE '%report%' )
-ORDER BY (data_length + index_length) ;"""
+ORDER BY (data_length + index_length) ;""")
         config = {
             'user': mysql_host_dict["username"],
             'password': mysql_host_dict["password"],
