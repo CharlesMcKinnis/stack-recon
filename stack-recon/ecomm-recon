@@ -727,29 +727,40 @@ if not args.jsonfile:
 
     if IMPORT_MYSQL_CONNECTOR:
         # mysql global variables and status
-        for k, v in globalconfig.get("mysql", {}).get("host_dict").iteritems():
-            if not globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb"):
-                globalconfig["mysql"]["host_dict"][k]["innodb"] = {}
+        for mysql_host, mysql_creds in globalconfig.get("mysql", {}).get("host_dict").iteritems():
+            if not globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("innodb"):
+                globalconfig["mysql"]["host_dict"][mysql_host]["innodb"] = {}
 
-            return_dict = mysqlctl.global_variables(v)  # stopping here
+            # global variables per host
+            return_dict = mysqlctl.global_variables(mysql_creds)  # stopping here
             if return_dict:
-                globalconfig["mysql"]["host_dict"][k]["variables"] = {}
-                update(globalconfig["mysql"]["host_dict"][k]["variables"],
+                globalconfig["mysql"]["host_dict"][mysql_host]["variables"] = {}
+                update(globalconfig["mysql"]["host_dict"][mysql_host]["variables"],
                        return_dict)
 
-            return_dict = mysqlctl.global_status(v)
+            # global status per host
+            return_dict = mysqlctl.global_status(mysql_creds)
             if return_dict:
-                globalconfig["mysql"]["host_dict"][k]["status"] = {}
-                update(globalconfig["mysql"]["host_dict"][k]["status"],
+                globalconfig["mysql"]["host_dict"][mysql_host]["status"] = {}
+                update(globalconfig["mysql"]["host_dict"][mysql_host]["status"],
                        return_dict)
                 # Innodb_buffer_pool_used_percentage calculated value
                 # What if the values are empty? They should not be.
                 # globalconfig["mysql"]["host_dict"][k]["innodb"]["Innodb_buffer_pool_used_percentage"]
-                globalconfig["mysql"]["host_dict"][k]["innodb"]["buffer_pool_used_percentage"] = (
-                    int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_free"]) *
+                globalconfig["mysql"]["host_dict"][mysql_host]["innodb"]["buffer_pool_used_percentage"] = (
+                    int(globalconfig["mysql"]["host_dict"][mysql_host]["status"]["Innodb_buffer_pool_pages_free"]) *
                     100 /
-                    int(globalconfig["mysql"]["host_dict"][k]["status"]["Innodb_buffer_pool_pages_total"])
+                    int(globalconfig["mysql"]["host_dict"][mysql_host]["status"]["Innodb_buffer_pool_pages_total"])
                     )
+
+            # get a per host list of large Magento tables
+            # return_dict = find_big_tables(mysql_host_dict, size_threshold_in_mb )
+            # returns Database, Table, Size_in_MB
+            return_dict = find_big_tables(mysql_creds, "1000")
+            if return_dict:
+                globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"] = {}
+                update(globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"],
+                       return_dict)
 
         # mysql innodb table sizes
         # for each database, get the total size of the innodb table sizes
@@ -1727,6 +1738,32 @@ if IMPORT_MYSQL_CONNECTOR:
             print "Host: %s" % v["host"]
             stackreconlib.print_table(table, HEADER=True)
 
+
+    """
+    MySQL check for large tables
+    """
+    for mysql_host, mysql_host_dict in globalconfig["mysql"]["host_dict"].iteritems():
+        # table header row
+        table = [["Database", "Table", "Size in MB"]]
+        # sqloutput = ""
+        # config_file_output = ""
+        row = []
+        # notes = ""
+
+        for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("big_tables", {}).iteritems():
+            if i in base_values:
+                row = []
+                notes = ""
+                row.append(j[1])
+                row.append(j[2])
+                row.append(j[3])
+                table.append(row)
+
+        if table:
+            print
+            print "Host: %s" % v["host"]
+            stackreconlib.print_table(table, HEADER=True)
+
     """
     MySQL innodb database size
     """
@@ -1767,6 +1804,9 @@ if IMPORT_MYSQL_CONNECTOR:
                "than the database sizes above.")
         print ("If a database isn't in use, don't consider its size.")
 
+    """
+    MySQL table sizes
+    """
 
 def system_specs():
     pass
