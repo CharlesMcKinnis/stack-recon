@@ -2122,8 +2122,8 @@ ORDER BY (data_length + index_length) ;""")
                     sys.exit(3)
 
             cursor.execute(query, size_threshold_in_mb)
-            for (i, j) in cursor:
-                return_dict[i] = j
+            for (h, i, j) in cursor:
+                return_dict = {"database": h, "table": i, "size_in_mb": j}
             cnx.close()
             return(return_dict)
 
