@@ -1742,9 +1742,11 @@ if IMPORT_MYSQL_CONNECTOR:
     """
     MySQL check for large tables
     """
+    print "Checking for tables larger than 1GB that are not static data..."
     for mysql_host, mysql_host_dict in globalconfig["mysql"]["host_dict"].iteritems():
         # table header row
         table = [["Database", "Table", "Size in MB"]]
+        table_empty = True
         # sqloutput = ""
         # config_file_output = ""
         row = []
@@ -1758,11 +1760,19 @@ if IMPORT_MYSQL_CONNECTOR:
                 row.append(j[2])
                 row.append(j[3])
                 table.append(row)
+                table_empty = False
 
-        if table:
+        if not table_empty:
             print
             print "Host: %s" % v["host"]
             stackreconlib.print_table(table, HEADER=True)
+            print "WARNING: Report these tables to the site owner or developer."
+            print "The tables reported frequently cause performance problems because they are not being cleaned regularly."
+            print("This site has some information from these tables: "
+                  "https://gist.github.com/dzungtran/291995569e5eda9c9892")
+            print "I am not affiliated with that site. Be cautious of following instructions you do not understand."
+        else:
+            print "No such tables found."
 
     """
     MySQL innodb database size
