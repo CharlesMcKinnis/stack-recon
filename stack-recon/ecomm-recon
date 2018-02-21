@@ -1908,7 +1908,7 @@ print
 print ("WARNING: Free advice is sometimes worth what you paid for it.")
 print ("This estimate is based on baseline numbers that assume full page "
        "cache is in use. If FPC is not in use, the capacity is typically 1/3 "
-       "to 1/4 of these values, because of memory use rendering the pages.")
+       "to 1/4 of these values, because of memory used when rendering the pages.")
 print ("For a dedicated web node,")
 print ("    The memory may support concurrent connection of %d" %
        max_clients)
