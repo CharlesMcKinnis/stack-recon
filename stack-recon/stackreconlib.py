@@ -2125,7 +2125,7 @@ ORDER BY (data_length + index_length) ;""")
             return_list_dict = []
             for (h, i, j) in cursor:
                 print "h", h, "i", i, "j", j
-                return_list_dict.append({"database": h, "table": i, "size_in_mb": j})
+                return_list_dict.add({"database": h, "table": i, "size_in_mb": j})
             cnx.close()
             return(return_list_dict)
 
