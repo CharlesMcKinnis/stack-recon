@@ -1830,44 +1830,6 @@ if IMPORT_MYSQL_CONNECTOR:
     MySQL table sizes
     """
 
-def system_specs():
-    pass
-command = "free"
-p = subprocess.Popen(
-    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-output, err = p.communicate()
-if not output:
-    raise NameError("Fail: %s" % err)
-lines_list = string.split(output, '\n')
-total_mem = lines_list[1].split()[1]
-free_mem = lines_list[1].split()[4]
-buffer_cache = lines_list[2].split()[3]
-max_clients = int(float(total_mem) / 1024 * .8 / 150)
-
-hyperthread = False
-f = open('/proc/cpuinfo', 'r')
-output = f.read()
-if " ht " in output:
-    hyperthread = True
-match = re.findall('([0-9\.]+)GHz', output)
-# number of cores, and speed in MHz
-cpu_mhz_total = len(match) * float(match[0]) * 1024
-if hyperthread is True:
-    cpu_mhz_total = cpu_mhz_total / 2
-cpu_mhz_total = int(cpu_mhz_total)
-cpu_clients = cpu_mhz_total / 60
-
-print
-print ("WARNING: Free advice is sometimes worth what you paid for it.")
-print ("This estimate is based on baseline numbers that assume full page "
-       "cache is in use. If FPC is not in use, the capacity is typically 1/3 "
-       "to 1/4 of these values, because of memory use rendering the pages.")
-print ("For a dedicated web node,")
-print ("    The memory may support concurrent connection of %d" %
-       max_clients)
-print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
-
-
 def cron_php_check():
     pass
 # Check for cron.php in crontab
@@ -1906,6 +1868,52 @@ if output:
  \___|_|  \___/|_| |_|
 """
     print output
+
+
+def system_specs():
+    pass
+print """
+           _       _
+  __ _  __| |_   _(_) ___ ___
+ / _` |/ _` \\ \\ / / |/ __/ _ \\
+| (_| | (_| |\\ V /| | (_|  __/
+ \__,_|\\__,_| \\_/ |_|\\___\\___|
+"""
+command = "free"
+p = subprocess.Popen(
+    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+output, err = p.communicate()
+if not output:
+    raise NameError("Fail: %s" % err)
+lines_list = string.split(output, '\n')
+total_mem = lines_list[1].split()[1]
+free_mem = lines_list[1].split()[4]
+buffer_cache = lines_list[2].split()[3]
+max_clients = int(float(total_mem) / 1024 * .8 / 150)
+
+hyperthread = False
+f = open('/proc/cpuinfo', 'r')
+output = f.read()
+if " ht " in output:
+    hyperthread = True
+match = re.findall('([0-9\.]+)GHz', output)
+# number of cores, and speed in MHz
+cpu_mhz_total = len(match) * float(match[0]) * 1024
+if hyperthread is True:
+    cpu_mhz_total = cpu_mhz_total / 2
+cpu_mhz_total = int(cpu_mhz_total)
+cpu_clients = cpu_mhz_total / 60
+
+print
+print ("WARNING: Free advice is sometimes worth what you paid for it.")
+print ("This estimate is based on baseline numbers that assume full page "
+       "cache is in use. If FPC is not in use, the capacity is typically 1/3 "
+       "to 1/4 of these values, because of memory use rendering the pages.")
+print ("For a dedicated web node,")
+print ("    The memory may support concurrent connection of %d" %
+       max_clients)
+print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
+
 
 # import os
 # mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')  # e.g. 4015976448
