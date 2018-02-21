@@ -2072,7 +2072,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
 
         returns a dict of key, value pairs
         """
-        return_dict = {}
+        return_list_dict = []
         size_threshold_in_mb = size_threshold_in_mb.encode('utf-8')
         query = ("""SELECT table_schema AS 'Database', table_name AS 'Table', 
 round(((data_length + index_length) / 1024 / 1024), 2) AS 'Size_in_MB'
@@ -2123,7 +2123,8 @@ ORDER BY (data_length + index_length) ;""")
 
             cursor.execute(query, size_threshold_in_mb)
             for (h, i, j) in cursor:
-                return_dict = {"database": h, "table": i, "size_in_mb": j}
+                print "h", h, "i", i, "j", j
+                return_list_dict.append({"database": h, "table": i, "size_in_mb": j})
             cnx.close()
             return(return_dict)
 

@@ -756,11 +756,11 @@ if not args.jsonfile:
             # get a per host list of large Magento tables
             # return_dict = find_big_tables(mysql_host_dict, size_threshold_in_mb )
             # returns Database, Table, Size_in_MB
-            return_dict = mysqlctl.find_big_tables(mysql_creds, "1000")
-            if return_dict:
+            return_list_dict = mysqlctl.find_big_tables(mysql_creds, "1000")
+            if return_list_dict:
                 globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"] = {}
                 update(globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"],
-                       return_dict)
+                       return_list_dict)
 
         # mysql innodb table sizes
         # for each database, get the total size of the innodb table sizes
@@ -1753,15 +1753,14 @@ if IMPORT_MYSQL_CONNECTOR:
         row = []
         # notes = ""
 
-        for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("big_tables", {}).iteritems():
-            if i in base_values:
-                row = []
-                notes = ""
-                row.append(j["database"])
-                row.append(j["table"])
-                row.append(j["size_in_mb"])
-                table.append(row)
-                table_empty = False
+        for values in globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("big_tables", {}).iteritems():
+            row = []
+            print "values", values
+            row.append(values["database"])
+            row.append(values["table"])
+            row.append(values["size_in_mb"])
+            table.append(row)
+            table_empty = False
 
         if not table_empty:
             print
