@@ -758,9 +758,9 @@ if not args.jsonfile:
             # returns Database, Table, Size_in_MB
             return_list_dict = mysqlctl.find_big_tables(mysql_creds, "1000")
             if return_list_dict:
-                globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"] = {}
-                update(globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"],
-                       return_list_dict)
+                if not globalconfig["mysql"]["host_dict"][mysql_host].get("big_tables"):
+                    globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"] = []
+                globalconfig["mysql"]["host_dict"][mysql_host]["big_tables"].append(return_list_dict)
 
         # mysql innodb table sizes
         # for each database, get the total size of the innodb table sizes
