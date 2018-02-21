@@ -2124,10 +2124,10 @@ ORDER BY (data_length + index_length) ;""")
             cursor.execute(query, size_threshold_in_mb)
             return_list_dict = []
             for (h, i, j) in cursor:
-                print "h", h, "i", i, "j", j
+                # print "h", h, "i", i, "j", j
                 return_list_dict.append({"database": h, "table": i, "size_in_mb": j})
             cnx.close()
-            print "return_list_dict", return_list_dict
+            # print "return_list_dict", return_list_dict
             return(return_list_dict)
 
 

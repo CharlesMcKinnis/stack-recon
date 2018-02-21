@@ -753,9 +753,11 @@ if not args.jsonfile:
                     int(globalconfig["mysql"]["host_dict"][mysql_host]["status"]["Innodb_buffer_pool_pages_total"])
                     )
 
-            # get a per host list of large Magento tables
-            # return_dict = find_big_tables(mysql_host_dict, size_threshold_in_mb )
-            # returns Database, Table, Size_in_MB
+            """
+            get a per host list of large Magento tables
+            return_list_dict = find_big_tables(mysql_host_dict, size_threshold_in_mb )
+            returns list of dicts {Database, Table, Size_in_MB}
+            """
             return_list_dict = mysqlctl.find_big_tables(mysql_creds, "1000")
             if return_list_dict:
                 if not globalconfig["mysql"]["host_dict"][mysql_host].get("big_tables"):
@@ -1576,6 +1578,10 @@ eval_type = {
 
 if IMPORT_MYSQL_CONNECTOR:
     for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+
+        """
+        # I've removed this output because it has limited value
+        # A better tool to use is mysqltuner.pl
         table = [["variable", "current", "suggested", "notes"]]
         sqloutput = ""
         config_file_output = ""
@@ -1682,6 +1688,7 @@ if IMPORT_MYSQL_CONNECTOR:
         if config_file_output:
             print "Configuration file options to change or update"
             print config_file_output
+        """
 
     """
     MySQL global status
@@ -1719,6 +1726,9 @@ if IMPORT_MYSQL_CONNECTOR:
         row.append(stackreconlib.bytes2human(
             globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0)))
         row.append("innodb data size")
+        if (globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0) <
+            globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)):
+            notes += "The innodb_buffer_pool_size variable is smaller than the datasize of innodb tables. This will have a negative import or performance."
         #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
         row.append(stackreconlib.bytes2human(
             globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)))
@@ -1737,6 +1747,7 @@ if IMPORT_MYSQL_CONNECTOR:
             print
             print "Host: %s" % v["host"]
             stackreconlib.print_table(table, HEADER=True)
+            print notes
 
 
     """
@@ -1756,7 +1767,7 @@ if IMPORT_MYSQL_CONNECTOR:
         print 'mysql_host_dict.get("big_tables")', mysql_host_dict.get("big_tables")
         for values in mysql_host_dict.get("big_tables"):
             row = []
-            print "values", values
+            # print "values", values
             row.append(values["database"])
             row.append(values["table"])
             row.append(values["size_in_mb"])
