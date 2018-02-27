@@ -2207,6 +2207,7 @@ ORDER BY (data_length + index_length) ;""")
 
 
     def innodb_table_size(self, db_list):
+        """ return the size of innodb tables """
         return_dict = {}
         query = ("SELECT "
                  "SUM(data_length), "
@@ -2214,7 +2215,7 @@ ORDER BY (data_length + index_length) ;""")
                  "FROM information_schema.TABLES "
                  "WHERE engine = 'innodb' AND table_schema = '%s';" %
                  db_list["dbname"]
-                 )
+                )
         config = {
             'user': db_list["username"],
             'password': db_list["password"],
@@ -2259,15 +2260,16 @@ ORDER BY (data_length + index_length) ;""")
             return(return_dict)
 
 
-def socket_client(host, port, string, **kwargs):
+def socket_client(host, port, var_string, **kwargs):
+    """ open a socket and send a string """
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
     else:
         timeout = 5
-    if isinstance(string, basestring):
-        strings = [string]
+    if isinstance(var_string, basestring):
+        strings = [var_string]
     else:
-        strings = string
+        strings = var_string
     # ip, port = '172.24.16.68', 6386
     # SOCK_STREAM == a TCP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -2276,8 +2278,8 @@ def socket_client(host, port, string, **kwargs):
     # sock.setblocking(0)  # optional non-blocking
     try:
         sock.connect((host, int(port)))
-        for string in strings:
-            sock.send(string)
+        for for_string in strings:
+            sock.send(for_string)
             reply = sock.recv(16384)  # limit reply to 16K
             # print "1352 reply %s" % reply
         sock.close()
@@ -2291,7 +2293,8 @@ def socket_client(host, port, string, **kwargs):
 def daemon_exe(match_exe):
     """
     var_filter = "text to search with"
-    using this as the filter will find an executable by name whether it was call by absolute path or bare
+    using this as the filter will find an executable by name whether it was call by absolute
+        path or bare
     "^(\S*/bash|bash)"
     """
     daemons = {}
@@ -2315,14 +2318,15 @@ def daemon_exe(match_exe):
             continue
         else:
             # probably don't need the if psexe now 1-20-2016
-            # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+            # if the exe has been deleted (i.e. through an rpm update), the exe
+            #     will be "/usr/sbin/nginx (deleted)"
             if psexe:
                 if re.search('\(deleted\)', psexe):
-                    # if the exe has been deleted (i.e. through an rpm update), the exe will be "/usr/sbin/nginx (deleted)"
+                    # if the exe has been deleted (i.e. through an rpm update),
+                    #     the exe will be "/usr/sbin/nginx (deleted)"
                     pserror = psexe
                     result = re.match('([^\(]+)', psexe)
                     psexe = result.group(1).rstrip()
-                    pass
                 if os.path.basename(psexe) in match_exe:
                     # if os.path.basename(psexe) == daemon_name:
                     if ppid == "1" or not os.path.basename(psexe) in daemons:
@@ -2331,7 +2335,10 @@ def daemon_exe(match_exe):
                         daemons[os.path.basename(psexe)]["cmd"] = pscmd
                         daemons[os.path.basename(psexe)]["basename"] = os.path.basename(psexe)
                         if pserror:
-                            daemons[os.path.basename(psexe)]["error"] = "Process %s, %s is in (deleted) status. It may not exist, or may have been updated." % (pid, pserror)
+                            daemons[os.path.basename(psexe)]["error"] = (
+                                "Process %s, %s is in (deleted) status. It may not exist, or may "
+                                "have been updated." %
+                                (pid, pserror))
                             pserror = ""
     return(daemons)
 
@@ -2345,89 +2352,89 @@ class AutoVivification(dict):
             value = self[item] = type(self)()
             return value
 
+'''
+def importfile(filename, keyword_regex, **kwargs):
+    """
+    pass the filename of the base config file, and a keyword regular expression
+        to identify the include directive.
+    The regexp should include parantheses ( ) around the filename part of the match
+    keywords: base_path = "/some/path"
+    trailing / will be stripped
+    kwargs["base_path"] will be added to filenames that do not include an
+        absolute path. i.e. Apache includes
+    Examples (the regexp is case insensitive):
+    nginx
+        wholeconfig = importfile(conffile, '\s*include\s+(\S+)')
+    httpd
+        wholeconfig = importfile(conffile, '\s*include\s+(\S+)', base_path="/etc/httpd")
+    """
+    # make the base_path incoming keyword a little more fault tolerant by
+    #   removing the trailing slash
+    if "base_path" in kwargs:
+        base_path = kwargs["base_path"].rstrip("/")
+    else:
+        base_path = ""
+    if "recurse_count" in kwargs:
+        kwargs["recurse_count"] += 1
+    else:
+        kwargs["recurse_count"] = 0
+    if kwargs["recurse_count"] > 20:
+        # arbitrary number
+        sys.stderr.write("Too many recursions while importing %s, the config "
+                         "is probably a loop.\n" % filename)
+        error_collection.append("Too many recursions while importing %s, the "
+                                "config is probably a loop.\n" % filename)
+        sys.exit(1)
 
-# def importfile(filename, keyword_regex, **kwargs):
-#     """
-#     pass the filename of the base config file, and a keyword regular expression
-#         to identify the include directive.
-#     The regexp should include parantheses ( ) around the filename part of the match
-#     keywords: base_path = "/some/path"
-#     trailing / will be stripped
-#     kwargs["base_path"] will be added to filenames that do not include an
-#         absolute path. i.e. Apache includes
-#     Examples (the regexp is case insensitive):
-#     nginx
-#         wholeconfig = importfile(conffile, '\s*include\s+(\S+)')
-#     httpd
-#         wholeconfig = importfile(conffile, '\s*include\s+(\S+)', base_path="/etc/httpd")
-#     """
-#     # make the base_path incoming keyword a little more fault tolerant by
-#     #   removing the trailing slash
-#     if "base_path" in kwargs:
-#         base_path = kwargs["base_path"].rstrip("/")
-#     else:
-#         base_path = ""
-#     if "recurse_count" in kwargs:
-#         kwargs["recurse_count"] += 1
-#     else:
-#         kwargs["recurse_count"] = 0
-#     if kwargs["recurse_count"] > 20:
-#         # arbitrary number
-#         sys.stderr.write("Too many recursions while importing %s, the config "
-#                          "is probably a loop.\n" % filename)
-#         error_collection.append("Too many recursions while importing %s, the "
-#                                 "config is probably a loop.\n" % filename)
-#         sys.exit(1)
-# 
-#     def full_file_path(right_file, base_path):
-#         # If the right side of the full name doesn't have a leading slash, it
-#         #   is a relative path.
-#         # Add the base_path to the left and return the value
-#         # else just return the name
-#         if right_file[0] not in "/":
-#             return(os.path.join(base_path, right_file))
-#         else:
-#             return(right_file)  # this is the fix!
-#     # either an absolute path to a file, or absolute path to a glob
-#     files = glob.glob(full_file_path(filename, base_path))
-#     combined = ""
-#     # print "1655 %r" % full_file_path(filename, base_path)
-#     # print "1656 %r" % files
-#     for onefile in files:
-#         # for each file in the glob (may be just one file), open it
-#         # try:
-#         onefile_handle = open(onefile, 'r')
-#         # print "1659 onefile_handle %r" % onefile_handle
-#         # onefile should always be a file
-#         if os.path.isfile(onefile):
-#             combined += "## START " + onefile + "\n"
-#         # else:
-#         #     print "1664 file isn't a file? " % onefile
-#         # except:
-#         #     return()
-#         # go through the file, line by line
-#         # if it has an include, go follow it
-#         for line in onefile_handle:
-#             result = re.match(keyword_regex, line.strip(), re.IGNORECASE)
-#             # if it is an include, remark out the line,
-#             # figure out the full filename
-#             # and import it inline
-#             if result:
-#                 combined += "#" + line + "\n"
-#                 nestedfile = full_file_path(result.group(1), base_path)
-#                 combined += importfile(nestedfile, keyword_regex, **kwargs)
-#             else:
-#                 combined += line
-#         # END of the file import, if it was a file and not a glob, make the ending.
-#         # onefile should always be a file
-#         if os.path.isfile(onefile):
-#             combined += "## END " + onefile + "\n"
-#         onefile_handle.close()
-#         # print "#combined#"
-#         # print combined
-#         # print "#end#"
-#     return(combined)
-
+    def full_file_path(right_file, base_path):
+        # If the right side of the full name doesn't have a leading slash, it
+        #   is a relative path.
+        # Add the base_path to the left and return the value
+        # else just return the name
+        if right_file[0] not in "/":
+            return(os.path.join(base_path, right_file))
+        else:
+            return(right_file)  # this is the fix!
+    # either an absolute path to a file, or absolute path to a glob
+    files = glob.glob(full_file_path(filename, base_path))
+    combined = ""
+    # print "1655 %r" % full_file_path(filename, base_path)
+    # print "1656 %r" % files
+    for onefile in files:
+        # for each file in the glob (may be just one file), open it
+        # try:
+        onefile_handle = open(onefile, 'r')
+        # print "1659 onefile_handle %r" % onefile_handle
+        # onefile should always be a file
+        if os.path.isfile(onefile):
+            combined += "## START " + onefile + "\n"
+        # else:
+        #     print "1664 file isn't a file? " % onefile
+        # except:
+        #     return()
+        # go through the file, line by line
+        # if it has an include, go follow it
+        for line in onefile_handle:
+            result = re.match(keyword_regex, line.strip(), re.IGNORECASE)
+            # if it is an include, remark out the line,
+            # figure out the full filename
+            # and import it inline
+            if result:
+                combined += "#" + line + "\n"
+                nestedfile = full_file_path(result.group(1), base_path)
+                combined += importfile(nestedfile, keyword_regex, **kwargs)
+            else:
+                combined += line
+        # END of the file import, if it was a file and not a glob, make the ending.
+        # onefile should always be a file
+        if os.path.isfile(onefile):
+            combined += "## END " + onefile + "\n"
+        onefile_handle.close()
+        # print "#combined#"
+        # print combined
+        # print "#end#"
+    return(combined)
+'''
 
 def importfile(filename, keyword_regex, **kwargs):
     """
@@ -2467,10 +2474,12 @@ def importfile(filename, keyword_regex, **kwargs):
         sys.exit(1)
 
     def full_file_path(right_file, base_path):
-        # If the right side of the full name doesn't have a leading slash, it
-        #   is a relative path.
-        # Add the base_path to the left and return the value
-        # else just return the name
+        """
+        If the right side of the full name doesn't have a leading slash, it
+            is a relative path.
+        Add the base_path to the left and return the value
+        else just return the name
+        """
         if right_file[0] not in "/":
             return(os.path.join(base_path, right_file))
         else:
@@ -2507,7 +2516,8 @@ def importfile(filename, keyword_regex, **kwargs):
                 # compound_dict["config_files_list"].append(nestedfile)  # added
                 return_dict = importfile(nestedfile, keyword_regex, **kwargs)
                 compound_dict["combined"] += return_dict["combined"]
-                compound_dict["config_files_list"] = compound_dict["config_files_list"] + return_dict["config_files_list"]  # added
+                compound_dict["config_files_list"] = (compound_dict["config_files_list"] +
+                                                      return_dict["config_files_list"])
             else:
                 compound_dict["combined"] += line
         # END of the file import, if it was a file and not a glob, make the ending.
@@ -2525,7 +2535,8 @@ def kwsearch(keywords, line, **kwargs):
     """
     pass:
         a list of keywords
-        a string to check for keywords and extract a value (the value is everything right of the keyword)
+        a string to check for keywords and extract a value
+            (the value is everything right of the keyword)
         optional: single_value=True returns a list of the values found, unless single_value is True
     """
     line = line.lower()
@@ -2534,8 +2545,11 @@ def kwsearch(keywords, line, **kwargs):
         result = re.match("(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
         # result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
 
+        """
         # this way, without the for loop took 10-12 times as long to run
-        # result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str, keywords)), line.strip(), re.IGNORECASE)
+        result = re.search("\s*(%s)\s*(.*)" % '|'.join(map(str, keywords)),
+                           line.strip(), re.IGNORECASE)
+        """
         if result:
             if "single_value" not in kwargs:
                 if not result.group(1).lower() in stanza:
@@ -2612,34 +2626,35 @@ def memory_estimate(process_name, **kwargs):
 
 
 def memory_print(result, proc_name, proc_max):
+    """ print memory information """
     print("%d %s processes are currently using %d KB of memory, and there is "
           "%d KB of free memory." % (
-            result["line_count"],
-            proc_name,
-            result["rss_sum"],
-            result["mem_free"]))
+              result["line_count"],
+              proc_name,
+              result["rss_sum"],
+              result["mem_free"]))
     print("Average memory per process: %d KB will use %d KB if max processes "
           "%d is reached." % (
-            result["proc_avg_size"],
-            int(result["rss_sum"] / result["line_count"] * proc_max),
-            proc_max))
+              result["proc_avg_size"],
+              int(result["rss_sum"] / result["line_count"] * proc_max),
+              proc_max))
     print("Largest process is %d KB and will use %d KB if max processes is reached.\n"
           % (
-            result["biggest"],
-            result["biggest"] * proc_max))
+              result["biggest"],
+              result["biggest"] * proc_max))
     print("What should I set max processes to?")
     print("The safe value would be to use the largest process, and commit 80%% "
           "of memory: %d" % int((result["rss_sum+mem_free"]
-                                 ) / result["biggest"] * .8))
+                                ) / result["biggest"] * .8))
     print
     print("Current maximum processes: %d" % proc_max)
     print("avg 100% danger   avg 80% warning   lrg 100% cautious   lrg 80% safe")
     print("     %3d                %3d                %3d              %3d" % (
         int(((result["rss_sum+mem_free"]) /
-            (result["proc_avg_size"]))),
+             (result["proc_avg_size"]))),
 
         int(((result["rss_sum+mem_free"]) /
-            (result["proc_avg_size"])) * .8),
+             (result["proc_avg_size"])) * .8),
 
         int((result["rss_sum+mem_free"]) /
             result["biggest"]),
@@ -2650,6 +2665,9 @@ def memory_print(result, proc_name, proc_max):
 
 
 def print_sites(localconfig):
+    """
+    print web site information
+    """
     for one in sorted(localconfig):
         if "domains" in one:
             print "Domains: %s" % "  ".join(one["domains"])
