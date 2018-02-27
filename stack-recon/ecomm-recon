@@ -59,6 +59,12 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
+# pylint: disable=R1705, R0201, C0325, C0103
+# R0201 method could be a function
+# C0325 parens after return
+# R1705 return after else not needed
+# C0103 snake case naming, mostly a missing _
+
 STACK_STATUS_VERSION = 2016112201
 
 if JSON:

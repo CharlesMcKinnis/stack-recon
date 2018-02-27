@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+
+# pylint: disable=R1705, R0201, C0325, C0103, W1401
+# R0201 method could be a function
+# C0325 parens after return
+# R1705 return after else not needed
+# C0103 snake case naming, mostly a missing _
+# W1401 stuff about \ in prints
+
 import re
 import glob
 import subprocess
@@ -71,6 +79,7 @@ class argsAlt(object):
 
 
 class apacheCtl(object):
+    """ Apache info gathering class """
     def __init__(self, daemon, **kwargs):
         self.daemon = daemon
         self.kwargs = kwargs
@@ -110,6 +119,7 @@ class apacheCtl(object):
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
     def figlet(self):
+        """ Apache figlet """
         print """
     _                     _
    / \   _ __   __ _  ___| |__   ___
@@ -138,6 +148,9 @@ class apacheCtl(object):
             return(output)
 
     def get_conf_parameters(self):
+        """
+        Return the params passed when the daemon started
+        """
         if self.kwargs["exe"].endswith("apache2"):
             conf = 'apache2ctl -V 2>&1'
         else:
@@ -149,7 +162,7 @@ class apacheCtl(object):
         output, err = p.communicate()
         if p.returncode > 0:
             return()
-        dict = {}
+        var_dict = {}
         compiled = 0
         for i in output.splitlines():
             if i.strip() == "Server compiled with....":
@@ -158,14 +171,17 @@ class apacheCtl(object):
             if compiled == 0:
                 result = re.match('\s*([^:]+):\s*(.+)', i.strip())
                 if result:
-                    dict[result.group(1)] = result.group(2)
+                    var_dict[result.group(1)] = result.group(2)
             else:
                 result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip())
                 if result:
-                    dict[result.group(1)] = result.group(2)
-        return dict
+                    var_dict[result.group(1)] = result.group(2)
+        return var_dict
 
     def get_root(self):
+        """
+        Return the document root
+        """
         try:
             return self.get_conf_parameters()['HTTPD_ROOT']
         except KeyError:
@@ -179,13 +195,17 @@ class apacheCtl(object):
         HTTPD_ROOT/SERVER_CONFIG_FILE
         """
         try:
-            return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'], self.get_conf_parameters()['SERVER_CONFIG_FILE'])
+            return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'],
+                                self.get_conf_parameters()['SERVER_CONFIG_FILE'])
         except KeyError:
             sys.stderr.write("apache error: Failed to get conf.\n")
             error_collection.append("apace error: Failed to get conf.\n")
             sys.exit(1)
 
     def get_mpm(self):
+        """
+        return the mpm in use
+        """
         try:
             return self.get_conf_parameters()['Server MPM']
         except KeyError:
@@ -302,12 +322,14 @@ class apacheCtl(object):
                 # you may encounter ending modules, but not have anything in
                 #   flags, and if so, there is nothing in it to test
                 if len(stanza_flags) > 0:
-                    if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count + 1:
+                    if(stanza_flags[-1]["type"] == "prefork" and
+                       stanza_flags[-1]["stanza_count"] == stanza_count + 1):
                         stanza_flags.pop()
                         continue
             # If we are in a prefork stanza
             if len(stanza_flags) > 0:
-                if stanza_flags[-1]["type"] == "prefork" and stanza_flags[-1]["stanza_count"] == stanza_count:
+                if(stanza_flags[-1]["type"] == "prefork" and
+                   stanza_flags[-1]["stanza_count"] == stanza_count):
                     if "prefork" not in stanzas:
                         stanzas["prefork"] = {}
                     update(stanzas["prefork"], kwsearch(prefork_keywords, line,
@@ -466,7 +488,8 @@ class apacheCtl(object):
                         event_limit_one = None
                     if (stanzas.get("event", {}).get("maxrequestworkers") and
                             stanzas.get("event", {}).get("threadsperchild")):
-                        event_limit_two = int(stanzas["event"]["maxrequestworkers"]) / int(stanzas["event"]["threadsperchild"])
+                        event_limit_two = (int(stanzas["event"]["maxrequestworkers"]) /
+                                           int(stanzas["event"]["threadsperchild"]))
                     else:
                         event_limit_two = None
                     if event_limit_one is not None and event_limit_two is not None:
@@ -487,7 +510,6 @@ class apacheCtl(object):
                 error_collection.append("apache error: Could not identify mpm "
                                         "in use.\n")
                 sys.exit(1)
-            pass
         return stanzas
 
 
@@ -506,9 +528,30 @@ class nginxCtl(object):
     nginx version: nginx/1.0.15
     built by gcc 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC)
     TLS SNI support enabled
-    configure arguments: --prefix=/usr/share/nginx --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --http-client-body-temp-path=/var/lib/nginx/tmp/client_body --http-proxy-temp-path=/var/lib/nginx/tmp/proxy --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi --http-scgi-temp-path=/var/lib/nginx/tmp/scgi --pid-path=/var/run/nginx.pid --lock-path=/var/lock/subsys/nginx --user=nginx --group=nginx --with-file-aio --with-ipv6 --with-http_ssl_module --with-http_realip_module --with-http_addition_module --with-http_xslt_module --with-http_image_filter_module --with-http_geoip_module --with-http_sub_module --with-http_dav_module --with-http_flv_module --with-http_mp4_module --with-http_gzip_static_module --with-http_random_index_module --with-http_secure_link_module --with-http_degradation_module --with-http_stub_status_module --with-http_perl_module --with-mail --with-mail_ssl_module --with-debug --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic' --with-ld-opt=-Wl,-E
+    configure arguments: --prefix=/usr/share/nginx --sbin-path=/usr/sbin/nginx
+        --conf-path=/etc/nginx/nginx.conf --error-log-path=/var/log/nginx/error.log
+        --http-log-path=/var/log/nginx/access.log
+        --http-client-body-temp-path=/var/lib/nginx/tmp/client_body
+        --http-proxy-temp-path=/var/lib/nginx/tmp/proxy
+        --http-fastcgi-temp-path=/var/lib/nginx/tmp/fastcgi
+        --http-uwsgi-temp-path=/var/lib/nginx/tmp/uwsgi
+        --http-scgi-temp-path=/var/lib/nginx/tmp/scgi
+        --pid-path=/var/run/nginx.pid --lock-path=/var/lock/subsys/nginx
+        --user=nginx --group=nginx --with-file-aio --with-ipv6
+        --with-http_ssl_module --with-http_realip_module
+        --with-http_addition_module --with-http_xslt_module
+        --with-http_image_filter_module --with-http_geoip_module
+        --with-http_sub_module --with-http_dav_module --with-http_flv_module
+        --with-http_mp4_module --with-http_gzip_static_module
+        --with-http_random_index_module --with-http_secure_link_module
+        --with-http_degradation_module --with-http_stub_status_module
+        --with-http_perl_module --with-mail --with-mail_ssl_module --with-debug
+        --with-cc-opt='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions
+        -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic'
+        --with-ld-opt=-Wl,-E
     """
     def figlet(self):
+        """ print nginx figlet """
         print """
              _
  _ __   __ _(_)_ __ __  __
@@ -575,25 +618,19 @@ class nginxCtl(object):
         """
         :returns: nginx binary location
         """
-        # try:
-        if True:
-            return self.get_conf_parameters()['--sbin-path']
+        return self.get_conf_parameters()['--sbin-path']
 
     def get_pid(self):
         """
         :returns: nginx pid location which is required by nginx services
         """
-        # try:
-        if True:
-            return self.get_conf_parameters()['--pid-path']
+        return self.get_conf_parameters()['--pid-path']
 
     def get_lock(self):
         """
         :returns: nginx lock file location which is required for nginx services
         """
-        # try:
-        if True:
-            return self.get_conf_parameters()['--lock-path']
+        return self.get_conf_parameters()['--lock-path']
 
     def parse_config(self, wholeconfig):
         """
@@ -665,7 +702,9 @@ class nginxCtl(object):
             # this doesn't do well if you open and close a stanza on the same line
             if len(re.findall('{', line)) > 0 and len(re.findall('}', line)) > 0:
                 if "error" not in stanzas:
-                    stanzas["error"] = "nginx config file: This script does not consistently support opening { and closing } stanzas on the same line.\n"
+                    stanzas["error"] = ("nginx config file: This script does not "
+                                        "consistently support opening "
+                                        "{ and closing } stanzas on the same line.\n")
                     error_collection.append("WARNING: nginx config file: This "
                                             "script does not consistently "
                                             "support opening { and closing } "
@@ -690,7 +729,7 @@ class nginxCtl(object):
                     stanzas[server_line] = {}
                 if "config_file" not in stanzas[server_line]:
                     stanzas[server_line]["config_file"] = []
-                # there should only be one config file, but just in case, 
+                # there should only be one config file, but just in case,
                 # we will append it
                 if not filechain[-1] in stanzas[server_line]["config_file"]:
                     stanzas[server_line]["config_file"].append(filechain[-1])
@@ -713,7 +752,8 @@ class nginxCtl(object):
                 if "server_name" not in stanzas[server_line]:
                     stanzas[server_line]["server_name"] = []
                 if kwsearch(["server_name"], line):
-                    stanzas[server_line]["server_name"] += kwsearch(["server_name"], line)["server_name"][0].split()
+                    stanzas[server_line]["server_name"] += kwsearch(["server_name"],
+                                                                    line)["server_name"][0].split()
                 """
                 for word in keywords:
                     result = re.match("\s*(%s)\s*(.*)" % word, line.strip("\s\t;"), re.IGNORECASE)
@@ -777,6 +817,7 @@ class nginxCtl(object):
 
 
 class phpfpmCtl(object):
+    """ php-fpm class """
     def __init__(self, daemon, **kwargs):
         self.daemon = daemon
         """ example contents will be only the dict in { }
@@ -790,6 +831,7 @@ class phpfpmCtl(object):
             self.kwargs["exe"] = "php-fpm"
 
     def figlet(self):
+        """ print the php-fpm figlet """
         print """
        _                  __
  _ __ | |__  _ __        / _|_ __  _ __ ___
@@ -816,13 +858,14 @@ class phpfpmCtl(object):
             return(output)
 
     def get_conf_parameters(self):
+        """ Return php-fpm conf params """
         conf = self.daemon["exe"] + " -V 2>&1"
         p = subprocess.Popen(
             conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, err = p.communicate()
         if p.returncode > 0:
             return()
-        dict = {}
+        var_dict = {}
         compiled = 0
         for i in output.splitlines():
             if i.strip() == "Server compiled with....":
@@ -831,12 +874,12 @@ class phpfpmCtl(object):
             if compiled == 0:
                 result = re.match('\s*([^:]+):\s*(.+)', i.strip())
                 if result:
-                    dict[result.group(1)] = result.group(2)
+                    var_dict[result.group(1)] = result.group(2)
             else:
                 result = re.match('\s*-D\s*([^=]+)=?"?([^"\s]*)"?', i.strip())
                 if result:
-                    dict[result.group(1)] = result.group(2)
-        return dict
+                    var_dict[result.group(1)] = result.group(2)
+        return var_dict
 
     def get_conf(self):
         """
@@ -878,6 +921,7 @@ class phpfpmCtl(object):
         sys.exit(1)
 
     def parse_config(self, wholeconfig):
+        """ parse the php-fpm configuration """
         stanza_chain = []
         linenum = 0
         filechain = []
@@ -934,7 +978,9 @@ class phpfpmCtl(object):
 
 
 class MagentoCtl(object):
+    """ class to get Magento information """
     def figlet(self):
+        """ Print Magento figlet """
         print """
  __  __                        _
 |  \/  | __ _  __ _  ___ _ __ | |_ ___
@@ -972,9 +1018,9 @@ class MagentoCtl(object):
                                            mage.get("patch"),
                                            mage.get("stability"),
                                            mage.get("number")
-                                           ]
-                                          )
-                                   )
+                                          ]
+                                         )
+                                  )
         # This is to address 1.10.1.1 EE that has no $_currentEdition defined
         if "edition" not in mage:
             mage["edition"] = ""
@@ -1007,15 +1053,15 @@ class MagentoCtl(object):
         return(mage)
 
     def localxml(self, local_xml_file):
+        """ do nothing with the local xml file? """
         pass
 
     def find_magento(self, doc_roots):
-        # returns the key docroots and value full path and filename or
-        #   Mage.php or magento
-        # rmme 2016-09-01
-        # pp = pprint.PrettyPrinter(indent=4)
+        """
+        returns the key docroots and value full path and filename or
+          Mage.php or magento
+        """
 
-        # print "854 magento docroots %r" % doc_roots
         return_dict = {}
         for doc_root_path in doc_roots:
             # with nginx and apache, we have docroot for web paths
@@ -1256,8 +1302,10 @@ class MagentoCtl(object):
                                                xml_config_single='session_save_path'))
         # test for session cache redis
         resources = tree.find("global/redis_session")
-        if resources is not None or (local_xml.get(section, {}).get(xml_config_node, "").lower() == "redis" and
-                                     "tcp://" in local_xml.get(section, {}).get(xml_config_single, "")):
+        if(resources is not None or
+           (local_xml.get(section, {}).get(xml_config_node, "").lower() == "redis" and
+            "tcp://" in local_xml.get(section, {}).get(xml_config_single, ""))
+          ):
             local_xml[section]["engine"] = "redis"
             redis_module_xml = os.path.join(config_node["magento_path"], "app",
                                             "etc", "modules",
@@ -1345,7 +1393,8 @@ class MagentoCtl(object):
             local_xml[section]["engine"] = "unknown"
         return(local_xml)
 
-    def parse_local_xml(self, tree, section, xml_parent_path, xml_config_node, xml_config_section, **kwargs):
+    def parse_local_xml(self, tree, section, xml_parent_path, xml_config_node, xml_config_section,
+                        **kwargs):
         """
         provide:
             tree, ElementTree object
@@ -1391,7 +1440,7 @@ class MagentoCtl(object):
         """
         if IMPORT_MYSQL_CONNECTOR is False:
             return
-        mysql = MysqlCtl()
+        mysql_handle = MysqlCtl()
         # Some of these aren't used yet, BUT WILL BE. DO NOT REMOVE THEM
         var_table_prefix = value.get("db/table_prefix", "")
         var_dbname = value.get("dbname", "")
@@ -1399,9 +1448,9 @@ class MagentoCtl(object):
         # var_host = value.get("host", "")
         # var_username = value.get("username", "")
         # var_password = value.get("password", "")
-        output = mysql.db_query(value,
-                                "select * FROM `%s`.`%score_cache_option`;" %
-                                (var_dbname, var_table_prefix))
+        output = mysql_handle.db_query(value,
+                                       "select * FROM `%s`.`%score_cache_option`;" %
+                                       (var_dbname, var_table_prefix))
         # doc_root isn't used locally anymore? 14 Jan 2016
         # globalconfig["magento"]["doc_root"][doc_root]["cache"]["cache_option_table"]
         # doc_roots = globalconfig["magento"]["doc_root"]
@@ -1413,7 +1462,9 @@ class MagentoCtl(object):
 
 
 class RedisCtl(object):
+    """ class to gather redis information """
     def figlet(self):
+        """ print redis figlet """
         print """
               _ _
  _ __ ___  __| (_)___
@@ -1423,6 +1474,7 @@ class RedisCtl(object):
 """
 
     def get_status(self, ip, port, **kwargs):
+        """ get redis status """
         if not ip or not port:
             sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" %
                              (ip, port))
@@ -1439,6 +1491,7 @@ class RedisCtl(object):
             return(None)
 
     def parse_status(self, reply):
+        """ parse redis status """
         return_dict = {}
         section = "none"
         for i in reply.splitlines():
@@ -1464,6 +1517,7 @@ class RedisCtl(object):
         return(return_dict)
 
     def get_all_statuses(self, instances, **kwargs):
+        """ Return all redis statuses """
         return_dict = {}
         for i in instances:
             host = instances[i]["host"]
@@ -1527,7 +1581,7 @@ class RedisCtl(object):
                 elif "tcp://" in local_session.get("session_save_path"):
                     result = re.match('tcp://([^:]+):(\d+)',
                                       local_session.get("session_save_path")
-                                      )
+                                     )
                     if result:
                         host = result.group(1)
                         port = result.group(2)
@@ -1653,7 +1707,9 @@ class RedisCtl(object):
 
 
 class MemcacheCtl(object):
+    """ gather memcache information """
     def figlet(self):
+        """ Print memcache figlet """
         print """
                                          _
  _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___
@@ -1663,18 +1719,20 @@ class MemcacheCtl(object):
 """
 
     def get_status(self, ip, port):
+        """ get memcache status """
         port = int(port)
         reply = socket_client(ip, port, "stats\n")
         return(reply)
 
     def parse_status(self, reply):
+        """ parse memcache status """
         return_dict = {}
         # section = ""
         for i in reply.splitlines():
             if len(i.strip()) == 0:
                 continue
             try:
-                [STAT, key, value] = i.split(' ', 3)
+                [stat, key, value] = i.split(' ', 3)
             except ValueError:
                 # STAT = None
                 key = None
@@ -1686,6 +1744,7 @@ class MemcacheCtl(object):
         return(return_dict)
 
     def get_all_statuses(self, instances):
+        """ get statuses from all memcache instances """
         return_dict = {}
         for instance in instances:
             [ip, port] = instance.split(":")
@@ -1698,12 +1757,13 @@ class MemcacheCtl(object):
         return(return_dict)
 
     def instances(self, doc_roots):
-        # print "memcache.instances doc_roots: %r" % doc_roots
+        """
+        return memcache instances from doc_roots
+        print "memcache.instances doc_roots: %r" % doc_roots
+        """
         return_dict = {}
         memcache_instances = set()
         for doc_root, doc_root_dict in doc_roots.iteritems():
-            # for doc_root in doc_roots:
-            #     doc_root_dict = globalconfig.get("magento", {}).get("doc_root", {}).get(doc_root, {})
 
             ################################################
             # Mage 1
@@ -1717,7 +1777,7 @@ class MemcacheCtl(object):
             if local_session.get("engine") == "memcache":
                 result = re.match('tcp://([^:]+):(\d+)',
                                   local_session.get("session_save_path")
-                                  )
+                                 )
                 if result:
                     host = result.group(1)
                     port = result.group(2)
@@ -1750,10 +1810,11 @@ class MemcacheCtl(object):
             # print "1454 env_session_options"
             # pp.pprint(env_session_options)
 
-            if (env_session.get("engine") == "memcache" or env_session.get("engine") == "memcached"):
+            if (env_session.get("engine") == "memcache" or
+                    env_session.get("engine") == "memcached"):
                 result = re.match('tcp://([^:]+):(\d+)',
                                   env_session.get("save_path")
-                                  )
+                                 )
                 if result:
                     host = result.group(1)
                     port = result.group(2)
@@ -1810,7 +1871,9 @@ END
 
 
 class MysqlCtl(object):
+    """ gather MySQL information """
     def figlet(self):
+        """ Print MySQL figlet """
         print """
  __  __       ____   ___  _
 |  \/  |_   _/ ___| / _ \| |
@@ -1821,6 +1884,7 @@ class MysqlCtl(object):
 """
 
     def get_status(self, ip, port):
+        """ gather MySQL status """
         port = int(port)
         reply = socket_client(ip, port, "stats\n")
         return(reply)
@@ -1908,10 +1972,14 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             # do stuff sqlquery
             cursor.execute(sqlquery)
             return_list = cursor.fetchall()
+            """
+            # remarked out 02-27-2018 because it isn't doing anything other than printing,
+            #     and that was remarked out
             for (i, j) in cursor:
                 # print("%s - %s" % (i, j))
                 pass
             cnx.close()
+            """
         # else:
             # print "Skipping database because there isn't enough login information"
             # print " Table prefix: %s" % var_table_prefix
@@ -1927,8 +1995,12 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         return(None)
 
     def parse_key_value(self, queried_table):
+        """ parse key value pairs from a table """
         lines = queried_table.splitlines()
-        lines = input.splitlines()
+        """
+        # lines = input.splitlines()
+        # removed 02-27-2018 this doesn't make sense to have here, it must be a typo
+        """
         counter = 0
         for line in lines:
             return_dict = {}
@@ -1947,7 +2019,11 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
     def not_used_instances(self, doc_roots):
         """
         With a list of doc_roots, examine the local xml we already parsed
-        Make a list of mysql instances, return the "db/table_prefix", "dbname", "host", "username", "password"
+        Make a list of mysql instances, return: "db/table_prefix",
+                                                "dbname",
+                                                "host",
+                                                "username",
+                                                "password"
         Returns a dict
         Value is None if it is undefined
         globalconfig[
@@ -1976,7 +2052,6 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             if doc_roots.get(doc_root, {}).get("local_xml"):
                 xml_db = doc_roots.get(doc_root, {}).get("local_xml", {}).get("db", {})
             return_dict[xml_db["host"]]["credentials"].add(xml_db)
-            pass
         # globalconfig["mysql"]=return_dict
         return(return_dict)
 
