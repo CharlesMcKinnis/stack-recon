@@ -300,7 +300,7 @@ if not args.jsonfile:
     |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\
     """
     class DATA_GATHER(object):
-        """ place holder
+        """ place holder """
         pass
     if skip_apache is not True:
         # using this as a bookmark in the IDE
@@ -366,7 +366,7 @@ if not args.jsonfile:
                     'listening': ['192.168.100.248:443']
                     }, {
                     'domains': ['adomain.com', 'www.domain.com new.domain.com'],
-                    'config_file': '/etc/httpd/conf/httpd.conf',
+                    'config  _file': '/etc/httpd/conf/httpd.conf',
                     'doc_root': '/var/www/html',
                     'listening': ['*:80']
                     }, {
