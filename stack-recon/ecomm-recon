@@ -1880,6 +1880,8 @@ for line in iter(proc.stdout.readline, ''):
                     "/cron.sh cron.php" not in line2
                ):
                 mage1 = False
+                # Mage 1 will have mage.php, and Mage 2 will have env.php
+                # Mage 2 is fine to use cron.php, so we only warn if it is Mage1
                 for  mage_path, v in globalconfig["magento"]["doc_root"].iteritems():
                     if v["Mage.php"]:
                         mage1 = True
