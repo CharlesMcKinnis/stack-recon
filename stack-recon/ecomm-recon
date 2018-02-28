@@ -1875,16 +1875,29 @@ for line in iter(proc.stdout.readline, ''):
                               stderr=subprocess.PIPE)
         for line2 in iter(p2.stdout.readline, ""):
             # print line2
-            # if cron.php is present, present a warning
+            # if cron.php is present and not commented out, present a warning
             if ("/cron.php" in line2 and not re.match('\s*#', line2) and
-                    "/cron.sh cron.php" not in line2):
-                output += ("WARNING: User %s is calling cron.php in crontab but "
-                           "should probably call cron.sh if this is Magento 1\n" % username)
-                output += "%s" % line2
-                error_collection.append("WARNING: User %s is calling cron.php "
-                                        "in crontab but should probably call "
-                                        "cron.sh" %
-                                        username)
+                    "/cron.sh cron.php" not in line2                    
+               ):
+                mage1 = False
+                for  mage_path, v in globalconfig["magento"]["doc_root"].iteritems():
+                    if v["Mage.php"]:
+                        mage1 = True
+                if mage1:
+                    output += ("WARNING: User %s is calling cron.php in crontab but "
+                               "should probably call cron.sh if this is Magento 1\n" % username)
+                    output += "%s" % line2
+                    error_collection.append("WARNING: User %s is calling cron.php "
+                                            "in crontab but should probably call "
+                                            "cron.sh" %
+                                            username)
+"""
+"""
+for mage_path, v in globalconfig["magento"]["doc_root"].iteritems():
+    if v["Mage.php"]:
+        # Magento 1
+
+
 if output:
     print """
   ___ _ __ ___  _ __
