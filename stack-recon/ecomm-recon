@@ -1879,7 +1879,7 @@ for line in iter(proc.stdout.readline, ''):
             if ("/cron.php" in line2 and not re.match('\s*#', line2) and
                     "/cron.sh cron.php" not in line2):
                 output += ("WARNING: User %s is calling cron.php in crontab but "
-                           "should probably call cron.sh if this is Magento 1" % username)
+                           "should probably call cron.sh if this is Magento 1\n" % username)
                 output += "%s" % line2
                 error_collection.append("WARNING: User %s is calling cron.php "
                                         "in crontab but should probably call "
