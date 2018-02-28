@@ -1893,7 +1893,7 @@ for line in iter(proc.stdout.readline, ''):
                                             username)
 
 if output:
-    print """
+    print """\n
   ___ _ __ ___  _ __
  / __| '__/ _ \| '_ \\
 | (__| | | (_) | | | |
