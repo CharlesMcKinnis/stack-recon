@@ -2296,7 +2296,7 @@ def socket_client(host, port, var_string, **kwargs):
         sock.connect((host, int(port)))
         for for_string in strings:
             if not isinstance(for_string, str):
-                for_string = str(for_string)
+                for_string = str(for_string).encode('utf-8')
             print("2298")
             print("for_string:", for_string)
             print("type:", type(for_string))
