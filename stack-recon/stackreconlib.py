@@ -2266,7 +2266,7 @@ def socket_client(host, port, var_string, **kwargs):
         timeout = int(kwargs["TIMEOUT"])
     else:
         timeout = 5
-    if isinstance(var_string, basestring):
+    if isinstance(var_string, str):
         strings = [var_string]
     else:
         strings = var_string
