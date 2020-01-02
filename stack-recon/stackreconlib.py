@@ -587,7 +587,7 @@ class nginxCtl(object):
         output, err = p.communicate()
         if p.returncode > 0:
             return()
-        output = re.sub('configure arguments:', '', output)
+        output = re.sub('configure arguments:', '', output.decode('ascii'))
         dict = {}
         for item in output.split(" "):
             if len(item.split("=")) == 2:
