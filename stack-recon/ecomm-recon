@@ -18,7 +18,7 @@ try:
     from mysql.connector import errorcode
     IMPORT_MYSQL_CONNECTOR = True
 except SyntaxError:
-    print "Error importing mysql library"
+    print("Error importing mysql library")
     IMPORT_MYSQL_CONNECTOR = False
 import re
 # import glob
@@ -691,7 +691,7 @@ if not args.jsonfile:
                                 "password": v.get("password"),
                                 "username": v.get("username")})
                 if not v.get("host"):
-                    print "636 no v.get('host')"
+                    print("636 no v.get('host')")
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -703,7 +703,7 @@ if not args.jsonfile:
                 #               "username": v.get("username")}}
         v = doc_root_dict.get("local_xml", {}).get("db_read", {})
         if v and v.get("host"):
-            print "found db_read %r in doc_root %s" % (v, doc_root)
+            print("found db_read %r in doc_root %s" % (v, doc_root))
             if ({"host": v.get("host"),
                  "dbname": v.get("dbname"),
                  "password": v.get("password"),
@@ -713,7 +713,7 @@ if not args.jsonfile:
                                 "password": v.get("password"),
                                 "username": v.get("username")})
                 if not v.get("host"):
-                    print "656 v.get('host')"
+                    print("656 v.get('host')")
                 update(host_dict,
                        {v.get("host"):
                         {"host": v.get("host"),
@@ -732,7 +732,7 @@ if not args.jsonfile:
                                     "password": v.get("password"),
                                     "username": v.get("username")})
                     if not v.get("host"):
-                        print "674 no v.get('host')"
+                        print("674 no v.get('host')")
                     update(host_dict,
                            {v.get("host"):
                             {"host": v.get("host"),
@@ -851,7 +851,7 @@ class OUTPUT(object):
 # Output body for checking values below
 ################################################
 
-print "FQDN: %s" % localfqdn
+print(alt_daemon_names, "FQDN: %s" % localfqdn)
 
 
 # if not args.silent:
@@ -868,11 +868,11 @@ if "nginx" in globalconfig:
         nginx.figlet()
     nginx_dict = globalconfig.get("nginx", {})
     if nginx_dict.get("version"):
-        print nginx_dict.get("version")
+        print(nginx_dict.get("version"))
     else:
-        print "No nginx version?"
+        print("No nginx version?")
     if nginx_dict.get("sites"):
-        print "nginx sites:"
+        print("nginx sites:")
         """
 
         "sites" : [
@@ -920,16 +920,16 @@ if "apache" in globalconfig:
         apache.figlet()
     apache_dict = globalconfig.get("apache", {})
     if apache_dict.get("version"):
-        print "Apache version: %s" % apache_dict.get("version")
+        print("Apache version: %s" % apache_dict.get("version"))
     else:
-        print "No apache version?"
+        print("No apache version?")
     if apache_dict.get("daemon", {}).get("Server MPM"):
-        print ("Apache server MPM: %s\n" %
+        print("Apache server MPM: %s\n" %
                apache_dict.get("daemon", {}).get("Server MPM"))
     else:
-        print "No apache server MPM?\n"
+        print("No apache server MPM?\n")
     if globalconfig.get("apache", {}).get("sites"):
-        print "Apache sites:"
+        print("Apache sites:")
         """
         28 Oct 2015
         {'domains':
@@ -949,15 +949,15 @@ if "apache" in globalconfig:
             proc_max = globalconfig["apache"]["maxprocesses"]
             result = memory_estimate(proc_name)
             if result:
-                print "! IMPORTANT !"
-                print ("These numbers do not include memory allocated to "
-                       "kernel buffers and cache. You can use the command "
-                       "below to clear the buffers and cache , but this "
-                       "may impact system performance for a short time.")
-                print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
-                print
+                print("! IMPORTANT !")
+                print("These numbers do not include memory allocated to "
+                      "kernel buffers and cache. You can use the command "
+                      "below to clear the buffers and cache , but this "
+                      "may impact system performance for a short time.")
+                print("free && sync && echo 3 > /proc/sys/vm/drop_caches && free")
+                print()
                 memory_print(result, proc_name, proc_max)
-        print "\n"
+        print("\n")
 
 
 # globalconfig["nginx"]["maxclients"]
@@ -976,25 +976,25 @@ if "phpfpm_meta" in globalconfig:
     if not args.nofiglet:
         phpfpm.figlet()
     if globalconfig.get("phpfpm_meta", {}).get("version"):
-        print ("php-fpm version: %s" %
-               globalconfig.get("phpfpm_meta", {}).get("version"))
+        print("php-fpm version: %s" %
+              globalconfig.get("phpfpm_meta", {}).get("version"))
     else:
-        print "No php version?"
-    print "php-fpm pools:"
+        print("No php version?")
+    print("php-fpm pools:")
     for one in globalconfig["phpfpm_meta"]:
         if type(globalconfig["phpfpm_meta"][one]) is dict:
-            print "%s" % (one,)
+            print("%s" % (one,))
 
     print
     # memory profile
-    print "php-fpm memory profile:"
-    print "! IMPORTANT !"
-    print ("These numbers do not include memory allocated to kernel "
-           "buffers and cache. You can use the command below to clear the "
-           "buffers and cache , but this "
-           "may impact system performance for a short time.")
-    print "free && sync && echo 3 > /proc/sys/vm/drop_caches && free"
-    print
+    print("php-fpm memory profile:")
+    print("! IMPORTANT !")
+    print("These numbers do not include memory allocated to kernel "
+          "buffers and cache. You can use the command below to clear the "
+          "buffers and cache , but this "
+          "may impact system performance for a short time.")
+    print("free && sync && echo 3 > /proc/sys/vm/drop_caches && free")
+    print()
 
     if (globalconfig.get("phpfpm_meta", {}).get("basename") and
             globalconfig.get("phpfpm_meta", {}).get("maxprocesses")):
@@ -1020,21 +1020,21 @@ def MAGENTO_PRINT():
 if globalconfig.get("magento", {}).get("doc_root"):
     if not args.nofiglet:
         magento.figlet()
-    print "\nMagento versions installed:"
+    print("\nMagento versions installed:")
     if globalconfig.get("magento", {}).get("doc_root"):
         for key, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
-            print "-" * 60
+            print("-" * 60)
             if not args.localxml:
-                print "Magento path: %s" % key
+                print("Magento path: %s" % key)
 
             # Mage 1
             if "local_xml" in doc_root_dict:
 
                 local_xml = doc_root_dict.get("local_xml")
 
-                print "local.xml: %s" % local_xml.get("filename", "n/a")
+                print("local.xml: %s" % local_xml.get("filename", "n/a"))
                 if not args.localxml:
-                    print "Version: %s" % doc_root_dict.get("magento_version", "n/a")
+                    print("Version: %s" % doc_root_dict.get("magento_version", "n/a"))
                 # Insert a WARNING here if the php version is a mismatch?
                 print
                 # Mage 1 DATABASE settings
@@ -1046,7 +1046,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 local_db = local_xml.get("db")
                 skip = ["pdoType", "initStatements", "model", "type"]
                 if doc_root_dict.get("local_xml", {}).get("db"):
-                    print "Database settings"
+                    print("Database settings")
                     table = []
                     for k2, v2 in local_db.iteritems():
                         if k2 in skip:
@@ -1066,7 +1066,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 if local_db_read:
                     skip = ["pdoType", "initStatements", "model", "type"]
                     if doc_root_dict.get("local_xml", {}).get("db"):
-                        print "Read-Only Database settings"
+                        print("Read-Only Database settings")
                         table = []
                         for k2, v2 in local_db_read.iteritems():
                             if k2 in skip:
@@ -1096,17 +1096,17 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         "connect_retries"
                        ]
                 if local_session_save:
-                    print ("Session Cache engine: %s" %
-                           local_session.get("engine", "EMPTY"))
-                    print "Session Cache backend: %s" % local_session_save
+                    print("Session Cache engine: %s" %
+                          local_session.get("engine", "EMPTY"))
+                    print("Session Cache backend: %s" % local_session_save)
                     table = []
                     for k2, v2 in local_session.iteritems():
                         if k2 in skip:
                             continue
                         if k2 == "Cm_RedisSession.xml active" and v2 == "false":
-                            print ("WARNING: Redis session cache is disabled, "
-                                   "even if configured, when "
-                                   "Cm_RedisSession.xml active is false.")
+                            print("WARNING: Redis session cache is disabled, "
+                                  "even if configured, when "
+                                  "Cm_RedisSession.xml active is false.")
                         if v2:
                             table.append([k2, v2])
                         # print "%s: %s" % (k2, v2)
@@ -1127,10 +1127,10 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         "compression_lib", "connect_retries"
                        ]
                 if local_object.get("backend"):
-                    print ("Object Cache engine: %s" %
-                           local_object.get("engine", "EMPTY"))
-                    print ("Object Cache backend: %s" %
-                           local_object.get("backend", "EMPTY"))
+                    print("Object Cache engine: %s" %
+                          local_object.get("engine", "EMPTY"))
+                    print("Object Cache backend: %s" %
+                          local_object.get("backend", "EMPTY"))
                     table = []
                     for k2, v2 in doc_root_dict["local_xml"]["object_cache"].iteritems():
                         if k2 in skip:
@@ -1154,11 +1154,11 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 # Magento 1.13.0.2 produced an error without this check
                 if local_fpc:
                     if "engine" in local_fpc:
-                        print ("Full Page Cache engine: %s" %
-                               local_fpc.get("engine", "EMPTY"))
+                        print("Full Page Cache engine: %s" %
+                              local_fpc.get("engine", "EMPTY"))
                     if "backend" in local_fpc:
-                        print ("Full Page Cache backend: %s" %
-                               local_fpc.get("backend", "EMPTY"))
+                        print("Full Page Cache backend: %s" %
+                              local_fpc.get("backend", "EMPTY"))
                         # add WARNING about Cm vs Mage for Enterprise vs Community
                         table = []
                         for k2, v2 in local_fpc.iteritems():
@@ -1181,26 +1181,26 @@ if globalconfig.get("magento", {}).get("doc_root"):
                     WARN_FPC = False
                     for row in cache_option_table:
                         if "turpentine" in row[0] and WARN_TURP is False:
-                            print ("The table contains turpentine which "
-                                   "indicates varnish plug-ins are or were "
-                                   "present")
+                            print("The table contains turpentine which "
+                                  "indicates varnish plug-ins are or were "
+                                  "present")
                             WARN_TURP = True
                         if ("full_page" in row[0] and
                                 row[1] == 0 and
                                 WARN_FPC is False):
                             print
-                            print ("WARNING: The full_page value being set to "
-                                   "0 indicates Full Page Cache (FPC) is "
-                                   "disabled, even if it is configured.")
+                            print("WARNING: The full_page value being set to "
+                                  "0 indicates Full Page Cache (FPC) is "
+                                  "disabled, even if it is configured.")
                             WARN_FPC = True
-                    print "cache_option_table:"
+                    print("cache_option_table:")
                     print_table(cache_option_table)
                 print
 
             # Mage 2
             if "env_php" in doc_root_dict:
-                print "env.php: %s" % doc_root_dict["env_php"]["filename"]
-                print "Version: %s" % doc_root_dict["magento_version"]
+                print("env.php: %s" % doc_root_dict["env_php"]["filename"])
+                print("Version: %s" % doc_root_dict["magento_version"])
                 # print "env.php json:"
                 print
 
@@ -1208,13 +1208,13 @@ if globalconfig.get("magento", {}).get("doc_root"):
 
                 # Mage 2 DATABASE settings
                 if "db" in env_php:
-                    print "Database settings"
+                    print("Database settings")
                     env_db = env_php.get("db", {})
-                    print "Table prefix: %s" % env_db["table_prefix"]
+                    print("Table prefix: %s" % env_db["table_prefix"])
 
                     skip = []
                     for k, v in env_db["connection"].iteritems():
-                        print "Connection name: %s" % k
+                        print("Connection name: %s" % k)
                         table = []
                         for k2, v2 in v.iteritems():
                             if k2 in skip:
@@ -1253,8 +1253,8 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         skip = []
 
                     if env_cache.get("save"):
-                        print ("Session Cache engine: %s" %
-                               env_cache.get("save", "EMPTY"))
+                        print("Session Cache engine: %s" %
+                              env_cache.get("save", "EMPTY"))
                         table = []
                         for k2, v2 in env_cache_options.iteritems():
                             if k2 in skip:
@@ -1282,7 +1282,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                                 'compression_lib',
                                 'connect_retries',
                                 'force_standalone']
-                        print ("Default Frontend Cache engine: redis")
+                        print("Default Frontend Cache engine: redis")
                         table = []
                         for k2, v2 in env_cache_options.iteritems():
                             if k2 in skip:
@@ -1294,8 +1294,8 @@ if globalconfig.get("magento", {}).get("doc_root"):
                             print_table(table, NOTABLE=args.notable)
                             print
                     else:
-                        print ("Default Frontend Cache engine: %s" %
-                               env_cache.get("backend", "EMPTY"))
+                        print("Default Frontend Cache engine: %s" %
+                              env_cache.get("backend", "EMPTY"))
 
                 # Mage 2 FULL PAGE CACHE (FPC)
                 if "cache" in env_php:
@@ -1311,7 +1311,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                                 'compression_lib',
                                 'connect_retries',
                                 'force_standalone']
-                        print ("Full Page Cache engine: redis")
+                        print("Full Page Cache engine: redis")
                         table = []
                         for k2, v2 in env_cache_options.iteritems():
                             if k2 in skip:
@@ -1323,21 +1323,21 @@ if globalconfig.get("magento", {}).get("doc_root"):
                             print_table(table, NOTABLE=args.notable)
                             print
                     else:
-                        print ("Full Page Cache engine: %s" %
-                               env_cache.get("backend", "EMPTY"))
+                        print("Full Page Cache engine: %s" %
+                              env_cache.get("backend", "EMPTY"))
 
                 # Mage 2 CACHE TYPES TABLE Similar to cache_option_table
                 #   in Mage 1
-                print "Cache types (similar to cache_option_table)"
+                print("Cache types (similar to cache_option_table)")
                 table = []
                 for k2, v2 in env_php.get("cache_types", {}).iteritems():
                     if k2 == "full_page" and v2 == "0":
-                        print ("The full_page value being set to 0 indicates "
-                               "Full Page Cache (FPC) is disabled, even if it "
-                               "is configured")
+                        print("The full_page value being set to 0 indicates "
+                              "Full Page Cache (FPC) is disabled, even if it "
+                              "is configured")
                     elif k2 == "full_page" and v2 == "1":
-                        print ("full_page is set to 1; If no Full Page "
-                               "Cache Engine is above, Varnish may be in use.")
+                        print("full_page is set to 1; If no Full Page "
+                              "Cache Engine is above, Varnish may be in use.")
                     if v2:
                         table.append([k2, v2])
                 # pp.pprint(env_php)
@@ -1488,7 +1488,7 @@ if globalconfig.get("memcache"):
         memcache.figlet()
     # pp.pprint(globalconfig.get("memcache"))
     for instance, instance_dict in globalconfig.get("memcache").iteritems():
-        print "Server: %s" % instance
+        print("Server: %s" % instance)
         table = []
         table.append(["Version", instance_dict.get('version', "")])
         # print "Version: %s" % instance_dict.get('version', "")
@@ -1519,7 +1519,7 @@ if globalconfig.get("redis"):
     if not args.nofiglet:
         redis.figlet()
     for instance, instance_dict in globalconfig.get("redis").iteritems():
-        print "Server: %s" % instance
+        print("Server: %s" % instance)
 
         # If this is ObjectRocket, it won't have Evicted Keys or Keyspace;
         #   it is less confusing to not display them
@@ -1533,7 +1533,7 @@ if globalconfig.get("redis"):
             print_table(table, NOTABLE=args.notable)
 
         if "Keyspace" in instance_dict:
-            print "Keyspace:"
+            print("Keyspace:")
             table = []
             for key, value in instance_dict.get("Keyspace", {}).iteritems():
                 if value:
@@ -1557,10 +1557,10 @@ if globalconfig.get("mysql"):
 #   and logic need to be separated first.
 # And the values need to be crammed in globalconfig
 print
-print ("This is a quick check of common MySQL variable values for production "
-       "Magento servers.")
-print ("If there are NOTICEs in the notes and Magento is experiencing "
-       "performance issues, escalate the issue.")
+print("This is a quick check of common MySQL variable values for production "
+      "Magento servers.")
+print("If there are NOTICEs in the notes and Magento is experiencing "
+      "performance issues, escalate the issue.")
 
 """
 MySQL global variables
@@ -1767,16 +1767,16 @@ if IMPORT_MYSQL_CONNECTOR:
 
         if table:
             print
-            print "Host: %s" % v["host"]
+            print("Host: %s" % v["host"])
             stackreconlib.print_table(table, HEADER=True)
-            print notes
+            print(notes)
 
 
     """
     MySQL check for large tables
     """
-    print ""
-    print "Checking for tables larger than 1GB that are not static data..."
+    print("")
+    print("Checking for tables larger than 1GB that are not static data...")
     for mysql_host, mysql_host_dict in globalconfig["mysql"]["host_dict"].iteritems():
         # table header row
         table = [["Database", "Table", "Size in MB"]]
@@ -1798,9 +1798,9 @@ if IMPORT_MYSQL_CONNECTOR:
 
         if not table_empty:
             print
-            print "Host: %s" % v["host"]
+            print("Host: %s" % v["host"])
             stackreconlib.print_table(table, HEADER=True)
-            print "WARNING: Report these tables to the site owner or developer."
+            print("WARNING: Report these tables to the site owner or developer.")
             print("The tables reported frequently cause performance problems because they are "
                   "not being cleaned regularly.")
             print("This site has some information from these tables: "
@@ -1808,7 +1808,7 @@ if IMPORT_MYSQL_CONNECTOR:
             print("I am not affiliated with that site. Be cautious of following instructions you "
                   "do not understand.")
         else:
-            print "No such tables found."
+            print("No such tables found.")
 
     """
     MySQL innodb database size
@@ -1844,11 +1844,11 @@ if IMPORT_MYSQL_CONNECTOR:
         table.append(row)
     if table:
         print
-        print "Database size of innoDB tables, total per DB"
+        print("Database size of innoDB tables, total per DB")
         stackreconlib.print_table(table, HEADER=True)
-        print ("The global variable for innodb_buffer_pool_size should be larger "
+        print("The global variable for innodb_buffer_pool_size should be larger "
                "than the database sizes above.")
-        print ("If a database isn't in use, don't consider its size.")
+        print("If a database isn't in use, don't consider its size.")
 
     """
     MySQL table sizes
@@ -1895,25 +1895,25 @@ for line in iter(proc.stdout.readline, ''):
                                             username)
 
 if output:
-    print """\n
+    print("""\n
   ___ _ __ ___  _ __
  / __| '__/ _ \| '_ \\
 | (__| | | (_) | | | |
  \___|_|  \___/|_| |_|
-"""
-    print output
+""")
+    print(output)
 
 
 def system_specs():
     """ system specs """
     pass
-print """
+print("""
            _       _
   __ _  __| |_   _(_) ___ ___
  / _` |/ _` \\ \\ / / |/ __/ _ \\
 | (_| | (_| |\\ V /| | (_|  __/
  \__,_|\\__,_| \\_/ |_|\\___\\___|
-"""
+""")
 command = "free"
 p = subprocess.Popen(
     command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -1940,14 +1940,14 @@ cpu_mhz_total = int(cpu_mhz_total)
 cpu_clients = cpu_mhz_total / 60
 
 print
-print ("WARNING: Free advice is sometimes worth what you paid for it.")
-print ("This estimate is based on baseline numbers that assume full page "
-       "cache is in use. If FPC is not in use, the capacity is typically 1/3 "
-       "to 1/4 of these values, because of memory used when rendering the pages.")
-print ("For a dedicated web node,")
-print ("    The memory may support concurrent connection of %d" %
-       max_clients)
-print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
+print("WARNING: Free advice is sometimes worth what you paid for it.")
+print("This estimate is based on baseline numbers that assume full page "
+      "cache is in use. If FPC is not in use, the capacity is typically 1/3 "
+      "to 1/4 of these values, because of memory used when rendering the pages.")
+print("For a dedicated web node,")
+print("    The memory may support concurrent connection of %d" %
+      max_clients)
+print("    The CPUs may support concurrent connections of %d." % cpu_clients)
 
 
 # import os
@@ -1981,15 +1981,15 @@ if ((not os.path.isfile(args.output) or
         outfile.close()
 
 if args.printglobalconfig:
-    print """
+    print("""
   ____ _       _           _  ____             __ _
  / ___| | ___ | |__   __ _| |/ ___|___  _ __  / _(_) __ _
 | |  _| |/ _ \| '_ \ / _` | | |   / _ \| '_ \| |_| |/ _` |
 | |_| | | (_) | |_) | (_| | | |__| (_) | | | |  _| | (_| |
  \____|_|\___/|_.__/ \__,_|_|\____\___/|_| |_|_| |_|\__, |
                                                     |___/
-"""
+""")
     pp.pprint(globalconfig)
 
 if args.printjson and JSON is True:
-    print json.dumps(globalconfig, cls=DecimalEncoder)
+    print(json.dumps(globalconfig, cls=DecimalEncoder))
