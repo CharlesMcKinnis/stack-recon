@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+# pylint: disable=R1705, R0201, C0325, C0103, C0411, W1401
+# R0201 method could be a function
+# C0325 parens after return
+# R1705 return after else not needed
+# C0103 snake case naming, mostly a missing _
+# C0411 wrong import order
+# W1401 stuff about \ in prints
+
 # from ecommstacklib import *
 import stackreconlib
 from stackreconlib import (error_collection,
@@ -59,10 +67,13 @@ except ImportError:
 #     error_collection.append("This program will be more robust if "
 #                             "mysql.connector installed.\n")
 
+
+
 STACK_STATUS_VERSION = 2016112201
 
 if JSON:
     class DecimalEncoder(json.JSONEncoder):
+        """ fix numbers """
         def default(self, o):
             if isinstance(o, decimal.Decimal):
                 return float(o)
@@ -115,7 +126,7 @@ if ARGPARSE:
     parser.add_argument("-i", "-j", "--jsonfile",
                         help="Name of a config dump json file. Skips " +
                         "detection and uses file values.",
-                        )
+                       )
     parser.add_argument("-s", "--silent",
                         help="No output, not even stderr.",
                         action="store_true")
@@ -175,10 +186,10 @@ if ARGPARSE:
                         action="store_true")
     parser.add_argument("--magentopath",
                         help="Location of a local.xml file",
-                        )
+                       )
     parser.add_argument("--localxml",
                         help="Path to Magento",
-                        )
+                       )
     """
     parser.add_argument("--nopassword",
                         help="Omits passwords from screen output and json " +
@@ -289,6 +300,7 @@ if not args.jsonfile:
     |____/_/   \_\_/_/   \_\  \____/_/   \_\_| |_| |_|_____|_| \_\
     """
     class DATA_GATHER(object):
+        """ place holder """
         pass
     if skip_apache is not True:
         # using this as a bookmark in the IDE
@@ -354,7 +366,7 @@ if not args.jsonfile:
                     'listening': ['192.168.100.248:443']
                     }, {
                     'domains': ['adomain.com', 'www.domain.com new.domain.com'],
-                    'config_file': '/etc/httpd/conf/httpd.conf',
+                    'config  _file': '/etc/httpd/conf/httpd.conf',
                     'doc_root': '/var/www/html',
                     'listening': ['*:80']
                     }, {
@@ -378,6 +390,7 @@ if not args.jsonfile:
 
     # using this as a bookmark in the IDE
     def NGINX_DATA_GATHER():
+        """ gather nginx data """
         pass
     if skip_nginx is not True:
         sys.stderr.write("nginx data gather\n")
@@ -426,6 +439,7 @@ if not args.jsonfile:
 
     # using this as a bookmark in the IDE
     def PHP_FPM_DATA_GATHER():
+        """ gather php-fpm info """
         pass
     if skip_phpfpm is not True:
         sys.stderr.write("php-fpm data gather\n")
@@ -486,9 +500,10 @@ if not args.jsonfile:
             sys.stderr.write("php-fpm is not running\n")
             error_collection.append("php-fpm is not running\n")
 
+    def MAGENTO_DATA_GATHER():
+        """ gather Magento info """
+        pass
     if not args.nomagento:
-        def MAGENTO_DATA_GATHER():
-            pass
         sys.stderr.write("magento data gather\n")
         magento = stackreconlib.MagentoCtl()
         ################################################
@@ -518,7 +533,6 @@ if not args.jsonfile:
                         doc_roots.add(nginx_site["doc_root"].rstrip('/'))
                 more_doc_roots = []
                 for doc_root in doc_roots:
-                    pass
                     magento_path, magento_path_dir = os.path.split(doc_root)
                     # This is to improve Magento 2 discovery
                     if magento_path_dir == "pub":
@@ -617,6 +631,7 @@ if not args.jsonfile:
             outfile.close()
 
         def REDIS_DATA_GATHER():
+            """ gather redis info """
             pass
         sys.stderr.write("redis data gather\n")
         redis = stackreconlib.RedisCtl()
@@ -644,7 +659,8 @@ if not args.jsonfile:
             outfile.close()
 
     def MYSQL_DATA_GATHER():
-            pass
+        """ gather mysql info """
+        pass
     sys.stderr.write("mysql data gather\n")
     mysqlctl = stackreconlib.MysqlCtl()
     ################################################
@@ -822,6 +838,7 @@ else:
 
 # using this as a bookmark in the IDE
 class OUTPUT(object):
+    """ output """
     pass
 """
   ___  _   _ _____ ____  _   _ _____
@@ -839,6 +856,7 @@ print "FQDN: %s" % localfqdn
 
 # if not args.silent:
 def NGINX_PRINT():
+    """ print nginx info """
     pass
 # sys.stderr.write("nginx data print\n")
 ################################################
@@ -891,6 +909,7 @@ if "nginx" in globalconfig:
 
 
 def APACHE_PRINT():
+    """ print apache info """
     pass
 # sys.stderr.write("apache data print\n")
 ################################################
@@ -944,6 +963,7 @@ if "apache" in globalconfig:
 # globalconfig["nginx"]["maxclients"]
 
 def PHP_FPM_PRINT():
+    """ print php-fpm info """
     pass
 # sys.stderr.write("php-fpm data print\n")
 ################################################
@@ -989,6 +1009,7 @@ if "phpfpm_meta" in globalconfig:
 
 
 def MAGENTO_PRINT():
+    """ print Magento info """
     pass
 # sys.stderr.write("magento data print\n")
 ################################################
@@ -1073,7 +1094,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         "bot_lifetime", "compression_lib",
                         "break_after_adminhtml", "break_after_frontend",
                         "connect_retries"
-                        ]
+                       ]
                 if local_session_save:
                     print ("Session Cache engine: %s" %
                            local_session.get("engine", "EMPTY"))
@@ -1104,7 +1125,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         "automatic_cleaning_factor", "force_standalone",
                         "compress_data", "compress_threshold",
                         "compression_lib", "connect_retries"
-                        ]
+                       ]
                 if local_object.get("backend"):
                     print ("Object Cache engine: %s" %
                            local_object.get("engine", "EMPTY"))
@@ -1129,7 +1150,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 local_fpc = local_xml.get("full_page_cache")
                 skip = ["engine", "connect_retries", "force_standalone",
                         "compress_data"
-                        ]
+                       ]
                 # Magento 1.13.0.2 produced an error without this check
                 if local_fpc:
                     if "engine" in local_fpc:
@@ -1193,7 +1214,6 @@ if globalconfig.get("magento", {}).get("doc_root"):
 
                     skip = []
                     for k, v in env_db["connection"].iteritems():
-                        pass
                         print "Connection name: %s" % k
                         table = []
                         for k2, v2 in v.iteritems():
@@ -1460,6 +1480,7 @@ This output is flawed because local.xml was not configured correctly
 
 
 def MEMCACHE_PRINT():
+    """ print memcache info """
     pass
 # sys.stderr.write("memcache data print\n")
 if globalconfig.get("memcache"):
@@ -1728,7 +1749,8 @@ if IMPORT_MYSQL_CONNECTOR:
         row.append("innodb data size")
         if (globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0) <
             globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)):
-            notes += "The innodb_buffer_pool_size variable is smaller than the datasize of innodb tables. This will have a negative import or performance."
+            notes += ("The innodb_buffer_pool_size variable is smaller than the datasize of "
+                      "innodb tables. This will have a negative import or performance.")
         #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
         row.append(stackreconlib.bytes2human(
             globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)))
@@ -1779,10 +1801,12 @@ if IMPORT_MYSQL_CONNECTOR:
             print "Host: %s" % v["host"]
             stackreconlib.print_table(table, HEADER=True)
             print "WARNING: Report these tables to the site owner or developer."
-            print "The tables reported frequently cause performance problems because they are not being cleaned regularly."
+            print("The tables reported frequently cause performance problems because they are "
+                  "not being cleaned regularly.")
             print("This site has some information from these tables: "
                   "https://gist.github.com/dzungtran/291995569e5eda9c9892")
-            print "I am not affiliated with that site. Be cautious of following instructions you do not understand."
+            print("I am not affiliated with that site. Be cautious of following instructions you "
+                  "do not understand.")
         else:
             print "No such tables found."
 
@@ -1831,6 +1855,7 @@ if IMPORT_MYSQL_CONNECTOR:
     """
 
 def cron_php_check():
+    """ Check for Mage 1 cron jobs """
     pass
 # Check for cron.php in crontab
 # get a list of users
@@ -1850,18 +1875,27 @@ for line in iter(proc.stdout.readline, ''):
                               stderr=subprocess.PIPE)
         for line2 in iter(p2.stdout.readline, ""):
             # print line2
-            # if cron.php is present, present a warning
+            # if cron.php is present and not commented out, present a warning
             if ("/cron.php" in line2 and not re.match('\s*#', line2) and
-                    "/cron.sh cron.php" not in line2):
-                output += ("WARNING: User %s is calling cron.php in crontab but "
-                       "should probably call cron.sh if this is Magento 1" % username)
-                output +=  "%s" % line2
-                error_collection.append("WARNING: User %s is calling cron.php "
-                                        "in crontab but should probably call "
-                                        "cron.sh" %
-                                        username)
+                    "/cron.sh cron.php" not in line2
+               ):
+                mage1 = False
+                # Mage 1 will have mage.php, and Mage 2 will have env.php
+                # Mage 2 is fine to use cron.php, so we only warn if it is Mage1
+                for  mage_path, v in globalconfig["magento"]["doc_root"].iteritems():
+                    if v["Mage.php"]:
+                        mage1 = True
+                if mage1:
+                    output += ("WARNING: User %s is calling cron.php in crontab but "
+                               "should probably call cron.sh if this is Magento 1\n" % username)
+                    output += "%s" % line2
+                    error_collection.append("WARNING: User %s is calling cron.php "
+                                            "in crontab but should probably call "
+                                            "cron.sh" %
+                                            username)
+
 if output:
-    print """
+    print """\n
   ___ _ __ ___  _ __
  / __| '__/ _ \| '_ \\
 | (__| | | (_) | | | |
@@ -1871,6 +1905,7 @@ if output:
 
 
 def system_specs():
+    """ system specs """
     pass
 print """
            _       _
@@ -1928,6 +1963,7 @@ print ("    The CPUs may support concurrent connections of %d." % cpu_clients)
 
 
 class TODO(object):
+    """ To Do list """
     pass
 
 # Save the config as a json file
