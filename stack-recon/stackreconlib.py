@@ -1550,7 +1550,7 @@ class RedisCtl(object):
         """
         # redis_instances = set()
         redis_dict = {}  # "host:port": {host:"", port:"", password:""}
-        for doc_root, doc_root_dict in doc_roots.iteritems():
+        for doc_root, doc_root_dict in doc_roots.items():
 
             ################################################
             # Mage 1
@@ -1763,7 +1763,7 @@ class MemcacheCtl(object):
         """
         return_dict = {}
         memcache_instances = set()
-        for doc_root, doc_root_dict in doc_roots.iteritems():
+        for doc_root, doc_root_dict in doc_roots.items():
 
             ################################################
             # Mage 1
