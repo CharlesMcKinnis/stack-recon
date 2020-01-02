@@ -1864,7 +1864,7 @@ proc = subprocess.Popen(command, stdout=subprocess.PIPE)
 output = ""
 for line in iter(proc.stdout.readline, ''):
     # extract the username
-    result = re.match("([^:]+)", line.encode('utf-8').rstrip())
+    result = re.match(b"([^:]+)", line.rstrip())
     if result:
         username = result.group(1)
         # print "User: %s" % username
