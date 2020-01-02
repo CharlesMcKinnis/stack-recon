@@ -2690,6 +2690,9 @@ def print_sites(localconfig):
     """
     print web site information
     """
+    print("line 2693")
+    print("localconfig value:", localconfig)
+    print("localconfig type:", type(localconfig))
     for one in sorted(localconfig):
         if "domains" in one:
             print("Domains: %s" % "  ".join(one["domains"]))
