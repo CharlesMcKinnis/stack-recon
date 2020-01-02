@@ -1480,8 +1480,15 @@ class RedisCtl(object):
                              (ip, port))
             sys.exit(1)
         #port = int(port)
+        print("Before")
+        print("port type", type(port))
+        print("ip type", type(ip))
+        print("command type", type(b"INFO\r\n"))
         port = port.encode('utf-8')
         ip = ip.encode('utf-8')
+        print("After")
+        print("port type", type(port))
+        print("ip type", type(ip))
         if kwargs.get("password") is not None:
             reply = socket_client(ip, port, [b"AUTH %s\r\n" % kwargs["password"],
                                              b"INFO\r\n"])
