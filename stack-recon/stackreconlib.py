@@ -2281,8 +2281,7 @@ def socket_client(host, port, var_string, **kwargs):
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
     else:
-        timeout = 
-    # make sure it is a list. if it is a string, make it a list of one string
+        timeout = 5
     if isinstance(var_string, str):
         strings = [var_string]
     else:
@@ -2296,10 +2295,12 @@ def socket_client(host, port, var_string, **kwargs):
     try:
         sock.connect((host, int(port)))
         for for_string in strings:
+            if not isinstance(for_string, str):
+                for_string = str(for_string)
             print("2298")
             print("for_string:", for_string)
             print("type:", type(for_string))
-            sock.send(str(for_string).encode('utf-8'))
+            sock.send(for_string)
             reply = sock.recv(16384)  # limit reply to 16K
             # print "1352 reply %s" % reply
         sock.close()
