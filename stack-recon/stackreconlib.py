@@ -2304,6 +2304,22 @@ def daemon_exe(match_exe):
         ppid = ""
         pscmd = ""
         pserror = ""
+        # which is causing the type error?
+        try:
+            ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
+        except TypeError:
+            sys.stderr.write("ppid TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
+            continue
+        try:
+            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000", " ").rstrip()
+        except TypeError:
+            sys.stderr.write("pscmd TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
+            continue
+        try:
+            psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
+        except TypeError:
+            sys.stderr.write("psexe TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
+            continue
         try:
             ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
             pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000", " ").rstrip()
