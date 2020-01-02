@@ -1493,7 +1493,13 @@ class RedisCtl(object):
             reply = socket_client(ip, port, [b"AUTH %s\r\n" % kwargs["password"],
                                              b"INFO\r\n"])
         else:
-            reply = socket_client(ip, port, b"INFO\r\n")
+            cmd = b"INFO\r\n"
+            print("After")
+            print("port type", type(port))
+            print("ip type", type(ip))
+            print("cmd", type(cmd))
+            reply = socket_client(ip, port, cmd)
+            # reply = socket_client(ip, port, b"INFO\r\n")
         if reply:
             return(reply)
         else:
@@ -2287,7 +2293,7 @@ def socket_client(host, port, var_string, **kwargs):
     # sock.setdefaulttimeout(timeout)
     # sock.setblocking(0)  # optional non-blocking
     try:
-        sock.connect((host, int(port)))
+        sock.connect((host, port))
         for for_string in strings:
             sock.send(for_string)
             reply = sock.recv(16384)  # limit reply to 16K
