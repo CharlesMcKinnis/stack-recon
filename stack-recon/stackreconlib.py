@@ -2306,7 +2306,7 @@ def daemon_exe(match_exe):
         pserror = ""
         # which is causing the type error?
         try:
-            ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
+            ppid = open(os.path.join('/proc', pid, 'stat'), 'r').read().split()[3]
         except TypeError:
             sys.stderr.write("ppid TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
@@ -2316,7 +2316,7 @@ def daemon_exe(match_exe):
             sys.stderr.write("pscmd TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
         try:
-            ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
+            ppid = open(os.path.join('/proc', pid, 'stat'), 'r').read().split()[3]
             pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'r').read().replace("\000", " ").rstrip()
             # On one system, I have observed the exe linked to a filename
             #   with a * added at the end and this causes a TypeError
