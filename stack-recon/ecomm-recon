@@ -1876,7 +1876,7 @@ for line in iter(proc.stdout.readline, ''):
         for line2 in iter(p2.stdout.readline, ""):
             # print line2
             # if cron.php is present and not commented out, present a warning
-            if ("/cron.php" in line2 and not re.match('\s*#', line2) and
+            if ("/cron.php" in line2 and not re.match(b'\s*#', line2) and
                     "/cron.sh cron.php" not in line2
                ):
                 mage1 = False
