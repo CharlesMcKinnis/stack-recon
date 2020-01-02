@@ -2293,7 +2293,7 @@ def socket_client(host, port, var_string, **kwargs):
     # sock.setdefaulttimeout(timeout)
     # sock.setblocking(0)  # optional non-blocking
     try:
-        sock.connect((host, port))
+        sock.connect((host, int(port)))
         for for_string in strings:
             sock.send(for_string)
             reply = sock.recv(16384)  # limit reply to 16K
