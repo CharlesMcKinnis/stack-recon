@@ -1486,7 +1486,7 @@ class RedisCtl(object):
             reply = socket_client(ip, port, [b"AUTH %s\r\n" % kwargs["password"],
                                              b"INFO\r\n"])
         else:
-            reply = socket_client(ip, port, "INFO\r\n")
+            reply = socket_client(ip, port, b"INFO\r\n")
         if reply:
             return(reply)
         else:
