@@ -552,12 +552,12 @@ if not args.jsonfile:
             # print "454 %r" % mage_files
             # get Magento information from the Mage.php and bin/magento files
             # not config info, just version
-            for doc_root_path, mage_php_file in mage_files.iteritems():
+            for doc_root_path, mage_php_file in mage_files.items():
                 # globalconfig["magento"]["doc_root"][doc_root_path] = {}
                 globalconfig["magento"]["doc_root"][doc_root_path] = magento.mage_file_info(mage_php_file)
 
         # for each docroot, try to parse local.xml
-        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].items():
             # Do not erase it, if it exists!
             if doc_root not in globalconfig["magento"]["doc_root"]:
                 globalconfig["magento"]["doc_root"][doc_root] = {}
@@ -676,7 +676,7 @@ if not args.jsonfile:
     doc_roots = globalconfig.get("magento", {}).get("doc_root", {})
     db_list = []
     host_dict = {}
-    for doc_root, doc_root_dict in doc_roots.iteritems():
+    for doc_root, doc_root_dict in doc_roots.items():
         # Magento 1
         # doc_root["local_xml"]["db"]
         # local.xml db
@@ -721,7 +721,7 @@ if not args.jsonfile:
                          "username": v.get("username")}})
         # Magento 2
         env_db = doc_root_dict.get("env_php", {}).get("db", {}).get("connection", {})
-        for k, v in env_db.iteritems():
+        for k, v in env_db.items():
             if v.get("host"):
                 if ({"host": v.get("host"),
                      "dbname": v.get("dbname"),
@@ -743,7 +743,7 @@ if not args.jsonfile:
 
     if IMPORT_MYSQL_CONNECTOR:
         # mysql global variables and status
-        for mysql_host, mysql_creds in globalconfig.get("mysql", {}).get("host_dict").iteritems():
+        for mysql_host, mysql_creds in globalconfig.get("mysql", {}).get("host_dict").items():
             if not globalconfig.get("mysql", {}).get("host_dict", {}).get(mysql_host, {}).get("innodb"):
                 globalconfig["mysql"]["host_dict"][mysql_host]["innodb"] = {}
 
@@ -1022,7 +1022,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
         magento.figlet()
     print("\nMagento versions installed:")
     if globalconfig.get("magento", {}).get("doc_root"):
-        for key, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+        for key, doc_root_dict in globalconfig["magento"]["doc_root"].items():
             print("-" * 60)
             if not args.localxml:
                 print("Magento path: %s" % key)
@@ -1048,7 +1048,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 if doc_root_dict.get("local_xml", {}).get("db"):
                     print("Database settings")
                     table = []
-                    for k2, v2 in local_db.iteritems():
+                    for k2, v2 in local_db.items():
                         if k2 in skip:
                             continue
                         try:
@@ -1068,7 +1068,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                     if doc_root_dict.get("local_xml", {}).get("db"):
                         print("Read-Only Database settings")
                         table = []
-                        for k2, v2 in local_db_read.iteritems():
+                        for k2, v2 in local_db_read.items():
                             if k2 in skip:
                                 continue
                             try:
@@ -1100,7 +1100,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                           local_session.get("engine", "EMPTY"))
                     print("Session Cache backend: %s" % local_session_save)
                     table = []
-                    for k2, v2 in local_session.iteritems():
+                    for k2, v2 in local_session.items():
                         if k2 in skip:
                             continue
                         if k2 == "Cm_RedisSession.xml active" and v2 == "false":
@@ -1132,7 +1132,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                     print("Object Cache backend: %s" %
                           local_object.get("backend", "EMPTY"))
                     table = []
-                    for k2, v2 in doc_root_dict["local_xml"]["object_cache"].iteritems():
+                    for k2, v2 in doc_root_dict["local_xml"]["object_cache"].items():
                         if k2 in skip:
                             continue
                         if v2:
@@ -1161,7 +1161,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                               local_fpc.get("backend", "EMPTY"))
                         # add WARNING about Cm vs Mage for Enterprise vs Community
                         table = []
-                        for k2, v2 in local_fpc.iteritems():
+                        for k2, v2 in local_fpc.items():
                             if k2 in skip:
                                 continue
                             if v2:
@@ -1213,10 +1213,10 @@ if globalconfig.get("magento", {}).get("doc_root"):
                     print("Table prefix: %s" % env_db["table_prefix"])
 
                     skip = []
-                    for k, v in env_db["connection"].iteritems():
+                    for k, v in env_db["connection"].items():
                         print("Connection name: %s" % k)
                         table = []
-                        for k2, v2 in v.iteritems():
+                        for k2, v2 in v.items():
                             if k2 in skip:
                                 continue
                             if v2:
@@ -1256,7 +1256,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                         print("Session Cache engine: %s" %
                               env_cache.get("save", "EMPTY"))
                         table = []
-                        for k2, v2 in env_cache_options.iteritems():
+                        for k2, v2 in env_cache_options.items():
                             if k2 in skip:
                                 continue
                             if v2:
@@ -1284,7 +1284,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                                 'force_standalone']
                         print("Default Frontend Cache engine: redis")
                         table = []
-                        for k2, v2 in env_cache_options.iteritems():
+                        for k2, v2 in env_cache_options.items():
                             if k2 in skip:
                                 continue
                             if v2:
@@ -1313,7 +1313,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                                 'force_standalone']
                         print("Full Page Cache engine: redis")
                         table = []
-                        for k2, v2 in env_cache_options.iteritems():
+                        for k2, v2 in env_cache_options.items():
                             if k2 in skip:
                                 continue
                             if v2:
@@ -1330,7 +1330,7 @@ if globalconfig.get("magento", {}).get("doc_root"):
                 #   in Mage 1
                 print("Cache types (similar to cache_option_table)")
                 table = []
-                for k2, v2 in env_php.get("cache_types", {}).iteritems():
+                for k2, v2 in env_php.get("cache_types", {}).items():
                     if k2 == "full_page" and v2 == "0":
                         print("The full_page value being set to 0 indicates "
                               "Full Page Cache (FPC) is disabled, even if it "
@@ -1487,7 +1487,7 @@ if globalconfig.get("memcache"):
     if not args.nofiglet:
         memcache.figlet()
     # pp.pprint(globalconfig.get("memcache"))
-    for instance, instance_dict in globalconfig.get("memcache").iteritems():
+    for instance, instance_dict in globalconfig.get("memcache").items():
         print("Server: %s" % instance)
         table = []
         table.append(["Version", instance_dict.get('version', "")])
@@ -1518,7 +1518,7 @@ def REDIS_PRINT():
 if globalconfig.get("redis"):
     if not args.nofiglet:
         redis.figlet()
-    for instance, instance_dict in globalconfig.get("redis").iteritems():
+    for instance, instance_dict in globalconfig.get("redis").items():
         print("Server: %s" % instance)
 
         # If this is ObjectRocket, it won't have Evicted Keys or Keyspace;
@@ -1535,7 +1535,7 @@ if globalconfig.get("redis"):
         if "Keyspace" in instance_dict:
             print("Keyspace:")
             table = []
-            for key, value in instance_dict.get("Keyspace", {}).iteritems():
+            for key, value in instance_dict.get("Keyspace", {}).items():
                 if value:
                     table.append([key, value])
                 # print "%s: %s" % (key, value)
@@ -1598,7 +1598,7 @@ eval_type = {
             #        return_dict)
 
 if IMPORT_MYSQL_CONNECTOR:
-    for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    for k, v in globalconfig["mysql"]["host_dict"].items():
 
         """
         # I've removed this output because it has limited value
@@ -1606,7 +1606,7 @@ if IMPORT_MYSQL_CONNECTOR:
         table = [["variable", "current", "suggested", "notes"]]
         sqloutput = ""
         config_file_output = ""
-        for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).iteritems():
+        for i, j in globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).items():
             if i in base_values:
                 row = []
                 notes = ""
@@ -1717,13 +1717,13 @@ if IMPORT_MYSQL_CONNECTOR:
     base_values = {
         "Max_used_connections": 0,
     }
-    for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    for k, v in globalconfig["mysql"]["host_dict"].items():
         table = [["Variable", "value", "compare-to", "compare-value"]]
         sqloutput = ""
         config_file_output = ""
         row = []
         notes = ""
-        # for i, j in globalconfig["mysql"]["host_dict"][k]["status"].iteritems():
+        # for i, j in globalconfig["mysql"]["host_dict"][k]["status"].items():
         #     if i in base_values:
         #         row = []
         #         notes = ""
@@ -1777,7 +1777,7 @@ if IMPORT_MYSQL_CONNECTOR:
     """
     print("")
     print("Checking for tables larger than 1GB that are not static data...")
-    for mysql_host, mysql_host_dict in globalconfig["mysql"]["host_dict"].iteritems():
+    for mysql_host, mysql_host_dict in globalconfig["mysql"]["host_dict"].items():
         # table header row
         table = [["Database", "Table", "Size in MB"]]
         table_empty = True
@@ -1813,7 +1813,7 @@ if IMPORT_MYSQL_CONNECTOR:
     """
     MySQL innodb database size
     """
-    # for k, v in globalconfig["mysql"]["host_dict"].iteritems():
+    # for k, v in globalconfig["mysql"]["host_dict"].items():
     #     print "%s: %r" % (k, v)
 
     table = [["Server", "DB Name", "data length", "index length", "total size"]]
@@ -1882,7 +1882,7 @@ for line in iter(proc.stdout.readline, ''):
                 mage1 = False
                 # Mage 1 will have mage.php, and Mage 2 will have env.php
                 # Mage 2 is fine to use cron.php, so we only warn if it is Mage1
-                for  mage_path, v in globalconfig["magento"]["doc_root"].iteritems():
+                for  mage_path, v in globalconfig["magento"]["doc_root"].items():
                     if v["Mage.php"]:
                         mage1 = True
                 if mage1:
