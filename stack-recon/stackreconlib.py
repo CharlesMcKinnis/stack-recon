@@ -1482,9 +1482,9 @@ class RedisCtl(object):
         port = int(port)
         if kwargs.get("password") is not None:
             reply = socket_client(ip, port, ["AUTH %s\r\n" % kwargs["password"],
-                                             "INFO\r\n"])
+                                             b"INFO\r\n"])
         else:
-            reply = socket_client(ip, port, "INFO\r\n")
+            reply = socket_client(ip, port, b"INFO\r\n")
         if reply:
             return(reply)
         else:
