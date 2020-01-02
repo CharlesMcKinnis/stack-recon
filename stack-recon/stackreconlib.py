@@ -2311,7 +2311,7 @@ def daemon_exe(match_exe):
             sys.stderr.write("ppid TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
         try:
-            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000", " ").rstrip()
+            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'r').read().replace("\000", " ").rstrip()
         except TypeError:
             sys.stderr.write("pscmd TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
