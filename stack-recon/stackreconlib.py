@@ -18,7 +18,7 @@ try:
     from mysql.connector import errorcode
     IMPORT_MYSQL_CONNECTOR = True
 except SyntaxError:
-    print "Error importing mysql library"
+    print("Error importing mysql library")
     IMPORT_MYSQL_CONNECTOR = False
 import string
 from xml.parsers.expat import ExpatError
@@ -120,14 +120,14 @@ class apacheCtl(object):
     """
     def figlet(self):
         """ Apache figlet """
-        print """
+        print("""
     _                     _
    / \   _ __   __ _  ___| |__   ___
   / _ \ | '_ \ / _` |/ __| '_ \ / _ \\
  / ___ \| |_) | (_| | (__| | | |  __/
 /_/   \_\ .__/ \__,_|\___|_| |_|\___|
         |_|
-"""
+""")
 
     def get_version(self):
         """
@@ -552,14 +552,14 @@ class nginxCtl(object):
     """
     def figlet(self):
         """ print nginx figlet """
-        print """
+        print("""
              _
  _ __   __ _(_)_ __ __  __
 | '_ \ / _` | | '_ \\\ \/ /
 | | | | (_| | | | | |>  <
 |_| |_|\__, |_|_| |_/_/\_\\
        |___/
-"""
+""")
 
     def get_version(self):
         """
@@ -832,14 +832,14 @@ class phpfpmCtl(object):
 
     def figlet(self):
         """ print the php-fpm figlet """
-        print """
+        print("""
        _                  __
  _ __ | |__  _ __        / _|_ __  _ __ ___
 | '_ \| '_ \| '_ \ _____| |_| '_ \| '_ ` _ \\
 | |_) | | | | |_) |_____|  _| |_) | | | | | |
 | .__/|_| |_| .__/      |_| | .__/|_| |_| |_|
 |_|         |_|             |_|
-"""
+""")
 
     def get_version(self):
         """
@@ -981,14 +981,14 @@ class MagentoCtl(object):
     """ class to get Magento information """
     def figlet(self):
         """ Print Magento figlet """
-        print """
+        print("""
  __  __                        _
 |  \/  | __ _  __ _  ___ _ __ | |_ ___
 | |\/| |/ _` |/ _` |/ _ \ '_ \| __/ _ \\
 | |  | | (_| | (_| |  __/ | | | || (_) |
 |_|  |_|\__,_|\__, |\___|_| |_|\__\___/
               |___/
-"""
+""")
 
     def m1_parse_version(self, mage_php_file):
         """Parse version information from Mage.php from Magento 1.x
@@ -1465,13 +1465,13 @@ class RedisCtl(object):
     """ class to gather redis information """
     def figlet(self):
         """ print redis figlet """
-        print """
+        print("""
               _ _
  _ __ ___  __| (_)___
 | '__/ _ \/ _` | / __|
 | | |  __/ (_| | \__ \\
 |_|  \___|\__,_|_|___/
-"""
+""")
 
     def get_status(self, ip, port, **kwargs):
         """ get redis status """
@@ -1710,13 +1710,13 @@ class MemcacheCtl(object):
     """ gather memcache information """
     def figlet(self):
         """ Print memcache figlet """
-        print """
+        print("""
                                          _
  _ __ ___   ___ _ __ ___   ___ __ _  ___| |__   ___
 | '_ ` _ \ / _ \ '_ ` _ \ / __/ _` |/ __| '_ \ / _ \\
 | | | | | |  __/ | | | | | (_| (_| | (__| | | |  __/
 |_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
-"""
+""")
 
     def get_status(self, ip, port):
         """ get memcache status """
@@ -1874,14 +1874,14 @@ class MysqlCtl(object):
     """ gather MySQL information """
     def figlet(self):
         """ Print MySQL figlet """
-        print """
+        print("""
  __  __       ____   ___  _
 |  \/  |_   _/ ___| / _ \| |
 | |\/| | | | \___ \| | | | |
 | |  | | |_| |___) | |_| | |___
 |_|  |_|\__, |____/ \__\_\_____|
         |___/
-"""
+""")
 
     def get_status(self, ip, port):
         """ gather MySQL status """
@@ -2011,7 +2011,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             counter += 1
             result = re.search('\|\s*([^\|]+)\|\s*([^\|]+)', line)
             if not result:
-                print "done"
+                print("done")
                 break
             return_dict[result.group(1).strip()] = result.group(2).strip()
         return(return_dict)
@@ -2670,17 +2670,17 @@ def print_sites(localconfig):
     """
     for one in sorted(localconfig):
         if "domains" in one:
-            print "Domains: %s" % "  ".join(one["domains"])
+            print("Domains: %s" % "  ".join(one["domains"]))
         if "listening" in one:
-            print "listening: %s" % ", ".join(one["listening"])
+            print("listening: %s" % ", ".join(one["listening"]))
         if "doc_root" in one:
-            print "Doc root: %s" % one["doc_root"]
+            print("Doc root: %s" % one["doc_root"])
         if "config_file" in one:
-            print "Config file: %s" % one["config_file"]
+            print("Config file: %s" % one["config_file"])
         if "access_log" in one:
-            print "Access log: %s" % one["access_log"]
+            print("Access log: %s" % one["access_log"])
         if "error_log" in one:
-            print "Error log: %s" % one["error_log"]
+            print("Error log: %s" % one["error_log"])
         print
 
 
@@ -2718,46 +2718,46 @@ table = [
     if kwargs.get("NOTABLE") is True:
         for line in table:
             # print "debug x %d, col_width[i] %d" % (x, col_width[i])
-            print ": ".join(line)
+            print(": ".join(line))
     else:
         # Ugly workaround for Unicode
         first_line = True
         try:
             col_width = [max(len(str(x)) for x in col) for col in zip(*table)]
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+            print("+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
                                                      col_width[i])
-                                    for i, x in enumerate(table[0])) + "-+"
+                                    for i, x in enumerate(table[0])) + "-+")
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
-                print "| " + " | ".join("{0:{1}}".format(x, col_width[i])
-                                        for i, x in enumerate(line)) + " |"
+                print("| " + " | ".join("{0:{1}}".format(x, col_width[i])
+                                        for i, x in enumerate(line)) + " |")
                 if first_line is True and kwargs.get("HEADER") is True:
-                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                    print("+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
                                                              col_width[i])
-                                            for i, x in enumerate(table[0])) + "-+"
+                                            for i, x in enumerate(table[0])) + "-+")
                     first_line = False
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+            print("+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
                                                      col_width[i])
-                                    for i, x in enumerate(table[0])) + "-+"
+                                    for i, x in enumerate(table[0])) + "-+")
         except UnicodeEncodeError:
             col_width = [max(len(x.encode('utf-8')) for x in col)
                          for col in zip(*table)]
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+            print("+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
                                                      col_width[i])
-                                    for i, x in enumerate(table[0])) + "-+"
+                                    for i, x in enumerate(table[0])) + "-+")
             for line in table:
                 # print "debug x %d, col_width[i] %d" % (x, col_width[i])
-                print "| " + " | ".join("{0:{1}}".format(x.encode('utf-8'),
+                print("| " + " | ".join("{0:{1}}".format(x.encode('utf-8'),
                                                          col_width[i])
-                                        for i, x in enumerate(line)) + " |"
+                                        for i, x in enumerate(line)) + " |")
                 if first_line is True and kwargs.get("HEADER") is True:
-                    print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+                    print("+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
                                                              col_width[i])
-                                            for i, x in enumerate(table[0])) + "-+"
+                                            for i, x in enumerate(table[0])) + "-+")
                     first_line = False
-            print "+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
+            print("+-" + "-+-".join("{0:{1}}".format("-" * col_width[i],
                                                      col_width[i])
-                                    for i, x in enumerate(table[0])) + "-+"
+                                    for i, x in enumerate(table[0])) + "-+")
 
 """
 table = [
