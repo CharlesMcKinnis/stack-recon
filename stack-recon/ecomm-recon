@@ -600,7 +600,7 @@ if not args.jsonfile:
 
         globalconfig["errors"] = error_collection
         if JSON:
-            json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+            json_str = json.dumps(globalconfig)
             # with open(args.output,'w') as outfile:
             #     outfile.write( json_str )
             outfile = open(args.output, 'w')
@@ -623,7 +623,7 @@ if not args.jsonfile:
 
         globalconfig["errors"] = error_collection
         if JSON:
-            json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+            json_str = json.dumps(globalconfig)
             # with open(args.output,'w') as outfile:
             #     outfile.write( json_str )
             outfile = open(args.output, 'w')
