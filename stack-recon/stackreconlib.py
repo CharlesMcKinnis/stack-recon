@@ -2625,7 +2625,7 @@ def memory_estimate(process_name, **kwargs):
     if not output:
         raise NameError("Fail: %s" % err)
     # lines_list = string.split(output, '\n')
-    lines_list = output.split('\n')
+    lines_list = output.split(b'\n')
     status["mem_free"] = int(lines_list[1].split()[3])
     # bc means buffers and cache
     status["bc_used"] = int(lines_list[2].split()[2])
