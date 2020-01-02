@@ -1479,12 +1479,12 @@ class RedisCtl(object):
             sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" %
                              (ip, port))
             sys.exit(1)
-        port = int(port)
+        #port = int(port)
         if kwargs.get("password") is not None:
             reply = socket_client(ip, port, ["AUTH %s\r\n" % kwargs["password"],
-                                             b"INFO\r\n"])
+                                             "INFO\r\n"])
         else:
-            reply = socket_client(ip, port, b"INFO\r\n")
+            reply = socket_client(ip, port, "INFO\r\n")
         if reply:
             return(reply)
         else:
