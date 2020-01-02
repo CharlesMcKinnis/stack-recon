@@ -2316,13 +2316,8 @@ def daemon_exe(match_exe):
             sys.stderr.write("pscmd TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
         try:
-            psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
-        except TypeError:
-            sys.stderr.write("psexe TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
-            continue
-        try:
             ppid = open(os.path.join('/proc', pid, 'stat'), 'rb').read().split()[3]
-            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'rb').read().replace("\000", " ").rstrip()
+            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'r').read().replace("\000", " ").rstrip()
             # On one system, I have observed the exe linked to a filename
             #   with a * added at the end and this causes a TypeError
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
@@ -2330,7 +2325,7 @@ def daemon_exe(match_exe):
             # e = ""
             sys.stderr.write("TypeError %s\n" % (os.path.join('/proc', pid, 'exe')))
             continue
-        except (IOError, OSError):  # proc has already terminated, you may not be root
+        except (IOError, OSError, FileNotFoundError):  # proc has already terminated, you may not be root
             continue
         else:
             # probably don't need the if psexe now 1-20-2016
