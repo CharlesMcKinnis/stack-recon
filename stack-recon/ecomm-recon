@@ -1747,8 +1747,8 @@ if IMPORT_MYSQL_CONNECTOR:
         row.append(stackreconlib.bytes2human(
             globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0)))
         row.append("innodb data size")
-        if (globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0) <
-            globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0)):
+        if (int(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("variables", {}).get("innodb_buffer_pool_size", 0)) <
+            int(globalconfig.get("mysql", {}).get("host_dict", {}).get(k, {}).get("innodb", {}).get("data+index_size", 0))):
             notes += ("The innodb_buffer_pool_size variable is smaller than the datasize of "
                       "innodb tables. This will have a negative import or performance.")
         #          globalconfig["mysql"]["host_dict"][host]["innodb"]["datasize"]
