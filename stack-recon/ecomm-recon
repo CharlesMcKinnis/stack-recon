@@ -71,13 +71,13 @@ except ImportError:
 
 STACK_STATUS_VERSION = 2016112201
 
-if JSON:
-    class DecimalEncoder(json.JSONEncoder):
-        """ fix numbers """
-        def default(self, o):
-            if isinstance(o, decimal.Decimal):
-                return float(o)
-            return super(DecimalEncoder, self).default(o)
+# if JSON:
+#     class DecimalEncoder(json.JSONEncoder):
+#         """ fix numbers """
+#         def default(self, o):
+#             if isinstance(o, decimal.Decimal):
+#                 return float(o)
+#             return super(DecimalEncoder, self).default(o)
 
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated
@@ -599,13 +599,13 @@ if not args.jsonfile:
                 # print "========================="
 
         globalconfig["errors"] = error_collection
-        if JSON:
-            json_str = json.dumps(globalconfig)
-            # with open(args.output,'w') as outfile:
-            #     outfile.write( json_str )
-            outfile = open(args.output, 'w')
-            outfile.write(json_str)
-            outfile.close()
+        # if JSON:
+        #     json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        #     # with open(args.output,'w') as outfile:
+        #     #     outfile.write( json_str )
+        #     outfile = open(args.output, 'w')
+        #     outfile.write(json_str)
+        #     outfile.close()
 
         def MEMCACHE_DATA_GATHER():
             pass
@@ -622,13 +622,13 @@ if not args.jsonfile:
                    memcache.get_all_statuses(memcache_instances))
 
         globalconfig["errors"] = error_collection
-        if JSON:
-            json_str = json.dumps(globalconfig)
-            # with open(args.output,'w') as outfile:
-            #     outfile.write( json_str )
-            outfile = open(args.output, 'w')
-            outfile.write(json_str)
-            outfile.close()
+        # if JSON:
+        #     json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        #     # with open(args.output,'w') as outfile:
+        #     #     outfile.write( json_str )
+        #     outfile = open(args.output, 'w')
+        #     outfile.write(json_str)
+        #     outfile.close()
 
         def REDIS_DATA_GATHER():
             """ gather redis info """
@@ -650,13 +650,13 @@ if not args.jsonfile:
         # pp.pprint(redis.get_all_statuses(redis_instances))
 
         globalconfig["errors"] = error_collection
-        if JSON:
-            json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-            # with open(args.output,'w') as outfile:
-            #     outfile.write( json_str )
-            outfile = open(args.output, 'w')
-            outfile.write(json_str)
-            outfile.close()
+        # if JSON:
+        #     json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+        #     # with open(args.output,'w') as outfile:
+        #     #     outfile.write( json_str )
+        #     outfile = open(args.output, 'w')
+        #     outfile.write(json_str)
+        #     outfile.close()
 
     def MYSQL_DATA_GATHER():
         """ gather mysql info """
@@ -804,13 +804,13 @@ if not args.jsonfile:
                 )
 
     globalconfig["errors"] = error_collection
-    if JSON:
-        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-        # with open(args.output,'w') as outfile:
-        #     outfile.write( json_str )
-        outfile = open(args.output, 'w')
-        outfile.write(json_str)
-        outfile.close()
+    # if JSON:
+    #     json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+    #     # with open(args.output,'w') as outfile:
+    #     #     outfile.write( json_str )
+    #     outfile = open(args.output, 'w')
+    #     outfile.write(json_str)
+    #     outfile.close()
 
 else:
     for i in globalconfig["errors"]:
@@ -1972,13 +1972,13 @@ if ((not os.path.isfile(args.output) or
      args.force) and not args.jsonfile and JSON is True):
 
     globalconfig["errors"] = error_collection
-    if JSON:
-        json_str = json.dumps(globalconfig, cls=DecimalEncoder)
-        # with open(args.output,'w') as outfile:
-        #     outfile.write( json_str )
-        outfile = open(args.output, 'w')
-        outfile.write(json_str)
-        outfile.close()
+    # if JSON:
+    #     json_str = json.dumps(globalconfig, cls=DecimalEncoder)
+    #     # with open(args.output,'w') as outfile:
+    #     #     outfile.write( json_str )
+    #     outfile = open(args.output, 'w')
+    #     outfile.write(json_str)
+    #     outfile.close()
 
 if args.printglobalconfig:
     print("""
