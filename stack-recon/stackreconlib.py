@@ -2074,7 +2074,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             try:
                 cnx = mysql.connector.connect(**config)
                 cursor = cnx.cursor()
-            except mysql.connector.Error, err:
+            except mysql.connector.Error as err:
                 if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                     frameinfo = getframeinfo(currentframe())
                     print("Something is wrong with your user name or password, "
