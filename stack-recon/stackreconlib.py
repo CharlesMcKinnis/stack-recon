@@ -1480,24 +1480,24 @@ class RedisCtl(object):
                              (ip, port))
             sys.exit(1)
         #port = int(port)
-        print("Before")
-        print("port type", type(port))
-        print("ip type", type(ip))
-        print("command type", type(b"INFO\r\n"))
+        # print("Before")
+        # print("port type", type(port))
+        # print("ip type", type(ip))
+        # print("command type", type(b"INFO\r\n"))
         port = port.encode('utf-8')
         ip = ip.encode('utf-8')
-        print("After")
-        print("port type", type(port))
-        print("ip type", type(ip))
+        # print("After")
+        # print("port type", type(port))
+        # print("ip type", type(ip))
         if kwargs.get("password") is not None:
             reply = socket_client(ip, port, [b"AUTH %s\r\n" % kwargs["password"],
                                              b"INFO\r\n"])
         else:
             cmd = b"INFO\r\n"
-            print("After")
-            print("port type", type(port))
-            print("ip type", type(ip))
-            print("cmd", type(cmd))
+            # print("After")
+            # print("port type", type(port))
+            # print("ip type", type(ip))
+            # print("cmd", type(cmd))
             reply = socket_client(ip, port, cmd)
             # reply = socket_client(ip, port, b"INFO\r\n")
         if reply:
@@ -2297,9 +2297,9 @@ def socket_client(host, port, var_string, **kwargs):
         for for_string in strings:
             if not isinstance(for_string, str):
                 for_string = str(for_string).encode('utf-8')
-            print("2298")
-            print("for_string:", for_string)
-            print("type:", type(for_string))
+            # print("2298")
+            # print("for_string:", for_string)
+            # print("type:", type(for_string))
             sock.send(for_string)
             reply = sock.recv(16384)  # limit reply to 16K
             # print "1352 reply %s" % reply
@@ -2624,7 +2624,8 @@ def memory_estimate(process_name, **kwargs):
     output, err = p.communicate()
     if not output:
         raise NameError("Fail: %s" % err)
-    lines_list = string.split(output, '\n')
+    # lines_list = string.split(output, '\n')
+    lines_list = output.split('\n')
     status["mem_free"] = int(lines_list[1].split()[3])
     # bc means buffers and cache
     status["bc_used"] = int(lines_list[2].split()[2])
