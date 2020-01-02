@@ -2295,7 +2295,10 @@ def socket_client(host, port, var_string, **kwargs):
     try:
         sock.connect((host, int(port)))
         for for_string in strings:
-            sock.send(for_string.encode('utf-8'))
+            print("2298")
+            print("for_string:", for_string)
+            print("type:", type(for_string))
+            sock.send(for_string)
             reply = sock.recv(16384)  # limit reply to 16K
             # print "1352 reply %s" % reply
         sock.close()
