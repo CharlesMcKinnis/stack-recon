@@ -1858,6 +1858,7 @@ def cron_php_check():
     """ Check for Mage 1 cron jobs """
     pass
 # This is running for longer than it should with python3 #fixme
+output = ""
 """
 # Check for cron.php in crontab
 # get a list of users
@@ -1897,7 +1898,7 @@ for line in iter(proc.stdout.readline, ''):
                                             username)
 """
 
-if output:
+if output is defined:
     print("""\n
   ___ _ __ ___  _ __
  / __| '__/ _ \| '_ \\
