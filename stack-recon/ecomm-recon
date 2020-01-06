@@ -1924,7 +1924,7 @@ p = subprocess.Popen(
 output, err = p.communicate()
 if not output:
     raise NameError("Fail: %s" % err)
-lines_list = output.encode('utf-8').split('\n')
+lines_list = output.split(b'\n')
 total_mem = lines_list[1].split()[1]
 free_mem = lines_list[1].split()[4]
 buffer_cache = lines_list[2].split()[3]
