@@ -1680,15 +1680,6 @@ class RedisCtl(object):
                     # redis_dict[stanza]["host"] = env_session_options.get("host")
                     # redis_dict[stanza]["port"] = env_session_options.get("port")
                     # redis_dict[stanza]["password"] = env_session_options.get("password")
-                """
-Traceback (most recent call last):
-  File "./ecomm-recon", line 640, in <module>
-    redis_instances = redis.instances(globalconfig.get("magento", {}).get("doc_root", {}))
-  File "/root/stack-recon/stack-recon/stackreconlib.py", line 1683, in instances
-    update(redis_dict[stanza], env_session_options)
-UnboundLocalError: local variable 'stanza' referenced before assignment
-                """
-                # update(redis_dict[stanza], env_session_options)
                     update(redis_dict[stanza], env_session_options)
 
             env_fpc = env_php.get("cache", {}).get("frontend", {}).get("page_cache",
@@ -1707,7 +1698,7 @@ UnboundLocalError: local variable 'stanza' referenced before assignment
                     redis_dict[stanza]["host"] = env_fpc_options.get("server")
                     # redis_dict[stanza]["port"] = env_fpc_options.get("port")
                     # redis_dict[stanza]["password"] = env_fpc_options.get("password")
-                update(redis_dict[stanza], env_fpc_options)
+                    update(redis_dict[stanza], env_fpc_options)
 
             env_default = env_php.get("cache", {}).get("frontend", {}).get("default", {})
             env_default_options = env_fpc.get("backend_options", {})
