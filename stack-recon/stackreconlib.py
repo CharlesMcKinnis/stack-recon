@@ -1716,7 +1716,7 @@ class RedisCtl(object):
                     redis_dict[stanza]["host"] = env_default_options.get("server")
                     # redis_dict[stanza]["port"] = env_default_options.get("port")
                     # redis_dict[stanza]["password"] = env_default_options.get("password")
-                update(redis_dict[stanza], env_default_options)
+                    update(redis_dict[stanza], env_default_options)
 
         return(redis_dict)
 
