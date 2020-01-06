@@ -1857,6 +1857,8 @@ if IMPORT_MYSQL_CONNECTOR:
 def cron_php_check():
     """ Check for Mage 1 cron jobs """
     pass
+# This is running for longer than it should with python3 #fixme
+"""
 # Check for cron.php in crontab
 # get a list of users
 command = ["/usr/bin/getent", "passwd"]
@@ -1893,6 +1895,7 @@ for line in iter(proc.stdout.readline, ''):
                                             "in crontab but should probably call "
                                             "cron.sh" %
                                             username)
+"""
 
 if output:
     print("""\n
