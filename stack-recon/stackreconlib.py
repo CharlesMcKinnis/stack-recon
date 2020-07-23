@@ -550,7 +550,7 @@ class nginxCtl(object):
             if len(item.split("=")) == 2:
                 dict[item.split("=")[0]] = item.split("=")[1]
         # nginx command line params
-        # nginx: master process /usr/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
+        # nginx: main process /usr/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
         # result = re.search('\((\S+)\)', phpfpm_process["cmd"])
         # if result:
         #     return(result.group(1))
@@ -780,7 +780,7 @@ class phpfpmCtl(object):
     def __init__(self, daemon, **kwargs):
         self.daemon = daemon
         """ example contents will be only the dict in { }
-        'php-fpm': { 'cmd': 'php-fpm: master process (/etc/php-fpm.conf)',
+        'php-fpm': { 'cmd': 'php-fpm: main process (/etc/php-fpm.conf)',
                      'basename': 'php-fpm',
                      'exe': '/usr/sbin/php-fpm'
                    }
@@ -852,7 +852,7 @@ class phpfpmCtl(object):
         phpfpm_process = self.daemon  # phpfpm_process["cmd"][0]
         if phpfpm_process:
             # the cmd line looks like:
-            #   php-fpm: master process (/etc/php-fpm.conf)
+            #   php-fpm: main process (/etc/php-fpm.conf)
             result = re.search('\((\S+)\)', phpfpm_process["cmd"])
             if result:
                 return(result.group(1))
