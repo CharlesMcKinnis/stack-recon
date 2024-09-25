@@ -1291,7 +1291,20 @@ if globalconfig.get("magento", {}).get("doc_root"):
                                 table.append([k2, v2])
                                 # print "%s: %s" % (k2, v2)
                         if len(table):
-                            print_table(table, NOTABLE=args.notable)
+                            """
+Traceback (most recent call last):
+  File "./ecomm-recon", line 1295, in <module>
+    print_table(table, NOTABLE=args.notable)
+  File "/root/stack-recon/stack-recon/stackreconlib.py", line 2760, in print_table
+    for i, x in enumerate(line)) + " |")
+  File "/root/stack-recon/stack-recon/stackreconlib.py", line 2760, in <genexpr>
+    for i, x in enumerate(line)) + " |")
+TypeError: unsupported format string passed to dict.__format__
+                            """
+                            try:
+                                print_table(table, NOTABLE=args.notable)
+                            except:
+                                pass
                             print
                     else:
                         print("Default Frontend Cache engine: %s" %
