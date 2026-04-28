@@ -13,6 +13,7 @@ import subprocess
 import sys
 import os
 from inspect import currentframe, getframeinfo
+from typing import Any, Dict, List, Optional, Tuple, Union
 try:
     import mysql.connector
     from mysql.connector import errorcode
@@ -80,7 +81,7 @@ class argsAlt(object):
 
 class apacheCtl(object):
     """ Apache info gathering class """
-    def __init__(self, daemon, **kwargs):
+    def __init__(self, daemon: Dict[str, Any], **kwargs: Any) -> None:
         self.daemon = daemon
         self.kwargs = kwargs
         if "exe" not in self.kwargs:
@@ -118,7 +119,7 @@ class apacheCtl(object):
      -D AP_TYPES_CONFIG_FILE="conf/mime.types"
      -D SERVER_CONFIG_FILE="conf/httpd.conf"
     """
-    def figlet(self):
+    def figlet(self) -> None:
         """ Apache figlet """
         print("""
     _                     _
@@ -129,7 +130,7 @@ class apacheCtl(object):
         |_|
 """)
 
-    def get_version(self):
+    def get_version(self) -> Optional[bytes]:
         """
         Discovers installed apache version
         """
@@ -147,7 +148,7 @@ class apacheCtl(object):
         else:
             return(output)
 
-    def get_conf_parameters(self):
+    def get_conf_parameters(self) -> Dict[str, str]:
         """
         Return the params passed when the daemon started
         """
@@ -178,7 +179,7 @@ class apacheCtl(object):
                     var_dict[result.group(1)] = result.group(2)
         return var_dict
 
-    def get_root(self):
+    def get_root(self) -> str:
         """
         Return the document root
         """
@@ -189,7 +190,7 @@ class apacheCtl(object):
             error_collection.append("apace error: Failed to get root.\n")
             sys.exit(1)
 
-    def get_conf(self):
+    def get_conf(self) -> str:
         """
         :returns: configuration path location
         HTTPD_ROOT/SERVER_CONFIG_FILE
@@ -202,7 +203,7 @@ class apacheCtl(object):
             error_collection.append("apace error: Failed to get conf.\n")
             sys.exit(1)
 
-    def get_mpm(self):
+    def get_mpm(self) -> str:
         """
         return the mpm in use
         """
@@ -213,7 +214,7 @@ class apacheCtl(object):
             error_collection.append("apace error: Failed to get mpm.\n")
             sys.exit(1)
 
-    def parse_config(self, wholeconfig):
+    def parse_config(self, wholeconfig: str) -> Dict[str, Any]:
         """
         list structure
         { line: { listen: [ ], server_name: [ ], root: path } }
@@ -274,7 +275,7 @@ class apacheCtl(object):
             while linecomp.endswith("\\"):
                 linecomp = linecomp.strip("\\").strip()
                 # read the next line
-                line = lines.next()
+                line = next(lines)
                 linenum += 1
                 linecomp += " "
                 linecomp += line.strip().lower()
@@ -514,7 +515,7 @@ class apacheCtl(object):
 
 
 class nginxCtl(object):
-    def __init__(self, daemon, **kwargs):
+    def __init__(self, daemon: Dict[str, Any], **kwargs: Any) -> None:
         self.daemon = daemon
         self.kwargs = kwargs
         if "exe" not in self.kwargs:
@@ -550,7 +551,7 @@ class nginxCtl(object):
         -fstack-protector --param=ssp-buffer-size=4 -m64 -mtune=generic'
         --with-ld-opt=-Wl,-E
     """
-    def figlet(self):
+    def figlet(self) -> None:
         """ print nginx figlet """
         print("""
              _
@@ -561,7 +562,7 @@ class nginxCtl(object):
        |___/
 """)
 
-    def get_version(self):
+    def get_version(self) -> Optional[bytes]:
         """
         Discovers installed nginx version
         """
@@ -576,7 +577,7 @@ class nginxCtl(object):
         else:
             return(output)
 
-    def get_conf_parameters(self):
+    def get_conf_parameters(self) -> Dict[str, str]:
         """
         Finds nginx configuration parameters
         :returns: list of nginx configuration parameters
@@ -602,7 +603,7 @@ class nginxCtl(object):
             dict['--conf-path'] = result.group(1)
         return dict
 
-    def get_conf(self):
+    def get_conf(self) -> str:
         """
         :returns: nginx configuration path location
         """
@@ -614,25 +615,25 @@ class nginxCtl(object):
                                     "configuration.\n")
             sys.exit(1)
 
-    def get_bin(self):
+    def get_bin(self) -> str:
         """
         :returns: nginx binary location
         """
         return self.get_conf_parameters()['--sbin-path']
 
-    def get_pid(self):
+    def get_pid(self) -> str:
         """
         :returns: nginx pid location which is required by nginx services
         """
         return self.get_conf_parameters()['--pid-path']
 
-    def get_lock(self):
+    def get_lock(self) -> str:
         """
         :returns: nginx lock file location which is required for nginx services
         """
         return self.get_conf_parameters()['--lock-path']
 
-    def parse_config(self, wholeconfig):
+    def parse_config(self, wholeconfig: str) -> Dict[str, Any]:
         """
         list structure
         { line: { listen: [ ], server_name: [ ], root: path } }
@@ -818,7 +819,7 @@ class nginxCtl(object):
 
 class phpfpmCtl(object):
     """ php-fpm class """
-    def __init__(self, daemon, **kwargs):
+    def __init__(self, daemon: Dict[str, Any], **kwargs: Any) -> None:
         self.daemon = daemon
         """ example contents will be only the dict in { }
         'php-fpm': { 'cmd': 'php-fpm: master process (/etc/php-fpm.conf)',
@@ -830,7 +831,7 @@ class phpfpmCtl(object):
         if "exe" not in self.kwargs:
             self.kwargs["exe"] = "php-fpm"
 
-    def figlet(self):
+    def figlet(self) -> None:
         """ print the php-fpm figlet """
         print("""
        _                  __
@@ -841,7 +842,7 @@ class phpfpmCtl(object):
 |_|         |_|             |_|
 """)
 
-    def get_version(self):
+    def get_version(self) -> Optional[bytes]:
         """
         Discovers installed nginx version
         """
@@ -857,7 +858,7 @@ class phpfpmCtl(object):
         else:
             return(output)
 
-    def get_conf_parameters(self):
+    def get_conf_parameters(self) -> Dict[str, str]:
         """ Return php-fpm conf params """
         conf = self.daemon["exe"] + " -V 2>&1"
         p = subprocess.Popen(
@@ -881,7 +882,7 @@ class phpfpmCtl(object):
                     var_dict[result.group(1)] = result.group(2)
         return var_dict
 
-    def get_conf(self):
+    def get_conf(self) -> str:
         """
         :returns: configuration path location
         HTTPD_ROOT/SERVER_CONFIG_FILE
@@ -920,7 +921,7 @@ class phpfpmCtl(object):
         error_collection.append("php-fpm error: Failed to get configuration.\n")
         sys.exit(1)
 
-    def parse_config(self, wholeconfig):
+    def parse_config(self, wholeconfig: str) -> Dict[str, Any]:
         """ parse the php-fpm configuration """
         stanza_chain = []
         linenum = 0
@@ -979,7 +980,7 @@ class phpfpmCtl(object):
 
 class MagentoCtl(object):
     """ class to get Magento information """
-    def figlet(self):
+    def figlet(self) -> None:
         """ Print Magento figlet """
         print("""
  __  __                        _
@@ -990,7 +991,7 @@ class MagentoCtl(object):
               |___/
 """)
 
-    def m1_parse_version(self, mage_php_file):
+    def m1_parse_version(self, mage_php_file: str) -> Dict[str, str]:
         """Parse version information from Mage.php from Magento 1.x
         mage_php_file is the path and filename of Mage.php"""
         mage = {}
@@ -1001,10 +1002,10 @@ class MagentoCtl(object):
             if result:
                 mage["edition"] = result.group(1)
             if "public static function getVersionInfo()" in line:
-                line = file_handle.next()  # {
-                line = file_handle.next()  # return array(
+                line = next(file_handle)  # {
+                line = next(file_handle)  # return array(
                 while ");" not in line:
-                    line = file_handle.next()
+                    line = next(file_handle)
                     result = re.match("'([^']+)'\s*=>\s*'([^']*)'", line.strip())
                     if result:
                         mage[result.group(1)] = result.group(2)
@@ -1026,7 +1027,7 @@ class MagentoCtl(object):
             mage["edition"] = ""
         return(mage)
 
-    def m2_parse_version(self, composer_json_file):
+    def m2_parse_version(self, composer_json_file: str) -> Dict[str, Any]:
         """Parse version information from composer.json from Magento 2.x
         composer_json_file is the path and filename of composer.json"""
         # mage = {"edition": "", "version": ""}
@@ -1052,11 +1053,11 @@ class MagentoCtl(object):
             mage["edition"] = composer.get("name", "No name String in composer.json")
         return(mage)
 
-    def localxml(self, local_xml_file):
+    def localxml(self, local_xml_file: str) -> None:
         """ do nothing with the local xml file? """
         pass
 
-    def find_magento(self, doc_roots):
+    def find_magento(self, doc_roots: List[str]) -> Dict[str, str]:
         """
         returns the key docroots and value full path and filename or
           Mage.php or magento
@@ -1134,7 +1135,7 @@ class MagentoCtl(object):
         # print "908 find_magento dict %r" % return_dict
         return(return_dict)
 
-    def mage_file_info(self, mage_php_file):
+    def mage_file_info(self, mage_php_file: str) -> Dict[str, Any]:
         """Magento installation information"""
         return_dict = {}
         # get the dir name of the magento file
@@ -1188,7 +1189,7 @@ class MagentoCtl(object):
 
         return(return_dict)
 
-    def mage2_config_gather(self, doc_root):
+    def mage2_config_gather(self, doc_root: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Provide the doc_root
         globalconfig["magento"]["doc_root"][doc_root_path]
@@ -1251,7 +1252,7 @@ class MagentoCtl(object):
             u'x-frame-options': u'SAMEORIGIN'}
         """
 
-    def open_local_xml(self, doc_root, config_node):
+    def open_local_xml(self, doc_root: str, config_node: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         provide the filename (absolute or relative) of local.xml
         This function opens the file as an XML ElementTree
@@ -1393,8 +1394,9 @@ class MagentoCtl(object):
             local_xml[section]["engine"] = "unknown"
         return(local_xml)
 
-    def parse_local_xml(self, tree, section, xml_parent_path, xml_config_node, xml_config_section,
-                        **kwargs):
+    def parse_local_xml(self, tree: Any, section: str, xml_parent_path: str,
+                        xml_config_node: str, xml_config_section: str,
+                        **kwargs: Any) -> Dict[str, Any]:
         """
         provide:
             tree, ElementTree object
@@ -1432,9 +1434,9 @@ class MagentoCtl(object):
                     local_xml[section][i.tag] = i.text
         return local_xml
 
-    def db_cache_table(self, doc_root, value):
+    def db_cache_table(self, doc_root: str, value: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].items():
             db_cache_table(doc_root,
                             doc_root_dict.get("local_xml", {}).get("db", {}))
         """
@@ -1463,7 +1465,7 @@ class MagentoCtl(object):
 
 class RedisCtl(object):
     """ class to gather redis information """
-    def figlet(self):
+    def figlet(self) -> None:
         """ print redis figlet """
         print("""
               _ _
@@ -1473,7 +1475,7 @@ class RedisCtl(object):
 |_|  \___|\__,_|_|___/
 """)
 
-    def get_status(self, ip, port, **kwargs):
+    def get_status(self, ip: str, port: str, **kwargs: Any) -> Optional[bytes]:
         """ get redis status """
         if not ip or not port:
             sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" %
@@ -1505,7 +1507,7 @@ class RedisCtl(object):
         else:
             return(None)
 
-    def parse_status(self, reply):
+    def parse_status(self, reply: Union[str, bytes]) -> Dict[str, Any]:
         """ parse redis status """
         return_dict = {}
         section = "none"
@@ -1531,7 +1533,7 @@ class RedisCtl(object):
                 return_dict[key] = value
         return(return_dict)
 
-    def get_all_statuses(self, instances, **kwargs):
+    def get_all_statuses(self, instances: Dict[str, Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
         """ Return all redis statuses """
         return_dict = {}
         for i in instances:
@@ -1550,7 +1552,7 @@ class RedisCtl(object):
                 return_dict[i] = self.parse_status(reply)
         return(return_dict)
 
-    def instances(self, doc_roots):
+    def instances(self, doc_roots: Dict[str, Any]) -> Dict[str, Dict[str, Optional[str]]]:
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of redis instances, return the IP or hostname, port and
@@ -1723,7 +1725,7 @@ class RedisCtl(object):
 
 class MemcacheCtl(object):
     """ gather memcache information """
-    def figlet(self):
+    def figlet(self) -> None:
         """ Print memcache figlet """
         print("""
                                          _
@@ -1733,14 +1735,14 @@ class MemcacheCtl(object):
 |_| |_| |_|\___|_| |_| |_|\___\__,_|\___|_| |_|\___|
 """)
 
-    def get_status(self, ip, port):
+    def get_status(self, ip: str, port: str) -> Optional[bytes]:
         """ get memcache status """
         # port = int(port)
         # this is probably broken, but I don't have a memcache test bed any longer.
         reply = socket_client(ip, port, "stats\n")
         return(reply)
 
-    def parse_status(self, reply):
+    def parse_status(self, reply: Union[str, bytes]) -> Dict[str, str]:
         """ parse memcache status """
         return_dict = {}
         # section = ""
@@ -1759,7 +1761,7 @@ class MemcacheCtl(object):
                 return_dict[key] = value
         return(return_dict)
 
-    def get_all_statuses(self, instances):
+    def get_all_statuses(self, instances: List[str]) -> Dict[str, Dict[str, str]]:
         """ get statuses from all memcache instances """
         return_dict = {}
         for instance in instances:
@@ -1772,7 +1774,7 @@ class MemcacheCtl(object):
             return_dict[instance] = self.parse_status(reply)
         return(return_dict)
 
-    def instances(self, doc_roots):
+    def instances(self, doc_roots: Dict[str, Any]) -> List[str]:
         """
         return memcache instances from doc_roots
         print "memcache.instances doc_roots: %r" % doc_roots
@@ -1888,7 +1890,7 @@ END
 
 class MysqlCtl(object):
     """ gather MySQL information """
-    def figlet(self):
+    def figlet(self) -> None:
         """ Print MySQL figlet """
         print("""
  __  __       ____   ___  _
@@ -1899,15 +1901,15 @@ class MysqlCtl(object):
         |___/
 """)
 
-    def get_status(self, ip, port):
+    def get_status(self, ip: str, port: str) -> Optional[bytes]:
         """ gather MySQL status """
         port = int(port)
         reply = socket_client(ip, port, "stats\n")
         return(reply)
 
-    def db_query(self, dbConnInfo, sqlquery):
+    def db_query(self, dbConnInfo: Dict[str, str], sqlquery: str) -> Optional[List[Tuple[Any, ...]]]:
         """
-        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].iteritems():
+        for doc_root, doc_root_dict in globalconfig["magento"]["doc_root"].items():
             db_cache_table(doc_root,
                             doc_root_dict.get("local_xml", {}).get("db", {}))
             db_query(doc_root_dict.get("local_xml", {}).get("db", {}),
@@ -2010,7 +2012,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             return(return_list)
         return(None)
 
-    def parse_key_value(self, queried_table):
+    def parse_key_value(self, queried_table: str) -> Dict[str, str]:
         """ parse key value pairs from a table """
         lines = queried_table.splitlines()
         """
@@ -2018,8 +2020,8 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         # removed 02-27-2018 this doesn't make sense to have here, it must be a typo
         """
         counter = 0
+        return_dict = {}
         for line in lines:
-            return_dict = {}
             # skip X lines
             if counter < 3:
                 counter += 1
@@ -2032,7 +2034,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             return_dict[result.group(1).strip()] = result.group(2).strip()
         return(return_dict)
 
-    def not_used_instances(self, doc_roots):
+    def not_used_instances(self, doc_roots: Dict[str, Any]) -> Dict[str, Any]:
         """
         With a list of doc_roots, examine the local xml we already parsed
         Make a list of mysql instances, return: "db/table_prefix",
@@ -2071,7 +2073,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
         # globalconfig["mysql"]=return_dict
         return(return_dict)
 
-    def global_variables(self, mysql_host_dict):
+    def global_variables(self, mysql_host_dict: Dict[str, str]) -> Optional[Dict[str, str]]:
         """
         pass a dict with
 
@@ -2114,7 +2116,7 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cnx.close()
             return(return_dict)
 
-    def global_status(self, mysql_host_dict):
+    def global_status(self, mysql_host_dict: Dict[str, str]) -> Optional[Dict[str, str]]:
         """
         pass a dict with
 
@@ -2157,15 +2159,14 @@ UnboundLocalError: local variable 'cursor' referenced before assignment
             cnx.close()
             return(return_dict)
 
-    def find_big_tables(self, mysql_host_dict, size_threshold_in_mb):
+    def find_big_tables(self, mysql_host_dict: Dict[str, str], size_threshold_in_mb: str) -> Optional[List[Dict[str, Any]]]:
         """
         pass a dict with
 
         returns a dict of key, value pairs
         """
         return_list_dict = []
-        size_threshold_in_mb = size_threshold_in_mb.encode('utf-8')
-        query = ("""SELECT table_schema AS 'Database', table_name AS 'Table', 
+        query = ("""SELECT table_schema AS 'Database', table_name AS 'Table',
 round(((data_length + index_length) / 1024 / 1024), 2) AS 'Size_in_MB'
 FROM information_schema.TABLES 
 WHERE round(((data_length + index_length) / 1024 / 1024) ,2) > 1000 AND ( 
@@ -2222,7 +2223,7 @@ ORDER BY (data_length + index_length) ;""")
             return(return_list_dict)
 
 
-    def innodb_table_size(self, db_list):
+    def innodb_table_size(self, db_list: Dict[str, str]) -> Optional[Dict[str, int]]:
         """ return the size of innodb tables """
         return_dict = {}
         query = ("SELECT "
@@ -2276,7 +2277,8 @@ ORDER BY (data_length + index_length) ;""")
             return(return_dict)
 
 
-def socket_client(host, port, var_string, **kwargs):
+def socket_client(host: Union[str, bytes], port: Union[str, bytes, int],
+                  var_string: Union[str, bytes, List[bytes]], **kwargs: Any) -> Optional[bytes]:
     """ open a socket and send a string """
     if "TIMEOUT" in kwargs:
         timeout = int(kwargs["TIMEOUT"])
@@ -2311,7 +2313,7 @@ def socket_client(host, port, var_string, **kwargs):
     return reply
 
 
-def daemon_exe(match_exe):
+def daemon_exe(match_exe: List[str]) -> Dict[str, Dict[str, str]]:
     """
     var_filter = "text to search with"
     using this as the filter will find an executable by name whether it was call by absolute
@@ -2367,7 +2369,7 @@ def daemon_exe(match_exe):
 
 class AutoVivification(dict):
     """Implementation of perl's autovivification feature."""
-    def __getitem__(self, item):
+    def __getitem__(self, item: Any) -> Any:
         try:
             return dict.__getitem__(self, item)
         except KeyError:
@@ -2408,7 +2410,7 @@ def importfile(filename, keyword_regex, **kwargs):
                                 "config is probably a loop.\n" % filename)
         sys.exit(1)
 
-    def full_file_path(right_file, base_path):
+    def full_file_path(right_file: str, base_path: str) -> str:
         # If the right side of the full name doesn't have a leading slash, it
         #   is a relative path.
         # Add the base_path to the left and return the value
@@ -2458,7 +2460,7 @@ def importfile(filename, keyword_regex, **kwargs):
     return(combined)
 '''
 
-def importfile(filename, keyword_regex, **kwargs):
+def importfile(filename: str, keyword_regex: str, **kwargs: Any) -> Dict[str, Any]:
     """
     pass the filename of the base config file, and a keyword regular expression
         to identify the include directive.
@@ -2495,7 +2497,7 @@ def importfile(filename, keyword_regex, **kwargs):
                                 "config is probably a loop.\n" % filename)
         sys.exit(1)
 
-    def full_file_path(right_file, base_path):
+    def full_file_path(right_file: str, base_path: str) -> str:
         """
         If the right side of the full name doesn't have a leading slash, it
             is a relative path.
@@ -2553,7 +2555,7 @@ def importfile(filename, keyword_regex, **kwargs):
     return(compound_dict)
 
 
-def kwsearch(keywords, line, **kwargs):
+def kwsearch(keywords: List[str], line: str, **kwargs: Any) -> Dict[str, Any]:
     """
     pass:
         a list of keywords
@@ -2586,7 +2588,7 @@ def kwsearch(keywords, line, **kwargs):
     return(stanza)  # once we have a match, move on
 
 
-def memory_estimate(process_name, **kwargs):
+def memory_estimate(process_name: str, **kwargs: Any) -> Dict[str, Any]:
     """
     line_count 16
     biggest 17036
@@ -2628,8 +2630,14 @@ def memory_estimate(process_name, **kwargs):
     lines_list = output.split(b'\n')
     status["mem_free"] = int(lines_list[1].split()[3])
     # bc means buffers and cache
-    status["bc_used"] = int(lines_list[2].split()[2])
-    status["bc_free"] = int(lines_list[2].split()[3])
+    # Old util-linux free has a "-/+ buffers/cache:" row at index 2;
+    # modern free dropped it — buff/cache is col 5, available is col 6 of the Mem row.
+    if lines_list[2].strip().startswith(b'-/+'):
+        status["bc_used"] = int(lines_list[2].split()[2])
+        status["bc_free"] = int(lines_list[2].split()[3])
+    else:
+        status["bc_used"] = int(lines_list[1].split()[5])
+        status["bc_free"] = int(lines_list[1].split()[6])
     conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
         conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -2648,7 +2656,7 @@ def memory_estimate(process_name, **kwargs):
     return(status)
 
 
-def memory_print(result, proc_name, proc_max):
+def memory_print(result: Dict[str, Any], proc_name: str, proc_max: int) -> None:
     """ print memory information """
     print("%d %s processes are currently using %d KB of memory, and there is "
           "%d KB of free memory." % (
@@ -2687,7 +2695,7 @@ def memory_print(result, proc_name, proc_max):
     ))
 
 
-def print_sites(localconfig):
+def print_sites(localconfig: List[Dict[str, Any]]) -> None:
     """
     print web site information
     """
@@ -2711,7 +2719,7 @@ def print_sites(localconfig):
         print
 
 
-def update(d, u):
+def update(d: Dict[str, Any], u: Dict[str, Any]) -> Dict[str, Any]:
     """
     update dictionary d with updated dictionary u recursively
     """
@@ -2726,7 +2734,7 @@ def update(d, u):
     return d
 
 
-def print_table(table, **kwargs):
+def print_table(table: List[List[str]], **kwargs: Any) -> None:
     """
     Provide a list of lists for the table
 table = [
@@ -2738,7 +2746,7 @@ table = [
     if HEADER=True then divide the first line from the following lines
     if NOTABLE=True then no table, colon separated instead
     turn a dict in to a list with
-    table = [(str(k), str(v)) for k, v in mydict.iteritems()]
+    table = [(str(k), str(v)) for k, v in mydict.items()]
     """
 
     # if NOTABLE is not set or NOTABLE is not True
@@ -2816,7 +2824,7 @@ SYMBOLS = {
 }
 
 
-def bytes2human(n, var_format='%(value).1f %(symbol)s', symbols='customary'):
+def bytes2human(n: Any, var_format: str = '%(value).1f %(symbol)s', symbols: str = 'customary') -> Optional[str]:
     """
     Convert n bytes into a human readable string based on format.
     symbols can be either "customary", "customary_ext", "iec" or "iec_ext",
@@ -2873,7 +2881,7 @@ def bytes2human(n, var_format='%(value).1f %(symbol)s', symbols='customary'):
     return var_format % dict(symbol=symbols[0], value=n)
 
 
-def human2bytes(s):
+def human2bytes(s: str) -> int:
     """
     Attempts to guess the string format based on default symbols
     set and return the corresponding bytes as an integer.

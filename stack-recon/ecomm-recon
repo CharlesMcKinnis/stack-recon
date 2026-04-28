@@ -27,6 +27,7 @@ import sys
 import os
 import string
 from inspect import currentframe, getframeinfo
+from typing import Any, Dict, List, Optional
 # import yaml
 # import fnmatch
 try:
@@ -71,13 +72,13 @@ except ImportError:
 
 STACK_STATUS_VERSION = 2016112201
 
-# if JSON:
-#     class DecimalEncoder(json.JSONEncoder):
-#         """ fix numbers """
-#         def default(self, o):
-#             if isinstance(o, decimal.Decimal):
-#                 return float(o)
-#             return super(DecimalEncoder, self).default(o)
+if JSON:
+    class DecimalEncoder(json.JSONEncoder):
+        """ fix numbers """
+        def default(self, o: Any) -> Any:
+            if isinstance(o, decimal.Decimal):
+                return float(o)
+            return super(DecimalEncoder, self).default(o)
 
 """
 Magento is a trademark of Varien. Neither I nor these scripts are affiliated
@@ -304,7 +305,7 @@ if not args.jsonfile:
         pass
     if skip_apache is not True:
         # using this as a bookmark in the IDE
-        def APACHE_DATA_GATHER():
+        def APACHE_DATA_GATHER() -> None:
             pass
         sys.stderr.write("apache data gather\n")
         ################################################
@@ -389,7 +390,7 @@ if not args.jsonfile:
                     globalconfig["apache"]["cmd"] = daemons[apache_basename]["cmd"]
 
     # using this as a bookmark in the IDE
-    def NGINX_DATA_GATHER():
+    def NGINX_DATA_GATHER() -> None:
         """ gather nginx data """
         pass
     if skip_nginx is not True:
@@ -438,7 +439,7 @@ if not args.jsonfile:
                     globalconfig["nginx"]["cmd"] = daemons["nginx"]["cmd"]
 
     # using this as a bookmark in the IDE
-    def PHP_FPM_DATA_GATHER():
+    def PHP_FPM_DATA_GATHER() -> None:
         """ gather php-fpm info """
         pass
     if skip_phpfpm is not True:
@@ -500,7 +501,7 @@ if not args.jsonfile:
             sys.stderr.write("php-fpm is not running\n")
             error_collection.append("php-fpm is not running\n")
 
-    def MAGENTO_DATA_GATHER():
+    def MAGENTO_DATA_GATHER() -> None:
         """ gather Magento info """
         pass
     if not args.nomagento:
@@ -607,7 +608,7 @@ if not args.jsonfile:
         #     outfile.write(json_str)
         #     outfile.close()
 
-        def MEMCACHE_DATA_GATHER():
+        def MEMCACHE_DATA_GATHER() -> None:
             pass
         sys.stderr.write("memcache data gather\n")
         memcache = stackreconlib.MemcacheCtl()
@@ -630,7 +631,7 @@ if not args.jsonfile:
         #     outfile.write(json_str)
         #     outfile.close()
 
-        def REDIS_DATA_GATHER():
+        def REDIS_DATA_GATHER() -> None:
             """ gather redis info """
             pass
         sys.stderr.write("redis data gather\n")
@@ -658,7 +659,7 @@ if not args.jsonfile:
         #     outfile.write(json_str)
         #     outfile.close()
 
-    def MYSQL_DATA_GATHER():
+    def MYSQL_DATA_GATHER() -> None:
         """ gather mysql info """
         pass
     sys.stderr.write("mysql data gather\n")
@@ -855,7 +856,7 @@ print(alt_daemon_names, "FQDN: %s" % localfqdn)
 
 
 # if not args.silent:
-def NGINX_PRINT():
+def NGINX_PRINT() -> None:
     """ print nginx info """
     pass
 # sys.stderr.write("nginx data print\n")
@@ -908,7 +909,7 @@ if "nginx" in globalconfig:
 # globalconfig["nginx"]["maxclients"]
 
 
-def APACHE_PRINT():
+def APACHE_PRINT() -> None:
     """ print apache info """
     pass
 # sys.stderr.write("apache data print\n")
@@ -962,7 +963,7 @@ if "apache" in globalconfig:
 
 # globalconfig["nginx"]["maxclients"]
 
-def PHP_FPM_PRINT():
+def PHP_FPM_PRINT() -> None:
     """ print php-fpm info """
     pass
 # sys.stderr.write("php-fpm data print\n")
@@ -1008,7 +1009,7 @@ if "phpfpm_meta" in globalconfig:
 # globalconfig["nginx"]["maxclients"]
 
 
-def MAGENTO_PRINT():
+def MAGENTO_PRINT() -> None:
     """ print Magento info """
     pass
 # sys.stderr.write("magento data print\n")
@@ -1492,7 +1493,7 @@ This output is flawed because local.xml was not configured correctly
 """
 
 
-def MEMCACHE_PRINT():
+def MEMCACHE_PRINT() -> None:
     """ print memcache info """
     pass
 # sys.stderr.write("memcache data print\n")
@@ -1526,7 +1527,7 @@ if globalconfig.get("memcache"):
         print
 
 
-def REDIS_PRINT():
+def REDIS_PRINT() -> None:
     pass
 if globalconfig.get("redis"):
     if not args.nofiglet:
@@ -1558,7 +1559,7 @@ if globalconfig.get("redis"):
 print
 
 
-def MYSQL_PRINT():
+def MYSQL_PRINT() -> None:
     pass
 if globalconfig.get("mysql"):
     if not args.nofiglet:
@@ -1867,7 +1868,7 @@ if IMPORT_MYSQL_CONNECTOR:
     MySQL table sizes
     """
 
-def cron_php_check():
+def cron_php_check() -> None:
     """ Check for Mage 1 cron jobs """
     pass
 # This is running for longer than it should with python3 #fixme
@@ -1921,7 +1922,7 @@ if output:
     print(output)
 
 
-def system_specs():
+def system_specs() -> None:
     """ system specs """
     pass
 print("""
