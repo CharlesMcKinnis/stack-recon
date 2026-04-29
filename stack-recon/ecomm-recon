@@ -238,7 +238,7 @@ else:
 # Because RHEL 5 :p
 try:
     test = ".".format()
-except:
+except Exception:
     args.notable = True
 
 if args.apache or args.nginx or args.phpfpm:
@@ -260,8 +260,8 @@ globalconfig = {}
 
 if args.jsonfile and JSON is True:
     if os.path.isfile(args.jsonfile):
-        f = open(args.jsonfile, 'r')
-        globalconfig = json.load(f)
+        with open(args.jsonfile, 'r') as f:
+            globalconfig = json.load(f)
     else:
         sys.stderr.write("The file %s does not exist.\n" % args.jsonfile)
         error_collection.append("The file %s does not exist.\n" % args.jsonfile)
@@ -336,9 +336,14 @@ if not args.jsonfile:
             error_collection.append("Apache is not running\n")
 
         if apache_exe:
-            apache_conf_file = apache.get_conf()
-            apache_root_path = apache.get_root()
-            apache_mpm = apache.get_mpm()
+            try:
+                apache_conf_file = apache.get_conf()
+                apache_root_path = apache.get_root()
+                apache_mpm = apache.get_mpm()
+            except RuntimeError as e:
+                error_collection.append(str(e) + "\n")
+                apache_conf_file = None
+                apache_root_path = None
             if apache_conf_file and apache_root_path:
                 sys.stderr.write("Using config %s\n" % apache_conf_file)
                 error_collection.append("Using config %s\n" % apache_conf_file)
@@ -346,7 +351,7 @@ if not args.jsonfile:
                 #   a whole word, and is a non-capturing group by virtue of
                 #   the (?:)
                 return_dict = importfile(apache_conf_file,
-                                         '\s*include(?:optional?)?\s+[\'"]?([^\s\'"]+)[\'"]?',
+                                         r'\s*include(?:optional)?\s+[\'"]?([^\s\'"]+)[\'"]?',
                                          base_path=apache_root_path)
                 wholeconfig = return_dict["combined"]
                 # print "file list: %r" % return_dict["config_files_list"]
@@ -403,7 +408,11 @@ if not args.jsonfile:
             error_collection.append("nginx is not running\n")
         else:
             nginx = stackreconlib.nginxCtl(daemons["nginx"], exe=daemons["nginx"]["exe"])
-            nginx_conf_file = nginx.get_conf()
+            try:
+                nginx_conf_file = nginx.get_conf()
+            except RuntimeError as e:
+                error_collection.append(str(e) + "\n")
+                nginx_conf_file = None
             if nginx_conf_file:
                 sys.stderr.write("Using config %s\n" % nginx_conf_file)
                 error_collection.append("Using config %s\n" % nginx_conf_file)
@@ -471,7 +480,11 @@ if not args.jsonfile:
         elif len(daemon_name) == 1:
             phpfpm = stackreconlib.phpfpmCtl(daemons[daemon_name[0]],
                                              exe=daemons[daemon_name[0]]["exe"])
-            phpfpm_conf_file = phpfpm.get_conf()
+            try:
+                phpfpm_conf_file = phpfpm.get_conf()
+            except RuntimeError as e:
+                error_collection.append(str(e) + "\n")
+                phpfpm_conf_file = None
             if phpfpm_conf_file:
                 return_dict = importfile(phpfpm_conf_file,
                                          '\s*include[\s=]+(\S+)')
@@ -1304,7 +1317,7 @@ TypeError: unsupported format string passed to dict.__format__
                             """
                             try:
                                 print_table(table, NOTABLE=args.notable)
-                            except:
+                            except Exception:
                                 pass
                             print
                     else:
@@ -1932,10 +1945,14 @@ print("""
 | (_| | (_| |\\ V /| | (_|  __/
  \__,_|\\__,_| \\_/ |_|\\___\\___|
 """)
-command = "free"
 p = subprocess.Popen(
-    command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-output, err = p.communicate()
+    ["free"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+try:
+    output, err = p.communicate(timeout=10)
+except subprocess.TimeoutExpired:
+    p.kill()
+    p.communicate()
+    raise NameError("Timeout running: free")
 if not output:
     raise NameError("Fail: %s" % err)
 lines_list = output.split(b'\n')

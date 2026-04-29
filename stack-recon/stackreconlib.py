@@ -135,14 +135,20 @@ class apacheCtl(object):
         Discovers installed apache version
         """
         if self.kwargs["exe"].endswith("apache2"):
-            version = 'apache2ctl -v'
+            version_cmd = ['apache2ctl', '-v']
         else:
-            version = self.kwargs["exe"] + " -v"
-        p = subprocess.Popen(version,
+            version_cmd = [self.kwargs["exe"], '-v']
+        p = subprocess.Popen(version_cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             shell=True)
-        output, err = p.communicate()
+                             stderr=subprocess.PIPE)
+        try:
+            output, err = p.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(version_cmd))
+            error_collection.append("Timeout running: %s\n" % " ".join(version_cmd))
+            return()
         if p.returncode > 0:
             return()
         else:
@@ -153,14 +159,20 @@ class apacheCtl(object):
         Return the params passed when the daemon started
         """
         if self.kwargs["exe"].endswith("apache2"):
-            conf = 'apache2ctl -V 2>&1'
+            conf_cmd = ['apache2ctl', '-V']
         else:
-            conf = self.kwargs["exe"] + " -V 2>&1"
-        p = subprocess.Popen(conf,
+            conf_cmd = [self.kwargs["exe"], '-V']
+        p = subprocess.Popen(conf_cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             shell=True)
-        output, err = p.communicate()
+                             stderr=subprocess.PIPE)
+        try:
+            output, err = p.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(conf_cmd))
+            error_collection.append("Timeout running: %s\n" % " ".join(conf_cmd))
+            return()
         if p.returncode > 0:
             return()
         var_dict = {}
@@ -186,9 +198,10 @@ class apacheCtl(object):
         try:
             return self.get_conf_parameters()['HTTPD_ROOT']
         except KeyError:
-            sys.stderr.write("apache error: Failed to get root.\n")
-            error_collection.append("apace error: Failed to get root.\n")
-            sys.exit(1)
+            msg = "apache error: Failed to get root."
+            sys.stderr.write(msg + "\n")
+            error_collection.append(msg + "\n")
+            raise RuntimeError(msg)
 
     def get_conf(self) -> str:
         """
@@ -199,9 +212,10 @@ class apacheCtl(object):
             return os.path.join(self.get_conf_parameters()['HTTPD_ROOT'],
                                 self.get_conf_parameters()['SERVER_CONFIG_FILE'])
         except KeyError:
-            sys.stderr.write("apache error: Failed to get conf.\n")
-            error_collection.append("apace error: Failed to get conf.\n")
-            sys.exit(1)
+            msg = "apache error: Failed to get conf."
+            sys.stderr.write(msg + "\n")
+            error_collection.append(msg + "\n")
+            raise RuntimeError(msg)
 
     def get_mpm(self) -> str:
         """
@@ -210,9 +224,10 @@ class apacheCtl(object):
         try:
             return self.get_conf_parameters()['Server MPM']
         except KeyError:
-            sys.stderr.write("apache error: Failed to get mpm.\n")
-            error_collection.append("apace error: Failed to get mpm.\n")
-            sys.exit(1)
+            msg = "apache error: Failed to get mpm."
+            sys.stderr.write(msg + "\n")
+            error_collection.append(msg + "\n")
+            raise RuntimeError(msg)
 
     def parse_config(self, wholeconfig: str) -> Dict[str, Any]:
         """
@@ -267,6 +282,7 @@ class apacheCtl(object):
         lines = iter(wholeconfig.splitlines())
         for line in lines:
             linenum += 1
+            line_orig = line
             linecomp = line.strip().lower()
             # if the line opens < but doesn't close it with > there is probably
             # a \ and newline and it should be concat with the next line until
@@ -274,11 +290,13 @@ class apacheCtl(object):
             # line
             while linecomp.endswith("\\"):
                 linecomp = linecomp.strip("\\").strip()
+                line_orig = line_orig.rstrip().rstrip("\\")
                 # read the next line
                 line = next(lines)
                 linenum += 1
                 linecomp += " "
                 linecomp += line.strip().lower()
+                line_orig += " " + line.strip()
             # when we start or end a file, we inserted ## START or END so we
             # could identify the file in the whole config as they are opened, we
             # add them to a list, and remove them as they close. Then we can use
@@ -310,7 +328,7 @@ class apacheCtl(object):
                 keywords = base_keywords + vhost_keywords
                 if "config" not in stanzas:
                     stanzas["config"] = {}
-                update(stanzas["config"], kwsearch(keywords, linecomp))
+                update(stanzas["config"], kwsearch(keywords, line_orig))
             # prefork matching
             result = re.match('<ifmodule\s+prefork.c', linecomp, re.IGNORECASE)
             if result:
@@ -333,7 +351,7 @@ class apacheCtl(object):
                    stanza_flags[-1]["stanza_count"] == stanza_count):
                     if "prefork" not in stanzas:
                         stanzas["prefork"] = {}
-                    update(stanzas["prefork"], kwsearch(prefork_keywords, line,
+                    update(stanzas["prefork"], kwsearch(prefork_keywords, line_orig,
                                                         single_value=True))
                     continue
             # worker matching
@@ -355,7 +373,7 @@ class apacheCtl(object):
                     if "worker" not in stanzas:
                         stanzas["worker"] = {}
                     update(stanzas["worker"], kwsearch(worker_keywords,
-                                                       linecomp,
+                                                       line_orig,
                                                        single_value=True))
                     continue
             # event matching
@@ -379,7 +397,7 @@ class apacheCtl(object):
                         stanzas["event"] = {}
                     update(stanzas["event"],
                            kwsearch(event_keywords,
-                                    linecomp,
+                                    line_orig,
                                     single_value=True))
                     continue
             """
@@ -413,7 +431,7 @@ class apacheCtl(object):
             # only match these in a virtual host
             if vhost_start == stanza_count:
                 keywords = vhost_keywords
-                update(stanzas[server_line], kwsearch(keywords, line.strip()))
+                update(stanzas[server_line], kwsearch(keywords, line_orig.strip()))
             # closing VirtualHost
             result = re.match('</virtualhost', linecomp, re.IGNORECASE)
             if result:
@@ -507,10 +525,10 @@ class apacheCtl(object):
                     if stanzas.get("worker", {}).get("maxclients"):
                         stanzas["maxprocesses"] = int(stanzas["worker"]["maxclients"])
             else:
-                sys.stderr.write("Could not identify mpm in use.\n")
-                error_collection.append("apache error: Could not identify mpm "
-                                        "in use.\n")
-                sys.exit(1)
+                msg = "apache error: Could not identify mpm in use."
+                sys.stderr.write(msg + "\n")
+                error_collection.append(msg + "\n")
+                raise RuntimeError(msg)
         return stanzas
 
 
@@ -566,12 +584,18 @@ class nginxCtl(object):
         """
         Discovers installed nginx version
         """
-        version = self.kwargs["exe"] + " -v 2>&1"
-        p = subprocess.Popen(version,
+        version_cmd = [self.kwargs["exe"], '-v']
+        p = subprocess.Popen(version_cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             shell=True)
-        output, err = p.communicate()
+                             stderr=subprocess.STDOUT)
+        try:
+            output, err = p.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(version_cmd))
+            error_collection.append("Timeout running: %s\n" % " ".join(version_cmd))
+            return()
         if p.returncode > 0:
             return()
         else:
@@ -582,10 +606,17 @@ class nginxCtl(object):
         Finds nginx configuration parameters
         :returns: list of nginx configuration parameters
         """
-        conf = self.kwargs["exe"] + " -V 2>&1 | grep 'configure arguments:'"
+        conf_cmd = [self.kwargs["exe"], '-V']
         p = subprocess.Popen(
-            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, err = p.communicate()
+            conf_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        try:
+            output, err = p.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(conf_cmd))
+            error_collection.append("Timeout running: %s\n" % " ".join(conf_cmd))
+            return()
         if p.returncode > 0:
             return()
         output = re.sub('configure arguments:', '', output.decode('ascii'))
@@ -610,10 +641,10 @@ class nginxCtl(object):
         try:
             return self.get_conf_parameters()['--conf-path']
         except KeyError:
-            sys.stderr.write("nginx error: Failed to get configuration.\n")
-            error_collection.append("nginx error: Failed to get "
-                                    "configuration.\n")
-            sys.exit(1)
+            msg = "nginx error: Failed to get configuration."
+            sys.stderr.write(msg + "\n")
+            error_collection.append(msg + "\n")
+            raise RuntimeError(msg)
 
     def get_bin(self) -> str:
         """
@@ -652,41 +683,21 @@ class nginxCtl(object):
                            "ssl_protocols", "ssl_ciphers", "access_log",
                            "error_log"]
         server_keywords_split = ["server_name"]
+
+        def _replace_nginx_var(m: "re.Match[str]") -> str:
+            return configfile_vars.get(m.group(0), m.group(0))
+
         for line in wholeconfig.splitlines():
             linenum += 1
             # this is where I need to add variable parsing
             nginxset = re.match("\s*set\s+(\$[a-zA-Z0-9_]+)\s+[\"']?([^\"\s';]*)[\"']?;", line)
             if nginxset:
                 configfile_vars[nginxset.group(1)] = nginxset.group(2)
-                # print "set match: %s" % (line)
-                # print "group1: %s" % (nginxset.group(1))
-                # print "group1: %s" % (nginxset.group(2))
-            # if line contains \s$(varname)\s replace varname with
-            #   nginxvars[group(1)]
+            # substitute all $var references in the line, except on the set
+            # directive itself (where the value is a literal, not a reference)
             # http://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set
-            # Syntax: 	set $variable value;
-            # Default:
-            # Context: 	server, location, if
-            # "\s*(server|location|if)\s+[^$]*($[\S]+)" # find a the first
-            #   variable occurrence
-            # look in the line for a variable
-            restring = "(\s*(server|location|if|root)\s+[^$]*)(\$[a-zA-Z0-9_]+)(.*)"
-            nginx_var_match = re.match(restring, line)
-            # while there is a match
-            while nginx_var_match:
-                # if there is a match, run a sub with the varname and the
-                #   varvalue
-                # print "before line %r" % line
-                if (configfile_vars.get(nginx_var_match.group(3)) is not None and
-                        nginx_var_match.group(3) is not None):
-                    line = re.sub(r"%s" % restring, r"\g<1>%s\g<4>" %
-                                  configfile_vars.get(nginx_var_match.group(3),
-                                                      ""),
-                                  line)
-                    # look in the line for another variable
-                    nginx_var_match = re.match(restring, line)
-                else:
-                    break
+            if not nginxset:
+                line = re.sub(r'\$[a-zA-Z0-9_]+', _replace_nginx_var, line)
             linecomp = line.strip().lower()
             # when we start or end a file, we inserted ## START or END so we
             #   could identify the file in the whole config
@@ -700,8 +711,11 @@ class nginxCtl(object):
             if filechange:
                 filechain.pop()
             # filechain[-1] for the most recent element
-            # this doesn't do well if you open and close a stanza on the same line
-            if len(re.findall('{', line)) > 0 and len(re.findall('}', line)) > 0:
+            open_count = len(re.findall('{', line))
+            close_count = len(re.findall('}', line))
+            # only warn when braces on the same line are unbalanced — balanced
+            # same-line blocks (e.g. location = /x { return 301; }) are valid
+            if open_count > 0 and close_count > 0 and open_count != close_count:
                 if "error" not in stanzas:
                     stanzas["error"] = ("nginx config file: This script does not "
                                         "consistently support opening "
@@ -712,8 +726,8 @@ class nginxCtl(object):
                                             "stanzas on the same line.\n")
                 stanzas["error"] += "line %d: %s\n" % (linenum, line.strip())
                 error_collection.append("line %d: %s\n" % (linenum, line.strip()))
-            stanza_count += len(re.findall('{', line))
-            stanza_count -= len(re.findall('}', line))
+            stanza_count += open_count
+            stanza_count -= close_count
             result = re.match("(\S+)\s*{", linecomp)
             if result:
                 stanza_chain.append({"linenum": linenum,
@@ -723,7 +737,7 @@ class nginxCtl(object):
             # start server { section
             # is this a "server {" line?
             result = re.match('^\s*server\s', linecomp, re.IGNORECASE)
-            if result:
+            if result and not (open_count > 0 and open_count == close_count):
                 server_start = stanza_count
                 server_line = str(linenum)
                 if server_line not in stanzas:
@@ -847,12 +861,18 @@ class phpfpmCtl(object):
         Discovers installed nginx version
         """
         # version = self.kwargs["exe"]+" -v"
-        version = self.daemon["exe"] + " -v"
-        p = subprocess.Popen(version,
+        version_cmd = [self.daemon["exe"], '-v']
+        p = subprocess.Popen(version_cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             shell=True)
-        output, err = p.communicate()
+                             stderr=subprocess.PIPE)
+        try:
+            output, err = p.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(version_cmd))
+            error_collection.append("Timeout running: %s\n" % " ".join(version_cmd))
+            return()
         if p.returncode > 0:
             return()
         else:
@@ -860,10 +880,17 @@ class phpfpmCtl(object):
 
     def get_conf_parameters(self) -> Dict[str, str]:
         """ Return php-fpm conf params """
-        conf = self.daemon["exe"] + " -V 2>&1"
+        conf_cmd = [self.daemon["exe"], '-V']
         p = subprocess.Popen(
-            conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        output, err = p.communicate()
+            conf_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        try:
+            output, err = p.communicate(timeout=10)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(conf_cmd))
+            error_collection.append("Timeout running: %s\n" % " ".join(conf_cmd))
+            return()
         if p.returncode > 0:
             return()
         var_dict = {}
@@ -904,22 +931,22 @@ class phpfpmCtl(object):
             # try to get the line from /etc/init.d/php5-fpm containing
             # --fpm-config and use the file name following it.
             try:
-                searchfile = open("/etc/init.d/php5-fpm", "r")
-            except:
-                sys.stderr.write("php-fpm error: Failed to get configuration "
-                                 "from init file.\n")
-                error_collection.append("php-fpm error: Failed to get "
-                                        "configuration from init file.\n")
-                sys.exit(1)
-            for line in searchfile:
-                if "--fpm-config" in line:
-                    result = re.search('--fpm-config\s+(\S+)', line)
-                    if result:
-                        return(result.group(1))
+                with open("/etc/init.d/php5-fpm", "r") as searchfile:
+                    for line in searchfile:
+                        if "--fpm-config" in line:
+                            result = re.search('--fpm-config\s+(\S+)', line)
+                            if result:
+                                return(result.group(1))
+            except Exception:
+                msg = "php-fpm error: Failed to get configuration from init file."
+                sys.stderr.write(msg + "\n")
+                error_collection.append(msg + "\n")
+                raise RuntimeError(msg)
 
-        sys.stderr.write("php-fpm error: Failed to get configuration.\n")
-        error_collection.append("php-fpm error: Failed to get configuration.\n")
-        sys.exit(1)
+        msg = "php-fpm error: Failed to get configuration."
+        sys.stderr.write(msg + "\n")
+        error_collection.append(msg + "\n")
+        raise RuntimeError(msg)
 
     def parse_config(self, wholeconfig: str) -> Dict[str, Any]:
         """ parse the php-fpm configuration """
@@ -995,22 +1022,21 @@ class MagentoCtl(object):
         """Parse version information from Mage.php from Magento 1.x
         mage_php_file is the path and filename of Mage.php"""
         mage = {}
-        file_handle = open(mage_php_file, 'r')
-        for line in file_handle:
-            result = re.match("static\s+private\s+\$_currentEdition\s*=\s*self::([^\s;]+);",
-                              line.strip(), re.IGNORECASE)
-            if result:
-                mage["edition"] = result.group(1)
-            if "public static function getVersionInfo()" in line:
-                line = next(file_handle)  # {
-                line = next(file_handle)  # return array(
-                while ");" not in line:
-                    line = next(file_handle)
-                    result = re.match("'([^']+)'\s*=>\s*'([^']*)'", line.strip())
-                    if result:
-                        mage[result.group(1)] = result.group(2)
-                # break
-        file_handle.close()
+        with open(mage_php_file, 'r') as file_handle:
+            for line in file_handle:
+                result = re.match("static\s+private\s+\$_currentEdition\s*=\s*self::([^\s;]+);",
+                                  line.strip(), re.IGNORECASE)
+                if result:
+                    mage["edition"] = result.group(1)
+                if "public static function getVersionInfo()" in line:
+                    line = next(file_handle)  # {
+                    line = next(file_handle)  # return array(
+                    while ");" not in line:
+                        line = next(file_handle)
+                        result = re.match("'([^']+)'\s*=>\s*'([^']*)'", line.strip())
+                        if result:
+                            mage[result.group(1)] = result.group(2)
+                    # break
         # join them with periods, unless they are empty, then omit them
         mage["version"] = ".".join(filter(None,
                                           [mage.get("major"),
@@ -1031,8 +1057,8 @@ class MagentoCtl(object):
         """Parse version information from composer.json from Magento 2.x
         composer_json_file is the path and filename of composer.json"""
         # mage = {"edition": "", "version": ""}
-        file_handle = open(composer_json_file, 'r')
-        composer = json.load(file_handle)
+        with open(composer_json_file, 'r') as file_handle:
+            composer = json.load(file_handle)
         # print "%r" % composer
 
         mage = {}
@@ -1203,12 +1229,18 @@ class MagentoCtl(object):
         doc_root["env_php"]
         """
         env_php_filename = doc_root["env_php"]["filename"]
-        cmdline = "php -r 'print json_encode(require(\"%s\"));'" % env_php_filename
+        cmdline = ["php", "-r", 'print json_encode(require("%s"));' % env_php_filename]
         p = subprocess.Popen(cmdline,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             shell=True)
-        output, err = p.communicate()
+                             stderr=subprocess.PIPE)
+        try:
+            output, err = p.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            p.kill()
+            p.communicate()
+            sys.stderr.write("Timeout running: %s\n" % " ".join(cmdline))
+            error_collection.append("Timeout running: %s\n" % " ".join(cmdline))
+            return()
         if p.returncode > 0:
             return()
         else:
@@ -1478,9 +1510,9 @@ class RedisCtl(object):
     def get_status(self, ip: str, port: str, **kwargs: Any) -> Optional[bytes]:
         """ get redis status """
         if not ip or not port:
-            sys.stderr.write("ERROR, one of these is none, ip: %s port: %s\n" %
-                             (ip, port))
-            sys.exit(1)
+            msg = "ERROR, one of these is none, ip: %s port: %s" % (ip, port)
+            sys.stderr.write(msg + "\n")
+            raise ValueError(msg)
         #port = int(port)
         # print("Before")
         # print("port type", type(port))
@@ -1514,13 +1546,13 @@ class RedisCtl(object):
         for i in reply.splitlines():
             if len(i.strip()) == 0:
                 continue
-            if i.lstrip()[0] == "#":   # IndexError: string index out of range
+            if i.lstrip().startswith("#"):
                 section = i.lstrip(' #').rstrip()
                 if section not in return_dict:
                     return_dict[section] = {}
                 continue
             try:
-                [key, value] = i.split(':', 2)
+                [key, value] = i.split(':', 1)
             except ValueError:
                 key = None
                 value = None
@@ -1957,6 +1989,8 @@ class MysqlCtl(object):
                 'database': var_dbname,
                 'raise_on_warnings': True,
             }
+            cnx = None
+            cursor = None
             try:
                 cnx = mysql.connector.connect(**config)
                 cursor = cnx.cursor()
@@ -1973,20 +2007,11 @@ class MysqlCtl(object):
                     return({})
                 else:
                     print(err)
-                    # sys.exit(1)  # fixme
                     sys.stderr.write("WARNING MySQL: %s.\n" % err)
                     error_collection.append("WARNING MySQL: %s.\n" % err)
                     return({})
-                    """
-Traceback (most recent call last):
- File "./ecomm-recon", line 515, in <module>
-   doc_root_dict.get("local_xml", {}).get("db", {}))
- File "/root/stack-recon/stack-recon/stackreconlib.py", line 1374, in db_cache_table
-   (var_dbname, var_table_prefix))
- File "/root/stack-recon/stack-recon/stackreconlib.py", line 1859, in db_query
-   cursor.execute(sqlquery)
-UnboundLocalError: local variable 'cursor' referenced before assignment
-                    """
+            if cursor is None:
+                return({})
             # do stuff sqlquery
             cursor.execute(sqlquery)
             return_list = cursor.fetchall()
@@ -2329,8 +2354,10 @@ def daemon_exe(match_exe: List[str]) -> Dict[str, Dict[str, str]]:
         pserror = ""
         # which is causing the type error?
         try:
-            ppid = open(os.path.join('/proc', pid, 'stat'), 'r').read().split()[3]
-            pscmd = open(os.path.join('/proc', pid, 'cmdline'), 'r').read().replace("\000", " ").rstrip()
+            with open(os.path.join('/proc', pid, 'stat'), 'r') as f:
+                ppid = f.read().split()[3]
+            with open(os.path.join('/proc', pid, 'cmdline'), 'r') as f:
+                pscmd = f.read().replace("\000", " ").rstrip()
             # On one system, I have observed the exe linked to a filename
             #   with a * added at the end and this causes a TypeError
             psexe = os.path.realpath(os.path.join('/proc', pid, 'exe'))
@@ -2404,11 +2431,11 @@ def importfile(filename, keyword_regex, **kwargs):
         kwargs["recurse_count"] = 0
     if kwargs["recurse_count"] > 20:
         # arbitrary number
-        sys.stderr.write("Too many recursions while importing %s, the config "
-                         "is probably a loop.\n" % filename)
-        error_collection.append("Too many recursions while importing %s, the "
-                                "config is probably a loop.\n" % filename)
-        sys.exit(1)
+        msg = ("Too many recursions while importing %s, the config "
+               "is probably a loop." % filename)
+        sys.stderr.write(msg + "\n")
+        error_collection.append(msg + "\n")
+        raise RuntimeError(msg)
 
     def full_file_path(right_file: str, base_path: str) -> str:
         # If the right side of the full name doesn't have a leading slash, it
@@ -2491,11 +2518,11 @@ def importfile(filename: str, keyword_regex: str, **kwargs: Any) -> Dict[str, An
         kwargs["recurse_count"] = 0
     if kwargs["recurse_count"] > 20:
         # arbitrary number
-        sys.stderr.write("Too many recursions while importing %s, the config "
-                         "is probably a loop.\n" % filename)
-        error_collection.append("Too many recursions while importing %s, the "
-                                "config is probably a loop.\n" % filename)
-        sys.exit(1)
+        msg = ("Too many recursions while importing %s, the config "
+               "is probably a loop." % filename)
+        sys.stderr.write(msg + "\n")
+        error_collection.append(msg + "\n")
+        raise RuntimeError(msg)
 
     def full_file_path(right_file: str, base_path: str) -> str:
         """
@@ -2515,40 +2542,38 @@ def importfile(filename: str, keyword_regex: str, **kwargs: Any) -> Dict[str, An
     # print "1656 %r" % files
     for onefile in files:
         # for each file in the glob (may be just one file), open it
-        # try:
-        # config_files_list.append(onefile)
-        onefile_handle = open(onefile, 'r')
         compound_dict["config_files_list"].append(onefile)  # added
-        # print "1659 onefile_handle %r" % onefile_handle
         # onefile should always be a file
         if os.path.isfile(onefile):
             compound_dict["combined"] += "## START " + onefile + "\n"
-        # else:
-        #     print "1664 file isn't a file? " % onefile
-        # except:
-        #     return()
         # go through the file, line by line
         # if it has an include, go follow it
-        for line in onefile_handle:
-            result = re.match(keyword_regex, line.strip(), re.IGNORECASE)
-            # if it is an include, remark out the line,
-            # figure out the full filename
-            # and import it inline
-            if result:
-                compound_dict["combined"] += "#" + line + "\n"
-                nestedfile = full_file_path(result.group(1), base_path)
-                # compound_dict["config_files_list"].append(nestedfile)  # added
-                return_dict = importfile(nestedfile, keyword_regex, **kwargs)
-                compound_dict["combined"] += return_dict["combined"]
-                compound_dict["config_files_list"] = (compound_dict["config_files_list"] +
-                                                      return_dict["config_files_list"])
-            else:
-                compound_dict["combined"] += line
+        with open(onefile, 'r') as onefile_handle:
+            for line in onefile_handle:
+                result = re.match(keyword_regex, line.strip(), re.IGNORECASE)
+                # if it is an include, remark out the line,
+                # figure out the full filename
+                # and import it inline
+                if result:
+                    compound_dict["combined"] += "#" + line + "\n"
+                    if base_path:
+                        nestedfile = full_file_path(result.group(1), base_path)
+                    else:
+                        # no base_path (nginx): resolve relative includes from the
+                        # including file's own directory
+                        nestedfile = full_file_path(result.group(1),
+                                                    os.path.dirname(onefile))
+                    # compound_dict["config_files_list"].append(nestedfile)  # added
+                    return_dict = importfile(nestedfile, keyword_regex, **kwargs)
+                    compound_dict["combined"] += return_dict["combined"]
+                    compound_dict["config_files_list"] = (compound_dict["config_files_list"] +
+                                                          return_dict["config_files_list"])
+                else:
+                    compound_dict["combined"] += line
         # END of the file import, if it was a file and not a glob, make the ending.
         # onefile should always be a file
         if os.path.isfile(onefile):
             compound_dict["combined"] += "## END " + onefile + "\n"
-        onefile_handle.close()
         # print "#compound_dict["config_files_list"]#"
         # print compound_dict["config_files_list"]
         # print "#end#"
@@ -2563,10 +2588,10 @@ def kwsearch(keywords: List[str], line: str, **kwargs: Any) -> Dict[str, Any]:
             (the value is everything right of the keyword)
         optional: single_value=True returns a list of the values found, unless single_value is True
     """
-    line = line.lower()
+    line_lower = line.lower()
     stanza = {}
     for word in keywords:
-        result = re.match("(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
+        result = re.match(r"(%s)\s+(.*)" % word, line_lower.strip(), re.IGNORECASE)
         # result = re.search("\s*(%s)\s*(.*)" % word, line.strip(), re.IGNORECASE)
 
         """
@@ -2575,16 +2600,20 @@ def kwsearch(keywords: List[str], line: str, **kwargs: Any) -> Dict[str, Any]:
                            line.strip(), re.IGNORECASE)
         """
         if result:
+            # re-match against original line to preserve value case
+            orig_result = re.match(r"(%s)\s+(.*)" % word, line.strip(), re.IGNORECASE)
+            key = result.group(1).lower()
+            value = orig_result.group(2) if orig_result else result.group(2)
             if "single_value" not in kwargs:
-                if not result.group(1).lower() in stanza:
-                    stanza[result.group(1).lower()] = []
-                if not result.group(2).strip('\'"') in stanza[result.group(1).lower()]:
+                if key not in stanza:
+                    stanza[key] = []
+                if value.strip('\'"') not in stanza[key]:
                     if "split_list" not in kwargs:
-                        stanza[result.group(1).lower()] += [result.group(2).strip(';"\'')]
+                        stanza[key] += [value.strip(';"\'')]
                     else:
-                        stanza[result.group(1).lower()] += [result.group(2).strip(';"\'').split()]
+                        stanza[key] += [value.strip(';"\'').split()]
             else:
-                stanza[result.group(1)] = result.group(2).strip('"\'')
+                stanza[result.group(1)] = value.strip('"\'')
     return(stanza)  # once we have a match, move on
 
 
@@ -2620,10 +2649,14 @@ def memory_estimate(process_name: str, **kwargs: Any) -> Dict[str, Any]:
 2 -/+ buffers/cache:  141234696    7457240
 3 Swap:      2097148    1550284     546864
     """
-    conf = "free -k"
     p = subprocess.Popen(
-        conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output, err = p.communicate()
+        ["free", "-k"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        output, err = p.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        p.kill()
+        p.communicate()
+        raise NameError("Timeout running: free -k")
     if not output:
         raise NameError("Fail: %s" % err)
     # lines_list = string.split(output, '\n')
@@ -2638,12 +2671,21 @@ def memory_estimate(process_name: str, **kwargs: Any) -> Dict[str, Any]:
     else:
         status["bc_used"] = int(lines_list[1].split()[5])
         status["bc_free"] = int(lines_list[1].split()[6])
-    conf = "ps aux | grep %s" % process_name
     p = subprocess.Popen(
-        conf, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output, err = p.communicate()
+        ["ps", "aux"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        output, err = p.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        p.kill()
+        p.communicate()
+        raise NameError("Timeout running: ps aux")
     if not output:
         raise NameError("Fail: %s" % err)
+    output = b"\n".join(
+        line for line in output.splitlines()
+        if process_name.encode() in line)
+    if not output:
+        raise NameError("Fail: no processes found for %s" % process_name)
     status["line_count"] = len(output.splitlines())
     for line in output.splitlines():
         status["rss_sum"] += int(line.split()[5])
